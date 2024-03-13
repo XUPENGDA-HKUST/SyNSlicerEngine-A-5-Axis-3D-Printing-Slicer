@@ -1,0 +1,54 @@
+#include <CGAL/Cartesian_converter.h>
+#include <CGAL/convex_hull_2.h>
+#include <CGAL/Convex_hull_traits_adapter_2.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/extract_mean_curvature_flow_skeleton.h>
+#include <CGAL/Polygon_2.h>
+#include <CGAL/Point_3.h>
+#include <CGAL/Vector_3.h>
+#include <CGAL/Surface_mesh.h>
+#include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
+#include <CGAL/Polygon_mesh_processing/compute_normal.h>
+#include <CGAL/Polygon_mesh_processing/clip.h>
+#include <CGAL/Polygon_mesh_processing/detect_features.h>
+#include <CGAL/Polygon_mesh_processing/remesh.h>
+#include <CGAL/Polygon_mesh_processing/repair_polygon_soup.h>
+#include <CGAL/Polygon_mesh_processing/polygon_mesh_to_polygon_soup.h>
+#include <CGAL/Polygon_mesh_slicer.h>
+#include <CGAL/Heat_method_3/Surface_mesh_geodesic_distances_3.h>
+#include <CGAL/Mean_curvature_flow_skeletonization.h>
+#include <CGAL/mesh_segmentation.h>
+
+using EPICK = CGAL::Exact_predicates_inexact_constructions_kernel;
+using CgalPolygon2D_EPICK = CGAL::Polygon_2<EPICK>;
+using CgalPoint2D_EPICK = CGAL::Point_2<EPICK>;
+
+using CgalPoint_EPICK = EPICK::Point_3;
+using CgalPlane_EPICK = EPICK::Plane_3;
+using CgalMesh_EPICK = CGAL::Surface_mesh<CgalPoint_EPICK>;
+using CgalPolyline_EPICK = std::vector<CgalPoint_EPICK>;
+using CgalVector_EPICK = EPICK::Vector_3;
+using CgalRay_EPICK = EPICK::Ray_3 ;
+
+using EPECK = CGAL::Exact_predicates_exact_constructions_kernel;
+using CgalPoint_EPECK = EPECK::Point_3;
+using CgalPlane_EPECK = EPECK::Plane_3;
+using CgalMesh_EPECK = CGAL::Surface_mesh<EPECK::Point_3>;
+
+using vertex_descriptor = boost::graph_traits<CgalMesh_EPICK>::vertex_descriptor;
+using Vertex_distance_map = CgalMesh_EPICK::Property_map<vertex_descriptor, double>;
+using Heat_method = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<CgalMesh_EPICK>;
+
+using Skeletonization_EPICK = CGAL::Mean_curvature_flow_skeletonization<CgalMesh_EPICK>;
+using Skeleton_EPICK = Skeletonization_EPICK::Skeleton;
+using Skeleton_vertex = Skeleton_EPICK::vertex_descriptor;
+using Skeleton_edge = Skeleton_EPICK::edge_descriptor;
+
+using Skeletonization_EPECK = CGAL::Mean_curvature_flow_skeletonization<CgalMesh_EPECK>;
+using Skeleton_EPECK = Skeletonization_EPECK::Skeleton;
+
+using CgalPrimitive = CGAL::AABB_face_graph_triangle_primitive<CgalMesh_EPICK> ;
+using CgalTraits = CGAL::AABB_traits<EPICK, CgalPrimitive>;
+using CgalTree = CGAL::AABB_tree<CgalTraits>;
+using CgalRayIntersection = boost::optional<CgalTree::Intersection_and_primitive_id<CgalRay_EPICK>::Type>;

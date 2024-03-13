@@ -1,0 +1,1 @@
+#include "VTK_CORE_CLASS"
