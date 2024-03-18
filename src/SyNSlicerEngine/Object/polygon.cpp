@@ -44,6 +44,11 @@ void Polygon::reset()
 
 Eigen::Vector3d Polygon::centroid() const
 {
+	if (m_polygon.size() < 3)
+	{
+		return Eigen::Vector3d(0, 0, 0);
+	}
+
 	std::vector<Eigen::Vector3d> new_polygon = m_polygon;
 	new_polygon.emplace_back(new_polygon.front());
 

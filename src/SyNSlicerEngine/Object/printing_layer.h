@@ -6,9 +6,6 @@
 
 #include "Object/line.h"
 #include "Object/plane.h"
-#include "Object/polyline.h"
-#include "Object/polyline_collection.h"
-#include "Object/polygon.h"
 #include "Object/polygon_collection.h"
 #include "Object/printing_path_collection.h"
 #include "Object/toolpath_collection.h"
@@ -31,12 +28,12 @@ namespace SyNSlicerEngine::Object {
 		~PrintingLayer();
 
 		int getNumberOfContours();
-		const Polyline &getContour(int index) const;
-		PolylineCollection &getContours();
+		const SO::Polygon &getContour(int index) const;
+		SO::PolygonCollection &getContours();
 
-		void setSupportStructureContours(const PolylineCollection &input_support_structure_contours);
-		void addSupportStructureContours(const PolylineCollection &input_support_structure_contours);
-		PolylineCollection &getSupportStructureContours();
+		void setSupportStructureContours(const SO::PolygonCollection &input_support_structure_contours);
+		void addSupportStructureContours(const SO::PolygonCollection &input_support_structure_contours);
+		SO::PolygonCollection &getSupportStructureContours();
 
 		Eigen::Vector3d &getOrigin();
 		SO::Line &getDirection1();
@@ -57,8 +54,8 @@ namespace SyNSlicerEngine::Object {
 	private:
 
 		//! m_contours store the outer contours
-		PolylineCollection m_contours;
-		PolylineCollection m_support_structure_contours;
+		SO::PolygonCollection m_contours;
+		SO::PolygonCollection m_support_structure_contours;
 
 		//! All the points in Contours should lie onto mp_slicing_plane;
 		Plane m_slicing_plane;

@@ -27,9 +27,14 @@ void Polyline::reset()
 	m_polyline.clear();
 }
 
-void Polyline::addPoint(const Eigen::Vector3d &point)
+void Polyline::push_back(const Eigen::Vector3d &point)
 {
 	m_polyline.push_back(point);
+}
+
+void Polyline::pop_back()
+{
+	m_polyline.pop_back();
 }
 
 bool Polyline::isClosed()
@@ -60,7 +65,7 @@ double Polyline::getLength()
 	return distance;
 }
 
-const int Polyline::size() const
+int Polyline::numberOfPoints() const
 {
 	return m_polyline.size();
 }

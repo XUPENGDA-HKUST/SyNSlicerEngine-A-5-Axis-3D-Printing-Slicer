@@ -129,6 +129,14 @@ std::vector<Eigen::Vector3d> Line::getRefinedLine(double gap)
 	return points_on_line;
 }
 
+double Line::getDistanceOfPoint(const Eigen::Vector3d &point) const
+{
+	Eigen::Vector3d v0(point - m_source);
+	double t = v0.dot(m_direction);
+	Eigen::Vector3d v1 = m_source + t * m_direction;
+	return (point - v1).norm();
+}
+
 Line &Line::operator=(const Line &other)
 {
 	setLine(other.m_source, other.m_target);

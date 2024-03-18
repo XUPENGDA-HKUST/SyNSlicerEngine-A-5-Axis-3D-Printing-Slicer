@@ -154,6 +154,22 @@ double Plane::getDistanceFromPointToPlane(const CgalPoint_EPICK &point) const
 	return distance;
 }
 
+int Plane::getPositionOfPointWrtPlane(const Eigen::Vector3d &point, double epsilon) const
+{
+	if (this->isPointOnPlane(point, epsilon))
+	{
+		return 0;
+	}
+	else if (this->getDistanceFromPointToPlane(point) > 0.0)
+	{
+		return 1;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
 Eigen::Vector3d Plane::getProjectionOfPointOntoPlane(const Eigen::Vector3d &point) const
 {
 	Eigen::Vector3d v0 = point - m_origin;
@@ -169,6 +185,56 @@ bool Plane::isLineOnPlane(const SO::Line &line, double epsilon) const
 		isPointOnPlane(line.getTarget(), epsilon);
 }
 
+bool Plane::isIntersectedWithLine(const SO::Line &line) const
+{
+	int a = this->getPositionOfPointWrtPlane(line.getSource());
+	int b = this->getPositionOfPointWrtPlane(line.getTarget());
+
+	if (a * b != 1)
+	{
+		return true;
+	};
+
+	return false;
+}
+
+Eigen::Vector3d Plane::getIntersectionWithLine(const SO::Line &line) const
+{
+	Eigen::Vector3d intersecting_point = Eigen::Vector3d(std::numeric_limits<double>::min(), std::numeric_limits<double>::min(), std::numeric_limits<double>::min());
+	if (this->isIntersectedWithLine(line))
+	{
+		double denominator = this->m_normal.dot(line.getDirection());
+		double t = (this->m_origin - line.getSource()).dot(this->m_normal) / denominator;
+		intersecting_point = line.getSource() + t * line.getDirection();
+	}
+	return intersecting_point;
+}
+
+bool Plane::isIntersectedWithRay(const SO::Line &ray) const
+{
+	double denominator = this->m_normal.dot(ray.getDirection());
+	if (abs(denominator) > 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+Eigen::Vector3d Plane::getIntersectionWithRay(const SO::Line &ray) const
+{
+	Eigen::Vector3d intersecting_point = Eigen::Vector3d(std::numeric_limits<double>::min(), std::numeric_limits<double>::min(), std::numeric_limits<double>::min());
+	if (this->isIntersectedWithRay(ray))
+	{
+		double denominator = this->m_normal.dot(ray.getDirection());
+		double t = (this->m_origin - ray.getSource()).dot(this->m_normal) / denominator;
+		intersecting_point = ray.getSource() + t * ray.getDirection();
+	}
+	return intersecting_point;
+}
+
 bool Plane::isIntersectedWithPlane(const Plane &other) const
 {
 	Eigen::Vector3d n12 = m_normal.cross(other.m_normal);
@@ -180,6 +246,71 @@ bool Plane::isIntersectedWithPlane(const Plane &other) const
 	{
 		return true;
 	}
+}
+
+SO::Line Plane::getIntersectionWithPlane(const Plane &other) const
+{
+	if (this->isIntersectedWithPlane(other))
+	{
+		Eigen::Vector3d n12 = this->m_normal.cross(other.getNormal());
+		double numerator_1 = -this->d() * pow(other.getNormal().norm(), 2);
+		double numerator_2 = -other.d() * this->m_normal.dot(other.getNormal());
+		double denominator = pow(n12.norm(), 2);
+		double a1 = (numerator_1 - numerator_2) / denominator;
+
+		numerator_1 = -other.d() * pow(this->m_normal.norm(), 2);
+		numerator_2 = -this->d() * this->m_normal.dot(other.getNormal());
+		double a2 = (numerator_1 - numerator_2) / denominator;
+
+		Eigen::Vector3d line_source = a1 * this->m_normal + a2 * other.getNormal();
+		Eigen::Vector3d line_direction = n12 / n12.norm();
+		SO::Line intersecting_line(line_source, line_direction, 1);
+		return intersecting_line;
+	}
+	else
+	{
+		constexpr double min = std::numeric_limits<double>::min();
+		return SO::Line(Eigen::Vector3d(min, min, min), Eigen::Vector3d(min, min, min));
+	}
+}
+
+double Plane::getAngleOfRotation(const Plane &destination) const
+{
+	double rotation_angle = this->m_normal.dot(destination.m_normal) / (this->m_normal.norm() * destination.m_normal.norm());
+	if (rotation_angle > 1.0 || rotation_angle < -1.0)
+	{
+		return 0;
+	}
+	else
+	{
+		rotation_angle = acos(rotation_angle);
+		return rotation_angle;
+	}
+}
+
+Eigen::Vector3d Plane::getAxisOfRotation(const Plane &destination) const
+{
+	Eigen::Vector3d axis_of_rotation = this->m_normal.cross(destination.m_normal);
+	axis_of_rotation = axis_of_rotation / axis_of_rotation.norm();
+	return axis_of_rotation;
+}
+
+Eigen::Transform<double, 3, Eigen::Affine> Plane::getTransformationMatrix(const Plane &destination) const
+{
+	Eigen::Transform<double, 3, Eigen::Affine> transformation_matrix;
+	// If loop for getting rid of transformation matrix with Nan
+	// It happens if v1 and v2 pointing to the same direction
+	if (getAngleOfRotation(destination) != 0)
+	{
+		transformation_matrix = Eigen::AngleAxis<double>(
+			getAngleOfRotation(destination),
+			getAxisOfRotation(destination));
+	}
+	else
+	{
+		transformation_matrix.setIdentity();
+	}
+	return transformation_matrix;
 }
 
 Plane &Plane::operator=(const Plane &other)

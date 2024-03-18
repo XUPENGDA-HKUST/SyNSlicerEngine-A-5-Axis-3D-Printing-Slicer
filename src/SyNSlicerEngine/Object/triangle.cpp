@@ -39,7 +39,7 @@ double Triangle::getArea()
 {
 	Eigen::Vector3d v0 = m_v1 - m_v0;
 	Eigen::Vector3d v1 = m_v2 - m_v0;
-	double area = 0.5 * v1.cross(v0).norm();
+	double area = 0.5 * v0.cross(v1).norm();
 	return area;
 }
 
@@ -47,7 +47,7 @@ Eigen::Vector3d Triangle::getNormal()
 {
 	Eigen::Vector3d v0 = m_v1 - m_v0;
 	Eigen::Vector3d v1 = m_v2 - m_v0;
-	Eigen::Vector3d normal = v1.cross(v0);
+	Eigen::Vector3d normal = v0.cross(v1);
 	if (normal.norm() > 1e-6)
 	{
 		normal = normal / normal.norm();
@@ -57,7 +57,7 @@ Eigen::Vector3d Triangle::getNormal()
 
 double Triangle::getOverhangingAngle(const SO::Plane &plane)
 {
-	Eigen::Vector3d face_normal =this->getNormal();
+	Eigen::Vector3d face_normal = this->getNormal();
 	Eigen::Vector3d plane_normal = -plane.getNormal();
 	double overhanging_angle = face_normal.dot(plane_normal);
 
@@ -77,11 +77,11 @@ double Triangle::getOverhangingAngle(const SO::Plane &plane)
 	return overhanging_angle;
 }
 
-bool Triangle::isOneOfTheVerticesOnPlane(const SO::Plane &plane)
+bool Triangle::isOneOfTheVerticesOnPlane(const SO::Plane &plane, double epsilon) const
 {
-	return plane.isPointOnPlane(m_v0)|| 
-		plane.isPointOnPlane(m_v1)|| 
-		plane.isPointOnPlane(m_v2);
+	return plane.isPointOnPlane(m_v0, epsilon)||
+		plane.isPointOnPlane(m_v1, epsilon)||
+		plane.isPointOnPlane(m_v2, epsilon);
 }
 
 Triangle &Triangle::operator=(const Triangle &other)

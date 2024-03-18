@@ -48,14 +48,21 @@ namespace SyNSlicerEngine::Object {
 
 		double getDistanceFromPointToPlane(const Eigen::Vector3d &point) const;
 		double getDistanceFromPointToPlane(const CgalPoint_EPICK &point) const;
+		int getPositionOfPointWrtPlane(const Eigen::Vector3d &point, double epsilon = 1e-6) const;
 
 		Eigen::Vector3d getProjectionOfPointOntoPlane(const Eigen::Vector3d &point) const;
 
 		bool isLineOnPlane(const SO::Line &line, double epsilon = 1e-6) const;
+		bool isIntersectedWithLine(const SO::Line &line) const;
+		Eigen::Vector3d getIntersectionWithLine(const SO::Line &line) const;
+		bool isIntersectedWithRay(const SO::Line &ray) const;
+		Eigen::Vector3d getIntersectionWithRay(const SO::Line &ray) const;
 
 		bool isIntersectedWithPlane(const Plane &other) const;
-
-		
+		SO::Line getIntersectionWithPlane(const Plane &other) const;
+		double getAngleOfRotation(const Plane &destination) const;
+		Eigen::Vector3d getAxisOfRotation(const Plane &destination) const;
+		Eigen::Transform<double, 3, Eigen::Affine> getTransformationMatrix(const Plane &destination) const;
 
 		Plane &operator = (const Plane &other);
 		bool operator == (const Plane &other);

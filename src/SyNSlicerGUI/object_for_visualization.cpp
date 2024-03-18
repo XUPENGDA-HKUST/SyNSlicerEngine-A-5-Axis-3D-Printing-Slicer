@@ -9,7 +9,7 @@ ObjectForVisualization::ObjectForVisualization()
 	, mp_actor(nullptr), mp_property(nullptr)
 	, ready_to_be_visualized(false), mp_renderer(nullptr), m_input_type(NoInput)
 {
-	std::cout << "ObjectForVisualization()" << std::endl;
+	//std::cout << "ObjectForVisualization()" << std::endl;
 }
 
 ObjectForVisualization::ObjectForVisualization(const ObjectForVisualization &other)
@@ -31,7 +31,7 @@ ObjectForVisualization::~ObjectForVisualization()
 		mp_actor->Delete();
 		ready_to_be_visualized = false;
 	}
-	std::cout << "~ObjectForVisualization()" << std::endl;
+	//std::cout << "~ObjectForVisualization()" << std::endl;
 }
 
 void ObjectForVisualization::prepareForVisualization()

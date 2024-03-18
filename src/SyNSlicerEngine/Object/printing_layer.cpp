@@ -19,11 +19,7 @@ PrintingLayer::PrintingLayer(const SO::Plane &slicing_plane, const SO::Plane &pr
 
 PrintingLayer::PrintingLayer(const SO::PolygonCollection &contours, const SO::Plane &slicing_plane, const SO::Plane &prev_slicing_plane)
 {
-	m_contours.setNumberOfPolyline(contours.get().size());
-	for (size_t i = 0; i < contours.get().size(); i++)
-	{
-		m_contours.addPolyline(contours.get()[i].get());
-	}
+	m_contours = contours;
 	m_slicing_plane = slicing_plane;
 	m_prev_slicing_plane = prev_slicing_plane;
 }
@@ -35,33 +31,33 @@ PrintingLayer::~PrintingLayer()
 
 int PrintingLayer::getNumberOfContours()
 {
-	return m_contours.getNumberOfPolyline();
+	return m_contours.numberOfPolygons();
 }
 
-const SO::Polyline &PrintingLayer::getContour(int index) const
+const SO::Polygon &PrintingLayer::getContour(int index) const
 {
 	return m_contours[index];
 }
 
-SO::PolylineCollection &PrintingLayer::getContours()
+SO::PolygonCollection &PrintingLayer::getContours()
 {
 	return m_contours;
 }
 
-void PrintingLayer::setSupportStructureContours(const PolylineCollection &input_support_structure_contours)
+void PrintingLayer::setSupportStructureContours(const PolygonCollection &input_support_structure_contours)
 {
 	m_support_structure_contours = input_support_structure_contours;
 }
 
-void PrintingLayer::addSupportStructureContours(const PolylineCollection &input_support_structure_contours)
+void PrintingLayer::addSupportStructureContours(const PolygonCollection &input_support_structure_contours)
 {
-	for (int i = 0; i < input_support_structure_contours.size(); i++)
+	for (int i = 0; i < input_support_structure_contours.numberOfPolygons(); i++)
 	{
-		m_support_structure_contours.addPolyline(input_support_structure_contours[i]);
+		m_support_structure_contours.addPolygon(input_support_structure_contours[i]);
 	}
 }
 
-SO::PolylineCollection &PrintingLayer::getSupportStructureContours()
+SO::PolygonCollection &PrintingLayer::getSupportStructureContours()
 {
 	return m_support_structure_contours;
 }

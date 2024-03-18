@@ -41,7 +41,7 @@ const int PolylineCollection::size() const
 	return m_polylines.size();
 }
 
-unsigned int PolylineCollection::getNumberOfPolyline()
+int PolylineCollection::numberOfPolylines() const
 {
 	return m_polylines.size();
 }

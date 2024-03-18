@@ -14,16 +14,19 @@ namespace SyNSlicerEngine::Object {
 		~Polyline();
 		
 		void reset();
-		void addPoint(const Eigen::Vector3d &point);
+		void push_back(const Eigen::Vector3d &point);
+		void pop_back();
 
 		bool isClosed();
 		void closePolyline();
+
 		double getLength();
 
-		const int size() const;
+		int numberOfPoints() const;
 		Eigen::Vector3d &operator[](unsigned int index);
 		const Eigen::Vector3d operator[](unsigned int index) const;
 		const std::vector<Eigen::Vector3d> get() const;
+
 		Polyline &operator=(const Polyline &other);
 
 	private:

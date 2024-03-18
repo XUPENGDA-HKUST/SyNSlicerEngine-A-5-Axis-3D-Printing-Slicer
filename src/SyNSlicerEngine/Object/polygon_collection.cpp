@@ -27,6 +27,12 @@ const std::vector<SO::Polygon> &PolygonCollection::get() const
 
 Eigen::Vector3d PolygonCollection::centroid() const
 {
+	if (m_polygons.size() < 1)
+	{
+		double min = -std::numeric_limits<double>::max();
+		return Eigen::Vector3d(min, min, min);
+	}
+
 	double numerator_x = 0.0;
 	double numerator_y = 0.0;
 	double numerator_z = 0.0;
@@ -75,6 +81,32 @@ bool PolygonCollection::isIntersectedWithPlane(const SO::Plane &plane) const
 	return false;
 }
 
+std::vector<Eigen::Vector3d> PolygonCollection::getIntersectionWithPlane(const SO::Plane &plane) const
+{
+	std::vector<Eigen::Vector3d> intersecting_points;
+
+	for (auto &polygon : this->m_polygons)
+	{
+		std::vector<Eigen::Vector3d> contour = polygon.get();
+		if ((contour.front() - contour.back()).norm() > 1e-6)
+		{
+			contour.emplace_back(contour.front());
+		};
+		int j = 0;
+		for (int i = 0; i < contour.size(); i++)
+		{
+			SO::Line line(contour[i], contour[j]);
+			if (plane.isIntersectedWithLine(line))
+			{
+				intersecting_points.emplace_back(plane.getIntersectionWithLine(line));
+			}
+			j = i;
+		}
+	};
+
+	return intersecting_points;
+}
+
 PolygonCollection PolygonCollection::getTransformedPolygon(const SO::Plane &plane) const
 {
 	SO::PolygonCollection transformed_polygons;
@@ -119,6 +151,22 @@ SO::Polygon PolygonCollection::getConvexHullPolygon() const
 
 	convex_hull = convex_hull.getTransformedPolygon(m_plane);
 	return convex_hull;
+}
+
+SO::Polygon PolygonCollection::getLargestPolygon()
+{
+	double max = -std::numeric_limits<double>::max();
+	SO::Polygon largest_polygon;
+	for (auto &polygon : this->m_polygons)
+	{
+		double area = polygon.area();
+		if (area > max)
+		{
+			largest_polygon = polygon;
+			max = area;
+		}
+	}
+	return largest_polygon;
 }
 
 void PolygonCollection::addPolygon(const SO::Polygon &polygon)

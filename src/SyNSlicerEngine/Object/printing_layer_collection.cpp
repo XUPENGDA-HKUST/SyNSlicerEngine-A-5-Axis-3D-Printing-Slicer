@@ -51,6 +51,17 @@ bool PrintingLayerCollection::isValid()
 	return true;
 }
 
+void PrintingLayerCollection::update()
+{
+	for (auto &layer: m_printing_layers)
+	{
+		for (auto &contour : layer.getContours().get())
+		{
+			m_contours.addPolyline(contour.get());
+		}		
+	}
+}
+
 void PrintingLayerCollection::generateToolpath(int toolpath_type)
 {
 	Eigen::Vector3d zigzag_direction(1, 0, 0);
@@ -81,6 +92,21 @@ void PrintingLayerCollection::generateToolpath(int toolpath_type)
 		}
 	}
 	*/
+}
+
+SO::PolylineCollection PrintingLayerCollection::getContours() const
+{
+	return m_contours;
+}
+
+SO::PolylineCollection PrintingLayerCollection::getErrorContours() const
+{
+	return m_contours_error;
+}
+
+SO::PolylineCollection PrintingLayerCollection::getSupportContours() const
+{
+	return m_support;
 }
 
 const int PrintingLayerCollection::size() const

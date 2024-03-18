@@ -8,6 +8,7 @@
 
 #include "Object/printing_layer.h"
 #include "Object/polyline_collection.h"
+#include "Object/polygon_collection.h"
 
 namespace SO = SyNSlicerEngine::Object;
 
@@ -29,7 +30,12 @@ namespace SyNSlicerEngine::Object {
 		void setLayerStatus(std::vector<bool> in_layer_status);
 		bool isValid();
 
+		void update();
 		void generateToolpath(int toolpath_type = 0);
+
+		SO::PolylineCollection getContours() const;
+		SO::PolylineCollection getErrorContours() const;
+		SO::PolylineCollection getSupportContours() const;
 
 		const int size() const;
 		const int getNumberOfLayers() const;

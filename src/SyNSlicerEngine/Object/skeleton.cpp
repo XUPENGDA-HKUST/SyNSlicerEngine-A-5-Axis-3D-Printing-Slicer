@@ -282,6 +282,7 @@ Skeleton_EPICK::vertex_descriptor Skeleton::findSkeletonVertex(const CgalMesh_EP
     if (vertex_found == false)
     {
         spdlog::error("Target vertex not found!");
+        return Skeleton_EPICK::vertex_descriptor();
     }
     return target_vertex;
 }

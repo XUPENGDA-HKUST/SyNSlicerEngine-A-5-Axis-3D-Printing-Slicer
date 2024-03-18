@@ -39,6 +39,8 @@ namespace SyNSlicerEngine::Object
 		Eigen::Vector3d findInterpolationOnLine(double middle, double start = 0.0, double end = 1.0);
 		std::vector<Eigen::Vector3d> getRefinedLine(double gap);
 
+		double getDistanceOfPoint(const Eigen::Vector3d &point) const;
+
 		Line &operator=(const Line &other);
 
 	protected:

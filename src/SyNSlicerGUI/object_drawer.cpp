@@ -5,6 +5,7 @@ using GUI::ObjectDrawer;
 ObjectDrawer::ObjectDrawer(vtkRenderer *p_renderer)
 	: mp_renderer(p_renderer)
 {
+
 }
 
 ObjectDrawer::~ObjectDrawer()
@@ -21,7 +22,6 @@ void GUI::ObjectDrawer::drawPoint(const Eigen::Vector3d &point, std::string name
 
 	pid[0] = points->InsertNextPoint(point[0], point[1], point[2]);
 	vertices->InsertNextCell(1, pid);
-	
 
 	// Create a polydata object
 	vtkNew<vtkPolyData> pointcloud;
@@ -31,6 +31,32 @@ void GUI::ObjectDrawer::drawPoint(const Eigen::Vector3d &point, std::string name
 	pointcloud->SetVerts(vertices);
 
 	this->addObjectToRenderer(pointcloud, name);
+	m_object_in_renderer[name]->getProperty()->SetPointSize(10);
+	m_object_in_renderer[name]->setColor(1, 0, 0);
+}
+
+void GUI::ObjectDrawer::drawPoints(const std::vector<Eigen::Vector3d> &points, std::string name)
+{
+	vtkNew<vtkPoints> vtk_points;
+	// Create the topology of the point (a vertex)
+	vtkNew<vtkCellArray> vtk_vertices;
+	// We need an an array of point id's for InsertNextCell.
+	vtkIdType pid[1];
+
+	for (int i = 0; i < points.size(); i++)
+	{
+		pid[0] = vtk_points->InsertNextPoint(points[i][0], points[i][1], points[i][2]);
+		vtk_vertices->InsertNextCell(1, pid);
+	}
+
+	// Create a polydata object
+	vtkNew<vtkPolyData> polydata;
+
+	// Set the points and vertices we created as the geometry and topology of the polydata
+	polydata->SetPoints(vtk_points);
+	polydata->SetVerts(vtk_vertices);
+
+	this->addObjectToRenderer(polydata, name);
 	m_object_in_renderer[name]->getProperty()->SetPointSize(10);
 	m_object_in_renderer[name]->setColor(1, 0, 0);
 }
@@ -56,6 +82,61 @@ void GUI::ObjectDrawer::drawLine(const SO::Line &line, std::string name)
 	this->addObjectToRenderer(line_poly_data, name);
 	m_object_in_renderer[name]->setColor(1, 0, 0);
 
+}
+
+void GUI::ObjectDrawer::drawPolyline(const SO::Polyline &polyline, std::string name)
+{
+	int pointID = 0;
+	vtkNew<vtkPoints> points;
+	vtkNew<vtkCellArray> cells;
+
+	for (int j = 0; j < polyline.numberOfPoints(); j++)
+	{
+		points->InsertNextPoint(polyline[j][0], polyline[j][1], polyline[j][2]);
+	}
+	vtkNew<vtkPolyLine> polyLine;
+	polyLine->GetPointIds()->SetNumberOfIds(polyline.numberOfPoints());
+	for (unsigned int k = 0; k < polyline.numberOfPoints(); k++)
+	{
+		polyLine->GetPointIds()->SetId(k, pointID);
+		++pointID;
+	}
+	cells->InsertNextCell(polyLine);
+
+	vtkNew<vtkPolyData> polyline_poly_data;
+	polyline_poly_data->SetPoints(points);
+	polyline_poly_data->SetLines(cells);
+
+	this->addObjectToRenderer(polyline_poly_data, name);
+}
+
+void GUI::ObjectDrawer::drawPolylines(const SO::PolylineCollection &polylines, std::string name)
+{
+	int pointID = 0;
+	vtkNew<vtkPoints> points;
+	vtkNew<vtkCellArray> cells;
+
+	for (int i = 0; i < polylines.numberOfPolylines(); i++)
+	{
+		for (int j = 0; j < polylines[i].numberOfPoints(); j++)
+		{
+			points->InsertNextPoint(polylines[i][j][0], polylines[i][j][1], polylines[i][j][2]);
+		}
+		vtkNew<vtkPolyLine> polyLine;
+		polyLine->GetPointIds()->SetNumberOfIds(polylines[i].numberOfPoints());
+		for (unsigned int k = 0; k < polylines[i].numberOfPoints(); k++)
+		{
+			polyLine->GetPointIds()->SetId(k, pointID);
+			++pointID;
+		}
+		cells->InsertNextCell(polyLine);
+	}
+
+	vtkNew<vtkPolyData> polyline_poly_data;
+	polyline_poly_data->SetPoints(points);
+	polyline_poly_data->SetLines(cells);
+
+	this->addObjectToRenderer(polyline_poly_data, name);
 }
 
 void GUI::ObjectDrawer::drawPolygon(const SO::Polygon &polygon, std::string name)
@@ -126,6 +207,77 @@ void ObjectDrawer::drawPlane(const SO::Plane &plane, std::string name)
 	this->addObjectToRenderer(p_plane_source->GetOutput(), name);
 }
 
+void ObjectDrawer::drawTriangles(std::vector<int> faces, const CgalMesh_EPICK &mesh, std::string name)
+{
+	vtkNew<vtkPoints> points;
+	vtkNew<vtkCellArray> triangles;
+
+	int v0 = 0;
+	int v1 = 1;
+	int v2 = 2;
+
+	for (auto f : faces)
+	{
+		for (auto v : mesh.vertices_around_face(mesh.halfedge(CgalMesh_EPICK::Face_index(f))))
+		{
+			points->InsertNextPoint(mesh.point(v).x(), mesh.point(v).y(), mesh.point(v).z());
+		}
+
+		vtkNew<vtkTriangle> triangle;
+		triangle->GetPointIds()->SetId(0, v0);
+		triangle->GetPointIds()->SetId(1, v1);
+		triangle->GetPointIds()->SetId(2, v2);
+
+		triangles->InsertNextCell(triangle);
+		v0 += 3;
+		v1 += 3;
+		v2 += 3;
+	}
+
+	vtkNew<vtkPolyData> trianglePolyData;
+	trianglePolyData->SetPoints(points);
+	trianglePolyData->SetPolys(triangles);
+
+	this->addObjectToRenderer(trianglePolyData, name);
+	this->setColor(name, 1, 0, 0);
+}
+
+void ObjectDrawer::drawTriangles(std::vector<CgalMesh_EPICK::Face_index> faces, 
+	const CgalMesh_EPICK &mesh, std::string name)
+{
+	vtkNew<vtkPoints> points;
+	vtkNew<vtkCellArray> triangles;
+
+	int v0 = 0;
+	int v1 = 1;
+	int v2 = 2;
+
+	for (auto &f : faces)
+	{
+		for (auto v : mesh.vertices_around_face(mesh.halfedge(f)))
+		{
+			points->InsertNextPoint(mesh.point(v).x(), mesh.point(v).y(), mesh.point(v).z());
+		}
+
+		vtkNew<vtkTriangle> triangle;
+		triangle->GetPointIds()->SetId(0, v0);
+		triangle->GetPointIds()->SetId(1, v1);
+		triangle->GetPointIds()->SetId(2, v2);
+
+		triangles->InsertNextCell(triangle);
+		v0 += 3;
+		v1 += 3;
+		v2 += 3;
+	}
+
+	vtkNew<vtkPolyData> trianglePolyData;
+	trianglePolyData->SetPoints(points);
+	trianglePolyData->SetPolys(triangles);
+
+	this->addObjectToRenderer(trianglePolyData, name);
+	this->setColor(name, 1, 0, 0);
+}
+
 void ObjectDrawer::drawMesh(const CgalMesh_EPICK &mesh, std::string name)
 {
 	if (CGAL::IO::write_polygon_mesh("temp.stl", mesh))
@@ -183,4 +335,3 @@ void ObjectDrawer::addObjectToRenderer(vtkPolyData *p_polydata, std::string name
 	object->addToRenderer(mp_renderer);
 	m_object_in_renderer.insert(std::make_pair(name, object));
 }
-

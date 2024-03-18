@@ -19,7 +19,7 @@ namespace SyNSlicerEngine::Object {
 		void addPolylines(const PolylineCollection &other);
 
 		const int size() const;
-		unsigned int getNumberOfPolyline();
+		int numberOfPolylines() const;
 
 		void closePolylines();
 

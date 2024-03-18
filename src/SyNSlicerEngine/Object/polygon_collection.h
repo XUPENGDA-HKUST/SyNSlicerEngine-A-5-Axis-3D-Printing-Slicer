@@ -24,9 +24,12 @@ namespace SyNSlicerEngine::Object {
 
 		Eigen::Vector3d centroid() const;
 		bool isIntersectedWithPlane(const SO::Plane &plane) const;
+		std::vector<Eigen::Vector3d> getIntersectionWithPlane(const SO::Plane &plane) const;
 
 		PolygonCollection getTransformedPolygon(const SO::Plane &plane) const;
 		Polygon getConvexHullPolygon() const;
+
+		Polygon getLargestPolygon();
 
 		void addPolygon(const Polygon &polygon);
 		void addPolygons(const PolygonCollection &other);

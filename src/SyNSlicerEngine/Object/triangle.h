@@ -31,7 +31,7 @@ namespace SyNSlicerEngine::Object
 		double getArea();
 		Eigen::Vector3d getNormal();
 		double getOverhangingAngle(const SO::Plane &plane);
-		bool isOneOfTheVerticesOnPlane(const SO::Plane &plane);
+		bool isOneOfTheVerticesOnPlane(const SO::Plane &plane, double epsilon = 1e-6) const;
 
 		Triangle &operator=(const Triangle &other);
 

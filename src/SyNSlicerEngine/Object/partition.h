@@ -24,19 +24,25 @@ namespace SyNSlicerEngine::Object
 
 	public:
 		Partition();
-		Partition(const Partition &other);
+		Partition(const Partition<T> &other);
+        Partition(const T &mesh);
 		Partition(std::string file_path);
 		~Partition();
 
 		void setBasePlane(const SO::Plane &base_plane);
-        PolygonCollection getBaseContours();
+        SO::Plane getBasePlane();
+        const PolygonCollection &getBaseContours();
 
+        bool repaireSelfIntersection();
+        bool makeAsCleanAsPossible();
         bool makeAsCleanAsPossible(CgalMesh_EPICK &mesh);
 
         CgalMesh_EPICK getEPICKMesh();
         CgalMesh_EPECK getEPECKMesh();
 
-		Partition &operator=(const Partition &other);
+        void setPrintingLayers(const SO::PrintingLayerCollection &printing_layers);
+
+		Partition<T> &operator=(const Partition<T> &other);
 
 	private:
 
@@ -56,34 +62,164 @@ namespace SyNSlicerEngine::Object
     }
 
     template<class T>
-    inline SyNSlicerEngine::Object::Partition<T>::Partition(const Partition &other)
+    inline Partition<T>::Partition(const Partition<T> &other)
     {
         *this = other;
     }
 
     template<class T>
-    inline SyNSlicerEngine::Object::Partition<T>::Partition(std::string file_path)
+    inline Partition<T>::Partition(const T &mesh)
+        : Polyhedron<T>(mesh)
+    {
+
+    }
+
+    template<class T>
+    inline Partition<T>::Partition(std::string file_path)
         : Polyhedron<T>(file_path)
     {
 
     }
 
     template<class T>
-    inline SyNSlicerEngine::Object::Partition<T>::~Partition()
+    inline Partition<T>::~Partition()
     {
     }
 
     template<class T>
-    inline void SyNSlicerEngine::Object::Partition<T>::setBasePlane(const SO::Plane &base_plane)
+    inline void Partition<T>::setBasePlane(const SO::Plane &base_plane)
     {
+        this->m_mesh.collect_garbage();
         this->m_base_plane = base_plane;
         this->determineBaseContours();
     }
 
     template<class T>
-    inline PolygonCollection Partition<T>::getBaseContours()
+    inline SO::Plane Partition<T>::getBasePlane()
+    {
+        return this->m_base_plane;
+    }
+
+    template<class T>
+    inline const PolygonCollection &Partition<T>::getBaseContours()
     {
         return this->m_base_contours;
+    }
+
+    template<class T>
+    inline bool Partition<T>::repaireSelfIntersection()
+    {
+        return false;
+    }
+
+    template<>
+    inline bool Partition<CgalMesh_EPICK>::repaireSelfIntersection()
+    {
+        if (CGAL::Polygon_mesh_processing::does_self_intersect<CGAL::Parallel_if_available_tag>(this->m_mesh, CGAL::parameters::vertex_point_map(get(CGAL::vertex_point, this->m_mesh))))
+        {
+            spdlog::info("Self-intersection detected, try to fix it!");
+            CGAL::Polygon_mesh_processing::experimental::remove_self_intersections(this->m_mesh, CGAL::parameters::preserve_genus(true));
+            if (CGAL::Polygon_mesh_processing::does_self_intersect<CGAL::Parallel_if_available_tag>(this->m_mesh, CGAL::parameters::vertex_point_map(get(CGAL::vertex_point, this->m_mesh))))
+            {
+                spdlog::info("Self-intersection cannot be fixed!");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    template<>
+    inline bool Partition<CgalMesh_EPICK>::makeAsCleanAsPossible()
+    {
+        struct Array_traits
+        {
+            struct Equal_3
+            {
+                bool operator()(const std::array<EPICK::FT, 3> &p, const std::array<EPICK::FT, 3> &q) const {
+                    return p == q;
+                }
+            };
+            struct Less_xyz_3
+            {
+                bool operator()(const std::array<EPICK::FT, 3> &p, const std::array<EPICK::FT, 3> &q) const {
+                    return std::lexicographical_compare(p.begin(), p.end(), q.begin(), q.end());
+                }
+            };
+            Equal_3 equal_3_object() const { return Equal_3(); }
+            Less_xyz_3 less_xyz_3_object() const { return Less_xyz_3(); }
+        };
+
+        this->m_mesh.collect_garbage();
+
+        std::vector<std::array<EPICK::FT, 3> > points;
+        std::vector<std::vector<std::size_t>> polygons;
+
+        CGAL::Polygon_mesh_processing::polygon_mesh_to_polygon_soup(this->m_mesh, points, polygons);
+
+        CgalMesh_EPICK repaired_mesh;
+
+        struct Visitor : public CGAL::Polygon_mesh_processing::Default_orientation_visitor
+        {
+            void non_manifold_edge(std::size_t id1, std::size_t id2, std::size_t nb_poly)
+            {
+                std::cout << std::setprecision(17);
+                std::cout << "The edge " << id1 << ", " << id2 << " is not manifold: " << nb_poly << " incident polygons." << std::endl;
+                std::cout << m_points[id1][0] << " ";
+                std::cout << m_points[id1][1] << " ";
+                std::cout << m_points[id1][2] << std::endl;
+                std::cout << m_points[id2][0] << " ";
+                std::cout << m_points[id2][1] << " ";
+                std::cout << m_points[id2][2] << std::endl;
+            }
+            void non_manifold_vertex(std::size_t id, std::size_t nb_cycles)
+            {
+                std::cout << "The vertex " << id << " is not manifold: " << nb_cycles << " connected components of vertices in the link." << std::endl;
+            }
+            void duplicated_vertex(std::size_t v1, std::size_t v2)
+            {
+                std::cout << "The vertex " << v1 << " has been duplicated, its new id is " << v2 << "." << std::endl;
+            }
+            void vertex_id_in_polygon_replaced(std::size_t p_id, std::size_t i1, std::size_t i2)
+            {
+                std::cout << "In the polygon " << p_id << ", the index " << i1 << " has been replaced by " << i2 << "." << std::endl;
+                std::cout << m_points[m_polygons[p_id][0]][0] << " " << m_points[m_polygons[p_id][0]][1] << " " << m_points[m_polygons[p_id][0]][2] << std::endl;
+                std::cout << m_points[m_polygons[p_id][1]][0] << " " << m_points[m_polygons[p_id][1]][1] << " " << m_points[m_polygons[p_id][1]][2] << std::endl;
+                std::cout << m_points[m_polygons[p_id][2]][0] << " " << m_points[m_polygons[p_id][2]][1] << " " << m_points[m_polygons[p_id][2]][2] << std::endl;
+                std::cout << std::endl;
+            }
+            void polygon_orientation_reversed(std::size_t p_id)
+            {
+                std::cout << "The polygon " << p_id << " has been reversed." << std::endl;
+            }
+            Visitor(std::vector<std::array<EPICK::FT, 3> > points, std::vector<std::vector<std::size_t>> polygons)
+            {
+                m_points = points;
+                m_polygons = polygons;
+            };
+
+            std::vector<std::array<EPICK::FT, 3>> m_points;
+            std::vector<std::vector<std::size_t>> m_polygons;
+        };
+
+
+        if (!CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons))
+        {
+            spdlog::info("orient_polygon_soup() return false for the first time!");
+        }
+
+        CGAL::Polygon_mesh_processing::repair_polygon_soup(points, polygons, CGAL::parameters::geom_traits(Array_traits()));
+        //CGAL::Polygon_mesh_processing::orient_triangle_soup_with_reference_triangle_mesh(mesh, points, polygons);
+
+        if (!CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons))
+        {
+            spdlog::info("orient_polygon_soup() return false for the second time!");
+            return false;
+        }
+
+        CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, repaired_mesh);
+
+        this->m_mesh = repaired_mesh;
+        return true;
     }
 
     template<class T>
@@ -177,7 +313,7 @@ namespace SyNSlicerEngine::Object
         if (!CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons))
         {
             spdlog::info("orient_polygon_soup() return false for the second time!");
-            return false;
+            //return false;
         }
 
         CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, repaired_mesh);
@@ -228,15 +364,15 @@ namespace SyNSlicerEngine::Object
                 const auto &e2 = m.next(e1);
 
                 std::vector<CgalMesh_EPICK::Halfedge_index> edges;
-                if (plane.isLineOnPlane(SO::Line(e1, m)))
+                if (plane.isLineOnPlane(SO::Line(e1, m), 1e-3))
                 {
                     edges.emplace_back(e1);
                 }
-                if (plane.isLineOnPlane(SO::Line(e0, m)))
+                if (plane.isLineOnPlane(SO::Line(e0, m), 1e-3))
                 {
                     edges.emplace_back(e0);
                 }
-                if (plane.isLineOnPlane(SO::Line(e2, m)))
+                if (plane.isLineOnPlane(SO::Line(e2, m), 1e-3))
                 {
                     edges.emplace_back(e2);
                 }
@@ -284,15 +420,15 @@ namespace SyNSlicerEngine::Object
                     const auto &e2 = m.next(e1);
 
                     std::vector<CgalMesh_EPICK::Halfedge_index> edges;
-                    if (plane.isLineOnPlane(SO::Line(e1, m)))
+                    if (plane.isLineOnPlane(SO::Line(e1, m), 1e-3))
                     {
                         edges.emplace_back(e1);
                     }
-                    if (plane.isLineOnPlane(SO::Line(e0, m)))
+                    if (plane.isLineOnPlane(SO::Line(e0, m), 1e-3))
                     {
                         edges.emplace_back(e0);
                     }
-                    if (plane.isLineOnPlane(SO::Line(e2, m)))
+                    if (plane.isLineOnPlane(SO::Line(e2, m), 1e-3))
                     {
                         edges.emplace_back(e2);
                     }
@@ -356,7 +492,13 @@ namespace SyNSlicerEngine::Object
     }
 
     template<class T>
-    inline Partition<T> &SyNSlicerEngine::Object::Partition<T>::operator=(const Partition &other)
+    inline void Partition<T>::setPrintingLayers(const SO::PrintingLayerCollection &printing_layers)
+    {
+        m_printing_layers = printing_layers;
+    }
+
+    template<class T>
+    inline Partition<T> &Partition<T>::operator=(const Partition<T> &other)
     {
         Polyhedron<T>::operator=(other);
         this->m_base_plane = other.m_base_plane;
@@ -366,13 +508,13 @@ namespace SyNSlicerEngine::Object
     }
 
     template<class T>
-    inline void SyNSlicerEngine::Object::Partition<T>::determineBaseContours()
+    inline void Partition<T>::determineBaseContours()
     {
        
     }
 
     template<>
-    inline void SyNSlicerEngine::Object::Partition<CgalMesh_EPICK>::determineBaseContours()
+    inline void Partition<CgalMesh_EPICK>::determineBaseContours()
     {
         this->m_base_contours.reset();
 
@@ -387,15 +529,15 @@ namespace SyNSlicerEngine::Object
             const auto &e2 = this->m_mesh.next(e1);
 
             std::vector<CgalMesh_EPICK::Halfedge_index> edges;
-            if (this->m_base_plane.isLineOnPlane(Line(e1, this->m_mesh)))
+            if (this->m_base_plane.isLineOnPlane(Line(e1, this->m_mesh), 1e-2))
             {
                 edges.emplace_back(e1);
             }
-            if (this->m_base_plane.isLineOnPlane(Line(e0, this->m_mesh)))
+            if (this->m_base_plane.isLineOnPlane(Line(e0, this->m_mesh), 1e-2))
             {
                 edges.emplace_back(e0);
             }
-            if (this->m_base_plane.isLineOnPlane(Line(e2, this->m_mesh)))
+            if (this->m_base_plane.isLineOnPlane(Line(e2, this->m_mesh), 1e-2))
             {
                 edges.emplace_back(e2);
             }
@@ -455,9 +597,8 @@ namespace SyNSlicerEngine::Object
         }
     }
 
-
     template<>
-    inline void SyNSlicerEngine::Object::Partition<CgalMesh_EPECK>::determineBaseContours()
+    inline void Partition<CgalMesh_EPECK>::determineBaseContours()
     {
         this->m_base_contours.reset();
 
