@@ -2,8 +2,10 @@
 
 using SyNSlicerEngine::Algorithm::AutoPartitioner;
 
-AutoPartitioner::AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, vtkRenderer *renderer)
+AutoPartitioner::AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, 
+    const SO::Nozzle &nozzle, vtkRenderer *renderer)
 	: m_partition(partition)
+    , m_nozzle(nozzle)
     , m_drawer(renderer)
 {
 	m_slicing_planes.emplace_back(
@@ -48,6 +50,15 @@ void AutoPartitioner::partition()
             }     
             m_results.addPartition(SO::Partition<CgalMesh_EPICK>(std::string("Part_") + std::to_string(i) + std::string(".stl")));
             m_results[i].setBasePlane(m_partition_list[i].getBasePlane());
+            for (auto lock : m_partition_list[i].getLocks())
+            {
+                m_results[i].addLock(lock);
+            }
+
+            for (auto key : m_partition_list[i].getKeys())
+            {
+                m_results[i].addKey(key);
+            }
         }
     }
 }
@@ -97,6 +108,16 @@ void AutoPartitioner::partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO
 
         if (partition_list.numberOfPartitions() > 0)
         {
+            for (auto lock : partition_list.back().getLocks())
+            {
+                low_partition.addLock(lock);
+            }
+
+            for (auto key : partition_list.back().getKeys())
+            {
+                up_partition.addKey(key);
+            }
+
             partition_list.pop_back();
         }
 
@@ -278,8 +299,6 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
             }
         }
     }
-
-    m_drawer.drawPoint(temp_clipping_plane.getOrigin(), std::string("Point") + std::to_string(partition_time));
 
     Eigen::Vector3d v1_s(0, 0, 0);
     SO::Triangle triangle(most_overhanging_face, mesh);
@@ -841,10 +860,12 @@ bool AutoPartitioner::clipPartition(SO::Partition<CgalMesh_EPECK> &partition, Re
     low_mesh.collect_garbage();
     partition_low = SO::Partition(low_mesh);
     partition_low.setBasePlane(base_plane);
+    partition_low.addKey(partition_time);
 
     up_mesh.collect_garbage();
     partition_up = SO::Partition(up_mesh);
     partition_up.setBasePlane(clipping_plane.clipping_plane);
+    partition_up.addLock(partition_time);
 
     spdlog::info("AutoPartitioner::clipPartition(): successful.");
     return true;
@@ -961,7 +982,7 @@ int AutoPartitioner::adjustPlaneNormalSoPointsAreOnNegativeSide(const EigenPoint
             }
         }
     }
-
+        
     Eigen::Vector3d most_positive_point;
     double max = std::numeric_limits<double>::min();
     if (points_to_check_0.size())
@@ -996,7 +1017,6 @@ int AutoPartitioner::adjustPlaneNormalSoPointsAreOnNegativeSide(const EigenPoint
         }
 
         clipping_plane = temp_clipping_plane;
-        return 1;
     }
     else
     {
@@ -1028,10 +1048,45 @@ int AutoPartitioner::adjustPlaneNormalSoPointsAreOnNegativeSide(const EigenPoint
             break;
         }
         clipping_plane = temp_clipping_plane;
-
-        return 1;
     }
-    return 0;
+
+    // Determine maximum angle that the normal is allow to shift.
+    /*
+    double c = pow(m_nozzle.getX(), 2) + pow(m_nozzle.getY() / 2, 2);
+    c = sqrt(c);
+    double h = base_plane.getDistanceFromPointToPlane(temp_clipping_plane.getOrigin());
+    double beta = acos(h / c);
+    double alpha = acos(m_nozzle.getX() / c);
+    double max_rotation_angle = M_PI - beta - alpha;
+
+    double value = temp_clipping_plane.getNormal().cross(base_plane.getNormal()).norm();
+    value = asin(value);
+    if (value > max_rotation_angle)
+    {
+        std::cout << value << " " << max_rotation_angle << std::endl;
+        Eigen::Transform<double, 3, Eigen::Affine> transformation_matrix;
+        transformation_matrix = Eigen::AngleAxis<double>(max_rotation_angle, reference_plane.getNormal());
+        Eigen::Vector3d new_normal = transformation_matrix.linear() * base_plane.getNormal();
+
+        if (new_normal.dot(temp_clipping_plane.getNormal()) < 0)
+        {
+            transformation_matrix = Eigen::AngleAxis<double>(max_rotation_angle, -reference_plane.getNormal());
+            new_normal = transformation_matrix.linear() * base_plane.getNormal();
+        }
+
+        temp_clipping_plane.setNormal(new_normal);
+        if (temp_clipping_plane.getNormal().dot(base_plane.getNormal()) < 0)
+        {
+            temp_clipping_plane.setNormal(-temp_clipping_plane.getNormal());
+        }
+        value = temp_clipping_plane.getNormal().cross(base_plane.getNormal()).norm();
+        value = asin(value);
+        std::cout << value << " " << max_rotation_angle << std::endl;
+        m_drawer.drawPlane(temp_clipping_plane, std::string("Plane") + std::to_string(partition_time));
+        clipping_plane = temp_clipping_plane;
+    }
+    */
+    return 1;
 }
 
 SO::PartitionCollection<CgalMesh_EPICK> AutoPartitioner::getResult()

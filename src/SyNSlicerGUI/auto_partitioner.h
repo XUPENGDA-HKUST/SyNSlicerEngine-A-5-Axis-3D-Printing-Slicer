@@ -10,6 +10,7 @@
 
 #include "spdlog/spdlog.h"
 
+#include "Object/nozzle.h"
 #include "Object/triangle.h"
 #include "Object/partition.h"
 #include "Object/partition_collection.h"
@@ -25,7 +26,7 @@ namespace SyNSlicerEngine::Algorithm
 	{
 	public:
 		AutoPartitioner() = delete;
-		AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, vtkRenderer *renderer = nullptr);
+		AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, const SO::Nozzle &nozzle, vtkRenderer *renderer = nullptr);
 		~AutoPartitioner();
 
 		enum Case { ResultValid = 0, ResultInvalid = 1, TriangleTooSmall = 2 };
@@ -88,6 +89,8 @@ namespace SyNSlicerEngine::Algorithm
 		SO::PartitionCollection<CgalMesh_EPICK> m_results;
 		std::vector<SO::Plane> m_slicing_planes;
 		CgalContours_EPICK m_prev_contours;
+
+		SO::Nozzle m_nozzle;
 
 		GUI::ObjectDrawer m_drawer;
 	};

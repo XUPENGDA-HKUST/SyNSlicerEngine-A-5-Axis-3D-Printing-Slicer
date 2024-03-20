@@ -33,6 +33,13 @@ namespace SyNSlicerEngine::Object
         SO::Plane getBasePlane();
         const PolygonCollection &getBaseContours();
 
+        void addKey(int key);
+        std::vector<int> getKeys();
+
+        void addLock(int lock);
+        std::vector<int> getLocks();
+
+
         bool repaireSelfIntersection();
         bool makeAsCleanAsPossible();
         bool makeAsCleanAsPossible(CgalMesh_EPICK &mesh);
@@ -41,6 +48,7 @@ namespace SyNSlicerEngine::Object
         CgalMesh_EPECK getEPECKMesh();
 
         void setPrintingLayers(const SO::PrintingLayerCollection &printing_layers);
+        SO::PrintingLayerCollection getPrintingLayers() const;
 
 		Partition<T> &operator=(const Partition<T> &other);
 
@@ -53,6 +61,9 @@ namespace SyNSlicerEngine::Object
 		SO::PolygonCollection m_base_contours;
 
 		SO::PrintingLayerCollection m_printing_layers;
+
+        std::vector<int> m_keys;
+        std::vector<int> m_locks;
 
 	};
 
@@ -104,6 +115,30 @@ namespace SyNSlicerEngine::Object
     inline const PolygonCollection &Partition<T>::getBaseContours()
     {
         return this->m_base_contours;
+    }
+
+    template<class T>
+    inline void Partition<T>::addKey(int key)
+    {
+        m_keys.emplace_back(key);
+    }
+
+    template<class T>
+    inline std::vector<int> Partition<T>::getKeys()
+    {
+        return m_keys;
+    }
+
+    template<class T>
+    inline void Partition<T>::addLock(int lock)
+    {
+        m_locks.emplace_back(lock);
+    }
+
+    template<class T>
+    inline std::vector<int> Partition<T>::getLocks()
+    {
+        return m_locks;
     }
 
     template<class T>
@@ -498,12 +533,20 @@ namespace SyNSlicerEngine::Object
     }
 
     template<class T>
+    inline SO::PrintingLayerCollection Partition<T>::getPrintingLayers() const
+    {
+        return m_printing_layers;
+    }
+
+    template<class T>
     inline Partition<T> &Partition<T>::operator=(const Partition<T> &other)
     {
         Polyhedron<T>::operator=(other);
         this->m_base_plane = other.m_base_plane;
         this->m_base_contours = other.m_base_contours;
         this->m_printing_layers = other.m_printing_layers;
+        this->m_keys = other.m_keys;
+        this->m_locks = other.m_locks;
         return *this;
     }
 

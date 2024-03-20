@@ -1,5 +1,6 @@
 #include <CGAL/Cartesian_converter.h>
 #include <CGAL/convex_hull_2.h>
+#include <CGAL/convex_hull_3.h>
 #include <CGAL/Convex_hull_traits_adapter_2.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
