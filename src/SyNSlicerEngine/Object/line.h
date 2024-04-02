@@ -40,6 +40,9 @@ namespace SyNSlicerEngine::Object
 		std::vector<Eigen::Vector3d> getRefinedLine(double gap);
 
 		double getDistanceOfPoint(const Eigen::Vector3d &point) const;
+		double getDistanceFromPointToLineSegment(const Eigen::Vector3d &point) const;
+
+		Eigen::Vector3d getProjectionOfPointOntoRay(const Eigen::Vector3d &point);
 
 		Line &operator=(const Line &other);
 

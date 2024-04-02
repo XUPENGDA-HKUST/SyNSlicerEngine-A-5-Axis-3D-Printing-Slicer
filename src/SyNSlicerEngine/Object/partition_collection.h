@@ -24,7 +24,7 @@ namespace SyNSlicerEngine::Object
 
 		void reset();
 		void addPartition(const SO::Partition<T> &partition);
-		SO::Partition<T> back();
+		SO::Partition<T> &back();
 		void pop_back();
 
 		int numberOfPartitions() const;
@@ -67,7 +67,7 @@ namespace SyNSlicerEngine::Object
 	}
 
 	template <class T>
-	inline SO::Partition<T> PartitionCollection<T>::back()
+	inline SO::Partition<T> &PartitionCollection<T>::back()
 	{
 		return m_partitions.back();
 	}

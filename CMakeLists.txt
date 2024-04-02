@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(SyNSlicer LANGUAGES CXX)
+project(SyNSlicerEngine LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 

@@ -10,6 +10,7 @@
 #include "Object/line.h"
 #include "Object/plane.h"
 #include "Object/partition.h"
+#include "Object/polyline_collection.h"
 
 #include "object_for_visualization.h"
 

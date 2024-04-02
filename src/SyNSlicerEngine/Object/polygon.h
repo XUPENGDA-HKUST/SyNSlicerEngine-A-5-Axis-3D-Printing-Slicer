@@ -36,6 +36,8 @@ namespace SyNSlicerEngine::Object {
 		bool isPointInside(const Eigen::Vector3d &point);
 		bool isOneOfTheVerticesOfTriangleInside(const SO::Triangle &triangle);
 
+		double getMinimumDistanceFromPolygon(const Polygon &other);
+
 		Polygon getTransformedPolygon(const SO::Plane &plane) const;
 		Polygon getConvexHullPolygon() const;
 

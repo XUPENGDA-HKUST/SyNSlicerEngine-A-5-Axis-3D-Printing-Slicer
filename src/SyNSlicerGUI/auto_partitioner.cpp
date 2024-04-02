@@ -25,6 +25,7 @@ void AutoPartitioner::partition()
     {
         spdlog::error("Input partition self-intersected!");
     }
+
     m_partition.makeAsCleanAsPossible();
 
     SO::Partition<CgalMesh_EPECK> epeck_partition = SO::Partition<CgalMesh_EPECK>(m_partition.getEPECKMesh());
@@ -128,6 +129,7 @@ void AutoPartitioner::partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO
         spdlog::get("basic_logger")->info("Clip plane: {} {} {} {} {} {}",
             clipping_plane.getOrigin()[0], clipping_plane.getOrigin()[1], clipping_plane.getOrigin()[2],
             clipping_plane.getNormal()[0], clipping_plane.getNormal()[1], clipping_plane.getNormal()[2]);
+        spdlog::get("basic_logger")->flush();
 
         partition_list.addPartition(low_partition);
         this->partitionMesh(low_partition, partition_list, vertices_to_ignore_list);

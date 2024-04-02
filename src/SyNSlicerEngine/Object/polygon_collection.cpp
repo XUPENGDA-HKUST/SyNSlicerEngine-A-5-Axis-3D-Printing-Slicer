@@ -11,6 +11,36 @@ PolygonCollection::PolygonCollection(const PolygonCollection &other)
 	*this = other;
 }
 
+PolygonCollection::PolygonCollection(const Clipper2Lib::PathsD &polygons, const SO::Plane &plane)
+{
+	double z = plane.getOrigin()[2];
+	for (int i = 0; i < polygons.size(); i++)
+	{
+		SO::Polygon temp_polygon;
+		temp_polygon.setPlane(plane);
+		for (int j = 0; j < polygons[i].size(); j++)
+		{
+			Eigen::Vector3d point(polygons[i][j].x, polygons[i][j].y, z);
+			temp_polygon.addPointToBack(point);
+		}
+		this->addPolygon(temp_polygon);
+	}
+}
+
+PolygonCollection::PolygonCollection(const std::vector<CgalPolyline_EPICK> &polygons, const SO::Plane &plane)
+{
+	for (int i = 0; i < polygons.size(); i++)
+	{
+		SO::Polygon temp_polygon;
+		temp_polygon.setPlane(plane);
+		for (int j = 0; j < polygons[i].size(); j++)
+		{
+			temp_polygon.addPointToBack(Eigen::Vector3d(polygons[i][j].x(), polygons[i][j].y(), polygons[i][j].z()));
+		}
+		this->addPolygon(temp_polygon);
+	}
+}
+
 PolygonCollection::~PolygonCollection()
 {
 }
@@ -107,7 +137,77 @@ std::vector<Eigen::Vector3d> PolygonCollection::getIntersectionWithPlane(const S
 	return intersecting_points;
 }
 
-PolygonCollection PolygonCollection::getTransformedPolygon(const SO::Plane &plane) const
+double PolygonCollection::getMaximumDistanceFromPlane(const SO::Plane &plane) const
+{
+	double max = 0.0;
+	for (auto &polygon : m_polygons)
+	{
+		for (auto &point : polygon.get())
+		{
+			double distance = plane.getDistanceFromPointToPlane(point);
+			if (distance > max)
+			{
+				max = distance;
+			}
+		}
+	}
+	return max;
+}
+
+double PolygonCollection::getMaximumDistanceFromPlane(const SO::Plane &plane, Eigen::Vector3d &point) const
+{
+	double max = 0.0;
+	for (auto &polygon : m_polygons)
+	{
+		for (auto &pt : polygon.get())
+		{
+			double distance = plane.getDistanceFromPointToPlane(pt);
+			if (distance > max)
+			{
+				max = distance;
+				point = pt;
+			}
+		}
+	}
+	return max;
+}
+
+double PolygonCollection::getMinimumDistanceFromPlane(const SO::Plane &plane) const
+{
+	double min = std::numeric_limits<double>::max();
+	for (auto &polygon : m_polygons)
+	{
+		for (auto &point : polygon.get())
+		{
+			double distance = plane.getDistanceFromPointToPlane(point);
+			if (distance < min)
+			{
+				min = distance;
+			}
+		}
+	}
+	return min;
+}
+
+double PolygonCollection::getMinimumDistanceFromPlane(const SO::Plane &plane, Eigen::Vector3d &point) const
+{
+	double min = std::numeric_limits<double>::max();
+	for (auto &polygon : m_polygons)
+	{
+		for (auto &pt : polygon.get())
+		{
+			double distance = plane.getDistanceFromPointToPlane(pt);
+			if (distance < min)
+			{
+				min = distance;
+				point = pt;
+			}
+		}
+	}
+	return min;
+}
+
+PolygonCollection PolygonCollection::getTransformedPolygons(const SO::Plane &plane) const
 {
 	SO::PolygonCollection transformed_polygons;
 
@@ -119,11 +219,83 @@ PolygonCollection PolygonCollection::getTransformedPolygon(const SO::Plane &plan
 	return transformed_polygons;
 }
 
+PolygonCollection PolygonCollection::projectToOtherPlane(const SO::Plane &plane) const
+{
+	SO::PolygonCollection projected_contours;
+	Eigen::Vector3d direction = -this->m_plane.getNormal();
+	for (int i = 0; i < this->m_polygons.size(); i++)
+	{
+		const SO::Polygon temp_contour = this->m_polygons[i];
+		SO::Polygon projected_contour;
+		projected_contour.setPlane(plane);
+		for (int j = 0; j < temp_contour.numberOfPoints(); j++)
+		{
+			SO::Line ray(temp_contour[j], direction, 1);
+			Eigen::Vector3d point = plane.getIntersectionWithRay(ray);
+			projected_contour.addPointToBack(point);
+		}
+		projected_contours.addPolygon(projected_contour);
+	}
+	return projected_contours;
+}
+
+PolygonCollection PolygonCollection::offset(double distance)
+{
+	SO::PolygonCollection subject_contours = this->getTransformedPolygons(SO::Plane(m_plane.getOrigin(), Eigen::Vector3d::UnitZ()));
+
+	Clipper2Lib::PathsD subject = subject_contours.getClipper2Polygons();
+	subject = Clipper2Lib::InflatePaths(subject, distance, Clipper2Lib::JoinType::Miter, Clipper2Lib::EndType::Polygon);
+	subject = Clipper2Lib::SimplifyPaths(subject, 0.1);
+
+	SO::PolygonCollection result(subject, SO::Plane(m_plane.getOrigin(), Eigen::Vector3d::UnitZ()));
+	result = result.getTransformedPolygons(this->m_plane);
+
+	return result;
+}
+
+PolygonCollection PolygonCollection::getDifference(const PolygonCollection &other)
+{
+	// Check if this and other are located on the same plane.
+	if (this->m_plane != other.m_plane)
+	{
+		return *this;
+	}
+
+	SO::PolygonCollection subject_contours = this->getTransformedPolygons(SO::Plane(m_plane.getOrigin(), Eigen::Vector3d::UnitZ()));
+	SO::PolygonCollection clip_contours = other.getTransformedPolygons(SO::Plane(m_plane.getOrigin(), Eigen::Vector3d::UnitZ()));
+
+	Clipper2Lib::PathsD subject = subject_contours.getClipper2Polygons();
+	Clipper2Lib::PathsD clip = clip_contours.getClipper2Polygons();
+	Clipper2Lib::PathsD solution = Clipper2Lib::Difference(subject, clip, Clipper2Lib::FillRule::NonZero);
+	solution = Clipper2Lib::SimplifyPaths(solution, 0.01);
+
+	SO::PolygonCollection difference(solution, SO::Plane(m_plane.getOrigin(), Eigen::Vector3d::UnitZ()));
+	difference = difference.getTransformedPolygons(m_plane);
+
+	return difference;
+}
+
+SO::Polygon PolygonCollection::getLargestPolygon() const
+{
+	double max = -std::numeric_limits<double>::max();
+	SO::Polygon largest_polygon;
+	for (auto &polygon : this->m_polygons)
+	{
+		double area = polygon.area();
+		if (area > max)
+		{
+			largest_polygon = polygon;
+			max = area;
+		}
+	}
+	return largest_polygon;
+}
+
 SO::Polygon PolygonCollection::getConvexHullPolygon() const
 {
 	PolygonCollection transformed_polygons = *this;
 	Plane xy_plane = Plane(m_plane.getOrigin(), Eigen::Vector3d(0, 0, 1));
-	transformed_polygons = transformed_polygons.getTransformedPolygon(xy_plane);
+	transformed_polygons = transformed_polygons.getTransformedPolygons(xy_plane);
 
 	std::vector<CgalPoint2D_EPICK> points;
 	for (auto &polygon : transformed_polygons.get())
@@ -153,24 +325,31 @@ SO::Polygon PolygonCollection::getConvexHullPolygon() const
 	return convex_hull;
 }
 
-SO::Polygon PolygonCollection::getLargestPolygon()
+SO::Polygon PolygonCollection::getPolygonCloestToPolygon(const SO::Polygon &polygon) const
 {
-	double max = -std::numeric_limits<double>::max();
-	SO::Polygon largest_polygon;
-	for (auto &polygon : this->m_polygons)
+	Eigen::Vector3d target = polygon.centroid();
+	SO::Polygon result;
+	double min = std::numeric_limits<double>::max();
+	for (auto &poly : m_polygons)
 	{
-		double area = polygon.area();
-		if (area > max)
+		Eigen::Vector3d source = poly.centroid();
+		double distance = (target - source).norm();
+		if (distance < min)
 		{
-			largest_polygon = polygon;
-			max = area;
+			min = distance;
+			result = poly;
 		}
 	}
-	return largest_polygon;
+	return result;
 }
 
 void PolygonCollection::addPolygon(const SO::Polygon &polygon)
 {
+	if (polygon.numberOfPoints() < 1)
+	{
+		return;
+	}
+
 	if (m_polygons.size() == 0)
 	{
 		m_polygons.emplace_back(polygon);
@@ -191,6 +370,11 @@ void PolygonCollection::addPolygon(const SO::Polygon &polygon)
 
 void PolygonCollection::addPolygons(const PolygonCollection &other)
 {
+	if (other.numberOfPolygons() < 1)
+	{
+		return;
+	}
+
 	if (m_polygons.size() == 0)
 	{
 		*this = other;
@@ -214,6 +398,10 @@ void PolygonCollection::addPolygons(const PolygonCollection &other)
 void PolygonCollection::setPlane(const Plane &plane)
 {
 	m_plane = plane;
+	for (auto &polygon : m_polygons)
+	{
+		polygon.setPlane(plane);
+	}
 }
 
 const SyNSlicerEngine::Object::Plane &PolygonCollection::getPlane() const
@@ -236,4 +424,20 @@ PolygonCollection &PolygonCollection::operator=(const PolygonCollection &other)
 const SO::Polygon &PolygonCollection::operator[](unsigned int index) const
 {
 	return m_polygons[index];
+}
+
+Clipper2Lib::PathsD PolygonCollection::getClipper2Polygons()
+{
+	Clipper2Lib::PathsD clipper2_polygon;
+	for (auto &polygon : m_polygons)
+	{
+		Clipper2Lib::PathD temp_path;
+		for (auto &point : polygon.get())
+		{
+			Clipper2Lib::PointD cp2point(point[0], point[1]);
+			temp_path.push_back(cp2point);
+		}
+		clipper2_polygon.push_back(temp_path);
+	}
+	return clipper2_polygon;
 }

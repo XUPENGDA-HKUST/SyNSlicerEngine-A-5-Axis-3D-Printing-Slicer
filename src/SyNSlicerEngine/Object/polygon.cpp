@@ -3,6 +3,7 @@
 using namespace SyNSlicerEngine::Object;
 
 Polygon::Polygon()
+	: m_plane(SO::Plane())
 {
 
 }
@@ -44,9 +45,19 @@ void Polygon::reset()
 
 Eigen::Vector3d Polygon::centroid() const
 {
-	if (m_polygon.size() < 3)
+	if (m_polygon.size() == 0)
 	{
-		return Eigen::Vector3d(0, 0, 0);
+		return Eigen::Vector3d(0.0, 0.0, 0.0);
+	}
+
+	if (m_polygon.size() == 1)
+	{
+		return m_polygon[0];
+	}
+
+	if (m_polygon.size() == 2)
+	{
+		return (m_polygon[0] + m_polygon[1]) / 2;
 	}
 
 	std::vector<Eigen::Vector3d> new_polygon = m_polygon;
@@ -208,6 +219,51 @@ bool Polygon::isOneOfTheVerticesOfTriangleInside(const SO::Triangle &triangle)
 	return result;
 }
 
+double Polygon::getMinimumDistanceFromPolygon(const Polygon &other)
+{
+	double temp_distance = 0.0;
+	double distance_1 = std::numeric_limits<double>::max();
+	for (int i = 0; i < this->m_polygon.size(); i++)
+	{
+		int k = 0;
+		for (int j = 1; j < other.m_polygon.size(); j++)
+		{
+			SO::Line edge(other.m_polygon[j], other.m_polygon[k]);
+			temp_distance = edge.getDistanceFromPointToLineSegment(this->m_polygon[i]);
+			if (temp_distance < distance_1)
+			{
+				distance_1 = temp_distance;
+			}
+			k = j;
+		}
+	}
+
+	double distance_2 = std::numeric_limits<double>::max();
+	for (int i = 0; i < other.m_polygon.size(); i++)
+	{
+		int k = 0;
+		for (int j = 1; j < this->m_polygon.size(); j++)
+		{
+			SO::Line edge(this->m_polygon[j], this->m_polygon[k]);
+			temp_distance = edge.getDistanceFromPointToLineSegment(other.m_polygon[i]);
+			if (temp_distance < distance_2)
+			{
+				distance_2 = temp_distance;
+			}
+			k = j;
+		}
+	}
+
+	if (distance_1 < distance_2)
+	{
+		return distance_1;
+	}
+	else
+	{
+		return distance_2;
+	}
+}
+
 Polygon Polygon::getTransformedPolygon(const SO::Plane &plane) const
 {
 	if (m_plane.isIntersectedWithPlane(plane) == false)
@@ -224,9 +280,9 @@ Polygon Polygon::getTransformedPolygon(const SO::Plane &plane) const
 
 	for (auto &point : m_polygon)
 	{
-		transformed_polygon.addPointToBack(transformation_matrix * (point - origin));
+		transformed_polygon.addPointToBack(transformation_matrix * (point - origin) + origin);
 	}
-
+	
 	return transformed_polygon;
 }
 
@@ -263,6 +319,10 @@ Polygon Polygon::getConvexHullPolygon() const
 
 void Polygon::addPointToBack(const Eigen::Vector3d &point)
 {
+	if (!this->m_plane.isPointOnPlane(point))
+	{
+		std::cout << "Point add to back is not on plane!" << std::endl;
+	}
 	m_polygon.emplace_back(point);
 }
 

@@ -35,13 +35,19 @@ namespace SyNSlicerEngine::Algorithm
 		bool checkSupportNeeded(SO::PolygonCollection &contours_below, SO::PolygonCollection &contours_up, SO::PolygonCollection &support_contours);
 		bool isSlicingPlaneValid(SO::Plane plane_up, SO::Plane plane_below);
 		bool isPlaneUpValid(SO::Plane &plane_up, SO::Plane plane_below);
+		
+		bool tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane plane_below, int &number_of_gaps);
+		bool tunePlaneUpUntilMaximumSideValid(SO::Plane &plane_up, SO::Plane plane_below);
+		bool getIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below);
+
+
+		bool tunePlaneUpUntilValid(SO::Plane &plane_up, SO::Plane plane_below, double &last_max_layer_thickness, double &number_of_intermediate_planes);
+
 		bool determineIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below);
 		Eigen::Vector3d getClosestPointFromLine(SO::PolygonCollection &contours, SO::Line &line);
 		Eigen::Vector3d getFurthestPointFromLine(SO::PolygonCollection &contours, SO::Line &line);
+		bool isIntersectingLineOfTwoPlanesIntersectsMesh(SO::Plane &plane_up, SO::Plane plane_below);
 
-		void projectContourOnOtherPlane(const SO::PolygonCollection &contours, const Eigen::Vector3d &direction, const SO::Plane &plane, SO::PolygonCollection &projected_contours);
-		void transformContoursToXYPlane(SO::PolygonCollection &contours, const Eigen::Transform<double, 3, Eigen::Affine> &transformation_matrix, const Eigen::Vector3d &origin);
-	
 		SO::PolygonCollection slice(SO::Plane plane);
 
 		SO::Partition<CgalMesh_EPICK> *mp_operating_partition;

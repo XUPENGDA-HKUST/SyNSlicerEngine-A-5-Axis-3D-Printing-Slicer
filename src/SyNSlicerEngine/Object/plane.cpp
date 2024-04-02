@@ -179,6 +179,42 @@ Eigen::Vector3d Plane::getProjectionOfPointOntoPlane(const Eigen::Vector3d &poin
 	return point_projection;
 }
 
+bool Plane::getMostPositivePoint(const std::vector<Eigen::Vector3d> &points, Eigen::Vector3d &result) const
+{
+	double max = 0.0;
+	double distance = 0.0;
+	bool result_found = false;
+	for (auto &point :points)
+	{
+		distance = this->getDistanceFromPointToPlane(point);
+		if (distance > max)
+		{
+			max = distance;
+			result = point;
+			result_found = true;
+		}
+	}
+	return result_found;
+}
+
+bool Plane::getMostNegativePoint(const std::vector<Eigen::Vector3d> &points, Eigen::Vector3d &result) const
+{
+	double min = 0.0;
+	double distance = 0.0;
+	bool result_found = false;
+	for (auto &point : points)
+	{
+		distance = this->getDistanceFromPointToPlane(point);
+		if (distance < min)
+		{
+			min = distance;
+			result = point;
+			result_found = true;
+		}
+	}
+	return result_found;
+}
+
 bool Plane::isLineOnPlane(const SO::Line &line, double epsilon) const
 {
 	return isPointOnPlane(line.getSource(), epsilon) &&
@@ -237,13 +273,39 @@ Eigen::Vector3d Plane::getIntersectionWithRay(const SO::Line &ray) const
 
 bool Plane::isIntersectedWithPlane(const Plane &other) const
 {
-	Eigen::Vector3d n12 = m_normal.cross(other.m_normal);
+	Eigen::Vector3d n12 = this->m_normal.cross(other.m_normal);
 	if (n12.norm() < 1e-6)
 	{
 		return false;
 	}
 	else
 	{
+		return true;
+	}
+}
+
+bool Plane::isIntersectedWithPlane(const Plane &other, SO::Line &intersecting_line) const
+{
+	Eigen::Vector3d n12 = this->m_normal.cross(other.m_normal);
+	if (n12.norm() < 1e-6)
+	{
+		intersecting_line = SO::Line(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0));
+		return false;
+	}
+	else
+	{
+		double numerator_1 = -this->d() * pow(other.getNormal().norm(), 2);
+		double numerator_2 = -other.d() * this->m_normal.dot(other.getNormal());
+		double denominator = pow(n12.norm(), 2);
+		double a1 = (numerator_1 - numerator_2) / denominator;
+
+		numerator_1 = -other.d() * pow(this->m_normal.norm(), 2);
+		numerator_2 = -this->d() * this->m_normal.dot(other.getNormal());
+		double a2 = (numerator_1 - numerator_2) / denominator;
+
+		Eigen::Vector3d line_source = a1 * this->m_normal + a2 * other.getNormal();
+		Eigen::Vector3d line_direction = n12 / n12.norm();
+		intersecting_line = SO::Line(line_source, line_direction, 1);
 		return true;
 	}
 }

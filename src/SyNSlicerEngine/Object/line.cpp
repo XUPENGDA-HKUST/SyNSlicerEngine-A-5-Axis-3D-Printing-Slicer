@@ -137,6 +137,38 @@ double Line::getDistanceOfPoint(const Eigen::Vector3d &point) const
 	return (point - v1).norm();
 }
 
+double Line::getDistanceFromPointToLineSegment(const Eigen::Vector3d &point) const
+{
+	double distance = 0.0;
+	Eigen::Vector3d v0(point - this->m_source);
+	double t = v0.dot(this->m_direction);
+	if (t >= 0 && t <= this->m_length)
+	{
+		Eigen::Vector3d v1 = this->m_source + t * this->m_direction;
+		distance = (point - v1).norm();
+		return distance;
+	}
+	else if (t < 0)
+	{
+		distance = (point - this->m_source).norm();
+		return distance;
+	}
+	else
+	{
+		distance = (point - this->m_target).norm();
+		return distance;
+	}
+}
+
+Eigen::Vector3d Line::getProjectionOfPointOntoRay(const Eigen::Vector3d &point)
+{
+	Eigen::Vector3d result;
+	Eigen::Vector3d v0(point - this->m_source);
+	double t = v0.dot(this->m_direction);
+	result = this->m_source + t * this->m_direction;
+	return result;
+}
+
 Line &Line::operator=(const Line &other)
 {
 	setLine(other.m_source, other.m_target);

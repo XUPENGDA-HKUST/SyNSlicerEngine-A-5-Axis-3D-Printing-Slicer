@@ -60,38 +60,19 @@ void PrintingLayerCollection::update()
 			m_contours.addPolyline(contour.get());
 		}		
 	}
+
+	for (auto &layer : m_printing_layers)
+	{
+		for (auto &contour : layer.getSupportStructureContours().get())
+		{
+			m_support.addPolyline(contour.get());
+		}
+	}
 }
 
 void PrintingLayerCollection::generateToolpath(int toolpath_type)
 {
 	Eigen::Vector3d zigzag_direction(1, 0, 0);
-	/*
-	for (int i = 0; i < m_printing_layers.size(); i++)
-	//for (int i = 0; i < 88; i++)
-	{
-		ToolpathGenerator toolpath_generator(m_printing_layers[i]);
-		if (toolpath_type == PathPlanning::ToolpathType::ContourParallel)
-		{
-			toolpath_generator.generateContourParallelPath();
-			toolpath_generator.generateContourParallelPathForSupport(2);
-			toolpath_generator.generatToolPath();
-		}
-		else if(toolpath_type == PathPlanning::ToolpathType::Zigzag)
-		{			
-			toolpath_generator.generateZigzagPath(zigzag_direction, 1);
-			toolpath_generator.generateContourParallelPathForSupport(2);
-			toolpath_generator.generatToolPath();
-			zigzag_direction = toolpath_generator.getZigzagNormal();
-		}
-		else if(toolpath_type == PathPlanning::ToolpathType::Zigzag)
-		{
-			double bound[6] = { -100,100,-100,100,0,100 };
-			toolpath_generator.generateSparseInfillPath(bound, 50, 1);
-			toolpath_generator.generateContourParallelPathForSupport(2);
-			toolpath_generator.generatToolPath();
-		}
-	}
-	*/
 }
 
 SO::PolylineCollection PrintingLayerCollection::getContours() const
