@@ -23,6 +23,9 @@ namespace SyNSlicerEngine::Object {
 		const std::vector<Polygon> &get() const;
 
 		Eigen::Vector3d centroid() const;
+
+		double getFurthestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const;
+
 		bool isIntersectedWithPlane(const SO::Plane &plane) const;
 
 		std::vector<Eigen::Vector3d> getIntersectionWithPlane(const SO::Plane &plane) const;
@@ -45,6 +48,8 @@ namespace SyNSlicerEngine::Object {
 		void addPolygon(const Polygon &polygon);
 		void addPolygons(const PolygonCollection &other);
 		
+		int removePolygonsBelowPlane(const SO::Plane &plane);
+
 		void setPlane(const Plane &plane);
 		const Plane &getPlane() const;
 

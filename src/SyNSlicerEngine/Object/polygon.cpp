@@ -219,6 +219,21 @@ bool Polygon::isOneOfTheVerticesOfTriangleInside(const SO::Triangle &triangle)
 	return result;
 }
 
+double Polygon::getFurthestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const
+{
+	double max = 0.0;
+	for (auto &pt : m_polygon)
+	{
+		double distance = line.getDistanceOfPoint(pt);
+		if (distance > max)
+		{
+			max = distance;
+			point = pt;
+		}
+	}
+	return max;
+}
+
 double Polygon::getMinimumDistanceFromPolygon(const Polygon &other)
 {
 	double temp_distance = 0.0;

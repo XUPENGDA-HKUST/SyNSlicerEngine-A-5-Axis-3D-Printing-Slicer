@@ -36,11 +36,12 @@ namespace SyNSlicerEngine::Algorithm
 		bool isSlicingPlaneValid(SO::Plane plane_up, SO::Plane plane_below);
 		bool isPlaneUpValid(SO::Plane &plane_up, SO::Plane plane_below);
 		
-		bool tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane plane_below, int &number_of_gaps);
+		bool tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane plane_below, std::vector<SO::Plane> &slicing_planes);
 		bool tunePlaneUpUntilMaximumSideValid(SO::Plane &plane_up, SO::Plane plane_below);
+		bool tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane_below);
 		bool getIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below);
 
-
+		
 		bool tunePlaneUpUntilValid(SO::Plane &plane_up, SO::Plane plane_below, double &last_max_layer_thickness, double &number_of_intermediate_planes);
 
 		bool determineIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below);

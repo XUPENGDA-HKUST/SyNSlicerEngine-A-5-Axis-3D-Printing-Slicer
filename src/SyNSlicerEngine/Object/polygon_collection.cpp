@@ -85,6 +85,22 @@ Eigen::Vector3d PolygonCollection::centroid() const
 	return result;
 }
 
+double PolygonCollection::getFurthestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const
+{
+	double max = 0.0;
+	Eigen::Vector3d furthest_pt(0, 0, 0);
+	for (auto &polygon : m_polygons)
+	{
+		double distance = polygon.getFurthestPointFromLine(line, furthest_pt);
+		if (distance > max)
+		{
+			max = distance;
+			point = furthest_pt;
+		}
+	}
+	return max;
+}
+
 bool PolygonCollection::isIntersectedWithPlane(const SO::Plane &plane) const
 {
 	bool has_points_on_positive_side = false;
@@ -393,6 +409,25 @@ void PolygonCollection::addPolygons(const PolygonCollection &other)
 			std::cout << "Polygons cannot be added to PolygonCollection because they are not lied on the same planes!" << std::endl;
 		}
 	}
+}
+
+int PolygonCollection::removePolygonsBelowPlane(const SO::Plane &plane)
+{
+	std::vector<Polygon> new_polygons;
+	int number_of_erased_polygons = 0;
+	for (auto &polygon : m_polygons)
+	{
+		if (plane.getPositionOfPointWrtPlane(polygon.centroid()) == -1)
+		{
+			number_of_erased_polygons += 1;
+		}
+		else
+		{
+			new_polygons.emplace_back(polygon);
+		}
+	}
+	m_polygons = new_polygons;
+	return number_of_erased_polygons;
 }
 
 void PolygonCollection::setPlane(const Plane &plane)

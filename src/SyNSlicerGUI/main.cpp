@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     */
     //SO::Partition<CgalMesh_EPICK> source_epick("../data/firebird_1mm_zero.stl");
     SO::Partition<CgalMesh_EPICK> source_epick("../data/bunny_Z_zero_1500.stl");
-    //SO::Partition<CgalMesh_EPICK> source_epick("../data/Check/Up_6.stl");
+    // SO::Partition<CgalMesh_EPICK> source_epick("../data/Check/Up_6.stl");
     
     // SO::Partition source("../data/triceratops.stl");
     SO::Plane plane_0(
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     source_epick.setBasePlane(SO::Plane(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 1)));
 
     drawer.drawMesh(source_epick.getEPICKMesh(), "123");
-    drawer.setOpacity("123", 0.2);
+    //drawer.setOpacity("123", 0.2);
     
     SyNSlicerEngine::Algorithm::AutoSlicer auto_s(source_epick, 0.3, 0.4, main_window.getRenderer());
     SO::PrintingLayerCollection printing_layers = source_epick.getPrintingLayers();
