@@ -85,6 +85,22 @@ Eigen::Vector3d PolygonCollection::centroid() const
 	return result;
 }
 
+double PolygonCollection::getClosestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const
+{
+	double min = std::numeric_limits<double>::max();
+	Eigen::Vector3d closest_pt(0, 0, 0);
+	for (auto &polygon : m_polygons)
+	{
+		double distance = polygon.getClosestPointFromLine(line, closest_pt);
+		if (distance < min)
+		{
+			min = distance;
+			point = closest_pt;
+		}
+	}
+	return min;
+}
+
 double PolygonCollection::getFurthestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const
 {
 	double max = 0.0;

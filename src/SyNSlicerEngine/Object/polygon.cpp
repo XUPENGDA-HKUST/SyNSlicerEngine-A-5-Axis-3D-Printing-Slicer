@@ -219,6 +219,21 @@ bool Polygon::isOneOfTheVerticesOfTriangleInside(const SO::Triangle &triangle)
 	return result;
 }
 
+double Polygon::getClosestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const
+{
+	double min = std::numeric_limits<double>::max();
+	for (auto &pt : m_polygon)
+	{
+		double distance = line.getDistanceOfPoint(pt);
+		if (distance < min)
+		{
+			min = distance;
+			point = pt;
+		}
+	}
+	return min;
+}
+
 double Polygon::getFurthestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const
 {
 	double max = 0.0;
@@ -334,7 +349,7 @@ Polygon Polygon::getConvexHullPolygon() const
 
 void Polygon::addPointToBack(const Eigen::Vector3d &point)
 {
-	if (!this->m_plane.isPointOnPlane(point))
+	if (!this->m_plane.isPointOnPlane(point, 1e-2))
 	{
 		std::cout << "Point add to back is not on plane!" << std::endl;
 	}

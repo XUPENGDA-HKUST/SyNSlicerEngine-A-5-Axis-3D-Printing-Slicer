@@ -51,9 +51,9 @@ int main(int argc, char *argv[])
     drawer.drawPolygon(polygon, "Check2");
     drawer.setColor("Check2", 1, 0, 0);
     */
-    //SO::Partition<CgalMesh_EPICK> source_epick("../data/firebird_1mm_zero.stl");
-    SO::Partition<CgalMesh_EPICK> source_epick("../data/bunny_Z_zero_1500.stl");
-    // SO::Partition<CgalMesh_EPICK> source_epick("../data/Check/Up_6.stl");
+    // SO::Partition<CgalMesh_EPICK> source_epick("../data/firebird_1mm_zero.stl");
+    // SO::Partition<CgalMesh_EPICK> source_epick("../data/bunny_Z_zero_1500.stl");
+    SO::Partition<CgalMesh_EPICK> source_epick("../data/Check/Part_0.stl");
     
     // SO::Partition source("../data/triceratops.stl");
     SO::Plane plane_0(
@@ -73,21 +73,22 @@ int main(int argc, char *argv[])
 
     drawer.drawMesh(source_epick.getEPICKMesh(), "123");
     //drawer.setOpacity("123", 0.2);
-    
+
     SyNSlicerEngine::Algorithm::AutoSlicer auto_s(source_epick, 0.3, 0.4, main_window.getRenderer());
     SO::PrintingLayerCollection printing_layers = source_epick.getPrintingLayers();
     printing_layers.update();
     drawer.drawPolylines(printing_layers.getContours(), "Contour");
     drawer.setColor("Contour", 1, 0, 0);
+    SO::PartitionCollection<CgalMesh_EPICK> result;
+    result.addPartition(source_epick);
 
+    /*
     SO::Nozzle nozzle(0.4, 10, 10);
 
     SyNSlicerEngine::Algorithm::AutoPartitioner auto_p(source_epick, nozzle, main_window.getRenderer());
-    //auto_p.partition();
-    //SO::PartitionCollection<CgalMesh_EPICK> result = auto_p.getResult();
-    SO::PartitionCollection<CgalMesh_EPICK> result;
-    result.addPartition(source_epick);
-    /*
+    auto_p.partition();
+    SO::PartitionCollection<CgalMesh_EPICK> result = auto_p.getResult();
+
     for (int i = 0; i < result.numberOfPartitions(); i++)
     {
         //if (i == 3)
@@ -105,8 +106,7 @@ int main(int argc, char *argv[])
             drawer.setColor("Contour" + std::to_string(i), 1, 0, 0);
         }
     }
-    
-    
+    */
     SyNSlicerEngine::Algorithm::SupportGenerator support_generator(result, main_window.getRenderer());
 
     for (int i = 0; i < result.numberOfPartitions(); i++)
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
         drawer.drawPolylines(printing_layers.getSupportContours(), "Support" + std::to_string(i));
         drawer.setColor("Support" + std::to_string(i), 0, 1, 1);
     }
-    */
+
     main_window.resetCamera();
     main_window.render();
     spdlog::info("Done");

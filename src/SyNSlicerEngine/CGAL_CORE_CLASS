@@ -1,3 +1,6 @@
+#include <CGAL/AABB_tree.h>
+#include <CGAL/AABB_traits.h>
+#include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/Cartesian_converter.h>
 #include <CGAL/convex_hull_2.h>
 #include <CGAL/convex_hull_3.h>

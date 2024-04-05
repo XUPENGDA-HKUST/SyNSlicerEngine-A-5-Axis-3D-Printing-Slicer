@@ -1,12 +1,5 @@
 #include "auto_slicer.h"
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Point_3.h>
-#include <CGAL/Polygon_mesh_slicer.h>
-#include <CGAL/AABB_tree.h>
-#include <CGAL/AABB_traits.h>
-#include <CGAL/AABB_face_graph_triangle_primitive.h>
-
 using SyNSlicerEngine::Algorithm::AutoSlicer;
 
 AutoSlicer::AutoSlicer(SO::Partition<CgalMesh_EPICK> &p_partition, double target_layer_thickness, double side_step, vtkRenderer *p_renderer)
@@ -60,7 +53,9 @@ AutoSlicer::~AutoSlicer()
 
 }
 
-static int aaa = 0;
+static int debug = 0;
+static int aaa = 0; 
+static int bbb = 0;
 
 bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contours, SO::PolygonCollection &next_contours)
 {
@@ -153,11 +148,11 @@ bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contou
         m_temp_slicing_result.clear();
         m_temp_slicing_result.emplace_back(this->slice(plane_up));
 
-        if (aaa == 37)
+        if (aaa == 2)
         { 
             //return false;
         }
-        //std::cout << aaa << std::endl;
+        std::cout << aaa << std::endl;
         aaa += 1;
     }
     else
@@ -237,115 +232,47 @@ bool AutoSlicer::checkSupportNeeded(SO::PolygonCollection &contours_below, SO::P
     return support_needed;
 }
 
-bool AutoSlicer::isSlicingPlaneValid(SO::Plane plane_up, SO::Plane plane_below)
+bool AutoSlicer::getIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below)
 {
-    SO::PolygonCollection contours = this->slice(plane_up);
+    int number_of_gaps = 0;
+    std::vector<SO::Plane> slicing_planes;
 
-    double min = std::numeric_limits<double>::max();
-    double max = -std::numeric_limits<double>::max();
-    for (auto &contour : contours.get())
+    if (!this->tunePlaneUpUntilMimimumSideValid(plane_up, plane_below, slicing_planes))
     {
-        for (auto &point : contour.get())
-        {
-            Eigen::Vector3d projected_point = plane_below.getProjectionOfPointOntoPlane(point);
-            double distance = (point - projected_point).norm();
-            if (distance > max)
-            {
-                max = distance;
-            }
-            if (distance < min)
-            {
-                min = distance;
-            }
-        }
-    }
-    //std::cout << min << " " << max << std::endl;
-    if ((max - m_max_layer_thickness) > 1e-3 || (m_min_layer_thickness - min) > 1e-3)
-    {
-        std::cout << min << " " << max << std::endl;
         return false;
     }
+
+    SO::Line intersecting_line;
+    if (!plane_below.isIntersectedWithPlane(plane_up, intersecting_line))
+    {
+        return false;
+    }
+
+    m_temp_slicing_result.clear();
+    m_temp_slicing_result.emplace_back(this->slice(plane_below));
+    int j = 0;
+    for (int i = 1; i < slicing_planes.size(); i++)
+    {
+        if (aaa == 9 && i == slicing_planes.size() - 1)
+        {
+            debug = 1;
+        }
+        if (tuneConsecutivePlanesValid(slicing_planes[i], slicing_planes[j]))
+        {
+            m_temp_slicing_result.emplace_back(this->slice(slicing_planes[i]));
+        }
+        else
+        {
+            plane_up = m_temp_slicing_result.back().getPlane();
+            m_temp_slicing_result.pop_back();
+            return true;
+        }
+        j = i;
+    }
+    m_temp_slicing_result.pop_back();
+    plane_up = slicing_planes.back();
 
     return true;
-}
-
-bool AutoSlicer::isPlaneUpValid(SO::Plane &plane_up, SO::Plane plane_below)
-{
-    if (this->isIntersectingLineOfTwoPlanesIntersectsMesh(plane_up, plane_below))
-    {
-        return false;
-    }
-
-    SO::PolygonCollection contours = this->slice(plane_up);
-    SO::Line intersecting_line = plane_below.getIntersectionWithPlane(plane_up);
-
-    if (intersecting_line.getLength() < 1e-6)
-    {
-        // Valid because plane_up and plane_below are parallel.
-        return true;
-    }
-
-    double angle_between_planes = plane_below.getAngleOfRotation(plane_up);
-
-    Eigen::Vector3d closest_point = this->getClosestPointFromLine(contours, intersecting_line);
-    Eigen::Vector3d furthest_point = this->getFurthestPointFromLine(contours, intersecting_line);
-
-    double min = intersecting_line.getDistanceOfPoint(closest_point);
-    double max = intersecting_line.getDistanceOfPoint(furthest_point);
-
-    double a = max * tan(angle_between_planes);
-    double b = min * tan(angle_between_planes);
-
-    int max_number_of_clipping_plane = floor(b / (m_min_layer_thickness));
-
-    if ((b / max_number_of_clipping_plane) < 0.25)
-    {
-        max_number_of_clipping_plane -= 1;
-    }
-
-    if ((b / max_number_of_clipping_plane) > 0.35)
-    {
-        max_number_of_clipping_plane += 1;
-    }
-
-    if (max_number_of_clipping_plane == 0)
-    {
-        max_number_of_clipping_plane = 1;
-    }
-
-    double max_layer_thickness = a / max_number_of_clipping_plane;
-
-    if (max_layer_thickness <= m_max_layer_thickness)
-    {
-        return true;
-    }
-
-    double c = m_max_layer_thickness * max_number_of_clipping_plane;
-    double angle_radian = atan(c / max);
-    angle_radian = angle_between_planes - angle_radian;
-
-    Eigen::Vector3d new_normal = plane_up.getNormal();
-    Eigen::Transform<double, 3, Eigen::Affine> transformation_matrix;
-    transformation_matrix = Eigen::AngleAxis<double>(angle_radian, -intersecting_line.getDirection());
-    new_normal = transformation_matrix.linear() * new_normal;
-    SO::Plane temp_plane(intersecting_line.getSource(), new_normal);
-    SO::PolygonCollection temp_contours = this->slice(temp_plane);
-    Eigen::Vector3d temp_furthest_point = this->getFurthestPointFromLine(temp_contours, intersecting_line);
-
-    new_normal = (temp_furthest_point - plane_up.getOrigin()).cross(intersecting_line.getDirection());
-
-    if (new_normal.dot(plane_up.getNormal()) < 1e-6)
-    {
-        new_normal = -new_normal;
-    }
-    plane_up.setNormal(new_normal);
-
-    if (this->isPlaneUpValid(plane_up, plane_below))
-    {
-        return true;
-    }
-
-    return false;  
 }
 
 bool AutoSlicer::tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane plane_below, std::vector<SO::Plane> &slicing_planes)
@@ -359,7 +286,8 @@ bool AutoSlicer::tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane
     SO::PolygonCollection contours = this->slice(plane_up);
     contours.removePolygonsBelowPlane(plane_below);
 
-    Eigen::Vector3d closest_point = this->getClosestPointFromLine(contours, intersecting_line);
+    Eigen::Vector3d closest_point;
+    contours.getClosestPointFromLine(intersecting_line, closest_point);
     double a = plane_below.getDistanceFromPointToPlane(closest_point);
     Eigen::Vector3d point_at_plane_below = plane_below.getProjectionOfPointOntoPlane(closest_point);
 
@@ -398,17 +326,9 @@ bool AutoSlicer::tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane
     return true;
 }
 
-bool AutoSlicer::tunePlaneUpUntilMaximumSideValid(SO::Plane &plane_up, SO::Plane plane_below)
-{
-    return false;
-}
-
-static int debug = 0;
-static int bbb = 0;
-
 bool AutoSlicer::tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane_below)
 {
-    SO::PolygonCollection contours = this->slice(plane_up);
+    SO::PolygonCollection contours = this->slice(plane_up);  
     SO::PolygonCollection original_contours = contours;
     contours.removePolygonsBelowPlane(plane_below);
 
@@ -437,56 +357,62 @@ bool AutoSlicer::tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane
     double max = contours.getMaximumDistanceFromPlane(plane_below, max_point);
     double max_last_time = std::numeric_limits<double>::max();
 
-    if (max > m_max_layer_thickness)
+    SO::Plane plane_before = plane_up;
+    SO::PolygonCollection contours_before = contours;
+    // some problem in this step 
+    SO::Line intersecting_line;
+    if (plane_below.isIntersectedWithPlane(plane_up, intersecting_line))
     {
-        SO::Line intersecting_line;
-        if (plane_below.isIntersectedWithPlane(plane_up, intersecting_line))
+        Eigen::Vector3d new_point;
+        m_temp_slicing_result.back().getFurthestPointFromLine(intersecting_line, new_point);
+        new_point = new_point + m_max_layer_thickness * plane_up.getNormal();
+
+        Eigen::Vector3d new_normal = (new_point - min_point).cross(intersecting_line.getDirection());
+        if (new_normal.dot(plane_below.getNormal()) < 0.0)
         {
-            Eigen::Vector3d new_point;
-            m_temp_slicing_result.back().getFurthestPointFromLine(intersecting_line, new_point);
-            new_point = new_point + m_max_layer_thickness * plane_up.getNormal();
+            new_normal = -new_normal;
+        }
+        plane_up.setOrigin(min_point);
+        plane_up.setNormal(new_normal);
 
-            Eigen::Vector3d new_normal = (new_point - min_point).cross(intersecting_line.getDirection());
-            if (new_normal.dot(plane_below.getNormal()) < 0.0)
-            {
-                new_normal = -new_normal;
-            }
-            plane_up.setOrigin(min_point);
-            plane_up.setNormal(new_normal);
+        contours = this->slice(plane_up);
+        contours.removePolygonsBelowPlane(plane_below);
 
+        min = contours.getMinimumDistanceFromPlane(plane_below, min_point);
+        min_last_time = 0;
+
+        // Sometime min > m_max_layer_thickness  
+        while (min > m_max_layer_thickness && min != std::numeric_limits<double>::max())
+        {
+            Eigen::Vector3d new_origin = plane_below.getProjectionOfPointOntoPlane(min_point);
+            new_origin = new_origin + m_min_layer_thickness * plane_below.getNormal();
+            plane_up.setOrigin(new_origin);
             contours = this->slice(plane_up);
             contours.removePolygonsBelowPlane(plane_below);
 
             min = contours.getMinimumDistanceFromPlane(plane_below, min_point);
-            min_last_time = 0;
-
-            // Sometime min > m_max_layer_thickness  
-            while (min > m_max_layer_thickness && min != std::numeric_limits<double>::max())
-            {
-                Eigen::Vector3d new_origin = plane_below.getProjectionOfPointOntoPlane(min_point);
-                new_origin = new_origin + m_min_layer_thickness * plane_below.getNormal();
-                plane_up.setOrigin(new_origin);
-                contours = this->slice(plane_up);
-                contours.removePolygonsBelowPlane(plane_below);
-
-                min = contours.getMinimumDistanceFromPlane(plane_below, min_point);
-            }
-
-            while (min < m_min_layer_thickness && abs(min - min_last_time) > 1e-6)
-            {
-                Eigen::Vector3d new_origin = plane_below.getProjectionOfPointOntoPlane(min_point)
-                    + m_min_layer_thickness * plane_below.getNormal();
-                plane_up.setOrigin(new_origin);
-                contours = this->slice(plane_up);
-                contours.removePolygonsBelowPlane(plane_below);
-
-                min_last_time = min;
-                min = contours.getMinimumDistanceFromPlane(plane_below, min_point);
-            }
-
-            max_last_time = max;
-            max = contours.getMaximumDistanceFromPlane(plane_below, max_point);
         }
+
+        while (min < m_min_layer_thickness && abs(min - min_last_time) > 1e-6)
+        {
+            Eigen::Vector3d new_origin = plane_below.getProjectionOfPointOntoPlane(min_point)
+                + m_min_layer_thickness * plane_below.getNormal();
+            plane_up.setOrigin(new_origin);
+            contours = this->slice(plane_up);
+            contours.removePolygonsBelowPlane(plane_below);
+
+            min_last_time = min;
+            min = contours.getMinimumDistanceFromPlane(plane_below, min_point);
+        }
+
+        max_last_time = max;
+        max = contours.getMaximumDistanceFromPlane(plane_below, max_point);
+    }
+    
+    if (plane_up.getPositionOfPointWrtPlane(contours_before.centroid()) == -1)
+    {
+        plane_up = plane_before;
+        contours = contours_before;
     }
 
     while (max > m_max_layer_thickness && abs(max - max_last_time) > 1e-6)
@@ -542,317 +468,43 @@ bool AutoSlicer::tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane
     }
 
     if (contours.numberOfPolygons() < 1)
-    {
+    {     
         return false;
     }
 
     return true;
 }
 
-bool AutoSlicer::getIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below)
-{
-    int number_of_gaps = 0;
-    std::vector<SO::Plane> slicing_planes;
-    if (!this->tunePlaneUpUntilMimimumSideValid(plane_up, plane_below, slicing_planes))
-    {
-        return false;
-    }
-
-    SO::Line intersecting_line;
-    if (!plane_below.isIntersectedWithPlane(plane_up, intersecting_line))
-    {
-        return false;
-    }
-
-    // Record the point fron contours at plane up to intersectin line.
-    double angle_of_rotation = plane_below.getAngleOfRotation(plane_up);
-    Eigen::Vector3d axis_of_rotation = plane_below.getAxisOfRotation(plane_up);
-    Eigen::Transform<double, 3, Eigen::Affine> transformation_matrix;
-
-    m_temp_slicing_result.clear();
-    m_temp_slicing_result.emplace_back(this->slice(plane_below));
-    int j = 0;
-    for (int i = 1; i < slicing_planes.size(); i++)
-    {
-        if (tuneConsecutivePlanesValid(slicing_planes[i], slicing_planes[j]))
-        {
-            m_temp_slicing_result.emplace_back(this->slice(slicing_planes[i]));
-        }
-        else
-        {
-            //return true;
-        }
-        j = i;
-    }
-    m_temp_slicing_result.pop_back();
-    plane_up = slicing_planes.back();
-    return true;
-}
-
-bool AutoSlicer::tunePlaneUpUntilValid(SO::Plane &plane_up, SO::Plane plane_below, double &last_max_layer_thickness, double &number_of_intermediate_planes)
+bool AutoSlicer::isSlicingPlaneValid(SO::Plane plane_up, SO::Plane plane_below)
 {
     SO::PolygonCollection contours = this->slice(plane_up);
-    SO::Line intersecting_line = plane_below.getIntersectionWithPlane(plane_up);
-    Eigen::Transform<double, 3, Eigen::Affine> transformation_matrix;
 
-    if (intersecting_line.getLength() < 1e-6)
-    {
-        // Valid because plane_up and plane_below are parallel.
-        //last_max_layer_thickness = m_max_layer_thickness;
-        return true;
-    }
-
-    double angle_between_planes = plane_below.getAngleOfRotation(plane_up);
-
-    Eigen::Vector3d closest_point = this->getClosestPointFromLine(contours, intersecting_line);
-    Eigen::Vector3d furthest_point = this->getFurthestPointFromLine(contours, intersecting_line);
-
-    double min = intersecting_line.getDistanceOfPoint(closest_point);
-    double max = intersecting_line.getDistanceOfPoint(furthest_point);
-
-    double a = max * angle_between_planes;
-    double b = min * angle_between_planes;
-
-    double unit_angle = m_min_layer_thickness / min;
-
-    int max_number_of_clipping_plane = floor(b / (m_min_layer_thickness));
-
-    if (max_number_of_clipping_plane == 0)
-    {
-        max_number_of_clipping_plane = 1;
-    }
-
-    double angle_of_rotation = unit_angle * max_number_of_clipping_plane;
-    transformation_matrix = Eigen::AngleAxis<double>(angle_of_rotation, -intersecting_line.getDirection());
-    Eigen::Vector3d new_normal = plane_up.getNormal();
-    new_normal = transformation_matrix.linear() * new_normal;
-    SO::Plane temp_plane(intersecting_line.getSource(), new_normal);
-    SO::PolygonCollection temp_contours = this->slice(temp_plane);
-    Eigen::Vector3d temp_furthest_point = this->getFurthestPointFromLine(temp_contours, intersecting_line);
-
-    if (plane_up.getPositionOfPointWrtPlane(temp_furthest_point) != -1)
-    {
-        transformation_matrix = Eigen::AngleAxis<double>(angle_of_rotation, intersecting_line.getDirection());
-        new_normal = plane_up.getNormal();
-        temp_plane = SO::Plane(intersecting_line.getSource(), new_normal);
-        temp_contours = this->slice(temp_plane);
-        temp_furthest_point = this->getFurthestPointFromLine(temp_contours, intersecting_line);
-    }
-
-    new_normal = (temp_furthest_point - plane_up.getOrigin()).cross(intersecting_line.getDirection());
-
-    if (new_normal.dot(plane_up.getNormal()) < 1e-6)
-    {
-        new_normal = -new_normal;
-    }
-    plane_up.setNormal(new_normal);
-
-    double max_layer_thickness = a / max_number_of_clipping_plane;
-
-    if (max_layer_thickness <= m_max_layer_thickness)
-    {
-        if (max_number_of_clipping_plane == 1)
-        {
-
-        }
-        last_max_layer_thickness = max_layer_thickness;
-        number_of_intermediate_planes = max_number_of_clipping_plane;
-        return true;
-    }
-    else if (abs(max_layer_thickness - last_max_layer_thickness) < 1e-6)
-    {
-        last_max_layer_thickness = max_layer_thickness;
-        number_of_intermediate_planes = max_number_of_clipping_plane;
-        return true;
-    }
-
-    last_max_layer_thickness = max_layer_thickness;
-
-    double c = m_max_layer_thickness * max_number_of_clipping_plane;
-    double angle_radian = atan(c / max);
-    angle_radian = angle_between_planes - angle_radian;
-
-    //Eigen::Vector3d new_normal = plane_up.getNormal();
-
-    // How to determine the axis of rotation?
-    /*
-    transformation_matrix = Eigen::AngleAxis<double>(angle_radian, -intersecting_line.getDirection());
-    new_normal = transformation_matrix.linear() * new_normal;
-    SO::Plane temp_plane(intersecting_line.getSource(), new_normal);
-    SO::PolygonCollection temp_contours = this->slice(temp_plane);
-    Eigen::Vector3d temp_furthest_point = this->getFurthestPointFromLine(temp_contours, intersecting_line);
-    */
-    if (plane_up.getPositionOfPointWrtPlane(temp_furthest_point) != -1)
-    {
-        transformation_matrix = Eigen::AngleAxis<double>(angle_radian, intersecting_line.getDirection());
-        new_normal = plane_up.getNormal();
-        temp_plane = SO::Plane(intersecting_line.getSource(), new_normal);
-        temp_contours = this->slice(temp_plane);
-        temp_furthest_point = this->getFurthestPointFromLine(temp_contours, intersecting_line);
-    }
-
-    new_normal = (temp_furthest_point - plane_up.getOrigin()).cross(intersecting_line.getDirection());
-
-    if (new_normal.dot(plane_up.getNormal()) < 1e-6)
-    {
-        new_normal = -new_normal;
-    }
-    plane_up.setNormal(new_normal);
-
-    if (this->tunePlaneUpUntilValid(plane_up, plane_below, last_max_layer_thickness, number_of_intermediate_planes))
-    {
-        return true;
-    }
-
-    return false;
-}
-
-bool AutoSlicer::determineIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below)
-{   
-    // Check is plane_up valid.
-
-
-
-    // Tune plane up until valid here.
-    double max_layer_thickness = 0.0;
-    double max_number_of_clipping_plane = 0.0;
-    SO::Line intersecting_line;
-    double angle_between_planes = 0.0;
-    Eigen::Transform<double, 3, Eigen::Affine> transformation_matrix;
-
-    if (aaa == 91)
-    {
-        m_drawer.drawPlane(plane_up, "Plane_up");
-        m_drawer.drawPlane(plane_below, "Plane_below");
-    }
-
-    if (this->tunePlaneUpUntilValid(plane_up, plane_below, max_layer_thickness, max_number_of_clipping_plane))
-    {
-        SO::PolygonCollection original_plane_up_contours = this->slice(plane_up);
-        Eigen::Vector3d point_cannot_exceed;
-        original_plane_up_contours.getMinimumDistanceFromPlane(plane_below, point_cannot_exceed);
-
-    block_3:
-        intersecting_line = plane_below.getIntersectionWithPlane(plane_up);
-
-        if (intersecting_line.getLength() < 1e-6)
-        {
-            return false;
-        }
-        
-        // Record the point fron contours at plane up to intersectin line.
-        double angle_of_rotation = plane_below.getAngleOfRotation(plane_up);
-        Eigen::Vector3d axis_of_rotation = plane_below.getAxisOfRotation(plane_up);
-
-        m_temp_slicing_result.clear();
-        m_temp_slicing_result.emplace_back(this->slice(plane_below));
-        for (int i = 1; i < max_number_of_clipping_plane; i++)
-        {
-            double angle = angle_of_rotation / max_number_of_clipping_plane * i;
-            transformation_matrix = Eigen::AngleAxis<double>(angle, axis_of_rotation);
-            Eigen::Vector3d new_normal = transformation_matrix.linear() * plane_below.getNormal();
-            SO::Plane new_plane(intersecting_line.getSource(), new_normal);
-            SO::PolygonCollection temp_contours = this->slice(new_plane);
-
-            Eigen::Vector3d point_at_max_thickness;
-            double max_thickness = temp_contours.getMaximumDistanceFromPlane(m_temp_slicing_result.back().getPlane());
-            if ((max_thickness - m_max_layer_thickness) > 1e-3)
-            {
-                std::cout << max_thickness << " " << m_max_layer_thickness << std::endl;
-                double theta = atan(m_max_layer_thickness / max_thickness * tan(angle_of_rotation / max_number_of_clipping_plane));
-                angle_of_rotation = theta * max_number_of_clipping_plane;
-                //double angle = angle_of_rotation / max_number_of_clipping_plane * (max_number_of_clipping_plane);
-                transformation_matrix = Eigen::AngleAxis<double>(angle_of_rotation, axis_of_rotation);
-                Eigen::Vector3d new_normal = transformation_matrix.linear() * plane_below.getNormal();
-                plane_up.setNormal(new_normal);
-                goto block_3;
-            }
-            m_temp_slicing_result.emplace_back(this->slice(new_plane));
-        }
-
-        if (aaa == 91)
-        {
-            std::cout << aaa << std::endl;
-        }
-
-        int j = 0;
-        for (int i = 1; i < m_temp_slicing_result.size(); i++)
-        {
-            Eigen::Vector3d point_at_min_thickness;
-            double min_thickness = m_temp_slicing_result[i].getMinimumDistanceFromPlane(m_temp_slicing_result[j].getPlane(), point_at_min_thickness);
-
-            if (min_thickness < m_min_layer_thickness)
-            {
-                std::cout << min_thickness << std::endl;
-                Eigen::Vector3d point_cannot_exceed_1;
-                m_temp_slicing_result.back().getMaximumDistanceFromPlane(m_temp_slicing_result.front().getPlane(), point_cannot_exceed_1);
-                Eigen::Vector3d new_normal = (point_cannot_exceed_1 - point_cannot_exceed).cross(intersecting_line.getDirection());
-
-                //m_drawer.drawPlane(plane_below, "Plane" + std::to_string(aaa));
-                m_drawer.drawLine(SO::Line(point_cannot_exceed_1, point_cannot_exceed), "Line" + std::to_string(aaa));
-
-                if (new_normal.dot(plane_below.getNormal()) < 0.0)
-                {
-                    new_normal = -new_normal;
-                }
-
-                SO::Plane new_plane(point_cannot_exceed, new_normal);
-                m_drawer.drawPlane(new_plane, "Plane_new" + std::to_string(aaa));
-
-                //plane_up.setOrigin(point_cannot_exceed);
-                //plane_up.setNormal(new_normal);
-                goto block_4;
-            }
-            j = i;
-        }
-
-    block_4:
-
-
-        plane_up.setOrigin(intersecting_line.getSource());
-        plane_up.setOrigin(this->slice(plane_up).centroid());
-        return true;
-    }
-    
-    return false;
-}
-
-Eigen::Vector3d AutoSlicer::getClosestPointFromLine(SO::PolygonCollection &contours, SO::Line &line)
-{
-    Eigen::Vector3d closest_point;
     double min = std::numeric_limits<double>::max();
-    for (auto &contour : contours.get())
-    {
-        for (auto &point : contour.get())
-        {
-            double distance = line.getDistanceOfPoint(point);
-            if (distance < min)
-            {
-                closest_point = point;
-                min = distance;
-            }
-        }
-    }
-    return closest_point;
-}
-
-Eigen::Vector3d AutoSlicer::getFurthestPointFromLine(SO::PolygonCollection &contours, SO::Line &line)
-{
-    Eigen::Vector3d furthest_point;
     double max = -std::numeric_limits<double>::max();
     for (auto &contour : contours.get())
     {
         for (auto &point : contour.get())
         {
-            double distance = line.getDistanceOfPoint(point);
+            Eigen::Vector3d projected_point = plane_below.getProjectionOfPointOntoPlane(point);
+            double distance = (point - projected_point).norm();
             if (distance > max)
             {
-                furthest_point = point;
                 max = distance;
+            }
+            if (distance < min)
+            {
+                min = distance;
             }
         }
     }
-    return furthest_point;
+    //std::cout << min << " " << max << std::endl;
+    if ((max - m_max_layer_thickness) > 1e-3 || (m_min_layer_thickness - min) > 1e-3)
+    {
+        std::cout << min << " " << max << std::endl;
+        return false;
+    }
+
+    return true;
 }
 
 SO::PolygonCollection AutoSlicer::slice(SO::Plane plane)
@@ -889,28 +541,4 @@ SO::PolygonCollection AutoSlicer::slice(SO::Plane plane)
     contours.setPlane(SO::Plane(contours.centroid(), contours.getPlane().getNormal()));
 
     return contours;
-}
-
-bool AutoSlicer::isIntersectingLineOfTwoPlanesIntersectsMesh(SO::Plane &plane_up, SO::Plane plane_below)
-{
-    SO::Line intersecting_line = plane_below.getIntersectionWithPlane(plane_up);
-    if (intersecting_line.getLength() < 1e-6)
-    {
-        return false;
-    }
-
-    CgalPoint_EPICK point(intersecting_line.getSource()[0], intersecting_line.getSource()[1], intersecting_line.getSource()[2]);
-    CgalVector_EPICK vector(intersecting_line.getDirection()[0], intersecting_line.getDirection()[1], intersecting_line.getDirection()[2]);
-    CgalRay_EPICK ray_1(point, vector);
-    CgalRayIntersection intersection_1 = m_tree.first_intersection(ray_1);
-    CgalRay_EPICK ray_2(point, -vector);
-    CgalRayIntersection intersection_2 = m_tree.first_intersection(ray_2);
-
-    if (intersection_1 || intersection_2)
-    {
-
-        return true;
-    }
-
-    return false;
 }

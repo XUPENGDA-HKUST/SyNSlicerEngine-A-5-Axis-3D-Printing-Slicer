@@ -24,6 +24,7 @@ namespace SyNSlicerEngine::Object {
 
 		Eigen::Vector3d centroid() const;
 
+		double getClosestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const;
 		double getFurthestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const;
 
 		bool isIntersectedWithPlane(const SO::Plane &plane) const;

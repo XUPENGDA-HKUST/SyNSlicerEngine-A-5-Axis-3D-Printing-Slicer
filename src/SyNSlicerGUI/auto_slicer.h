@@ -33,21 +33,12 @@ namespace SyNSlicerEngine::Algorithm
 	private:
 		bool determineNextSlicingPlane(SO::PolygonCollection &current_contours, SO::PolygonCollection &next_contours);
 		bool checkSupportNeeded(SO::PolygonCollection &contours_below, SO::PolygonCollection &contours_up, SO::PolygonCollection &support_contours);
-		bool isSlicingPlaneValid(SO::Plane plane_up, SO::Plane plane_below);
-		bool isPlaneUpValid(SO::Plane &plane_up, SO::Plane plane_below);
-		
-		bool tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane plane_below, std::vector<SO::Plane> &slicing_planes);
-		bool tunePlaneUpUntilMaximumSideValid(SO::Plane &plane_up, SO::Plane plane_below);
-		bool tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane_below);
+
 		bool getIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below);
+		bool tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane plane_below, std::vector<SO::Plane> &slicing_planes);
+		bool tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane_below);
 
-		
-		bool tunePlaneUpUntilValid(SO::Plane &plane_up, SO::Plane plane_below, double &last_max_layer_thickness, double &number_of_intermediate_planes);
-
-		bool determineIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below);
-		Eigen::Vector3d getClosestPointFromLine(SO::PolygonCollection &contours, SO::Line &line);
-		Eigen::Vector3d getFurthestPointFromLine(SO::PolygonCollection &contours, SO::Line &line);
-		bool isIntersectingLineOfTwoPlanesIntersectsMesh(SO::Plane &plane_up, SO::Plane plane_below);
+		bool isSlicingPlaneValid(SO::Plane plane_up, SO::Plane plane_below);
 
 		SO::PolygonCollection slice(SO::Plane plane);
 

@@ -36,6 +36,7 @@ namespace SyNSlicerEngine::Object {
 		bool isPointInside(const Eigen::Vector3d &point);
 		bool isOneOfTheVerticesOfTriangleInside(const SO::Triangle &triangle);
 
+		double getClosestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const;
 		double getFurthestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const;
 
 		double getMinimumDistanceFromPolygon(const Polygon &other);
