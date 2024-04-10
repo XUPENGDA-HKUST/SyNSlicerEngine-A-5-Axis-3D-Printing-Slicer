@@ -46,14 +46,14 @@ namespace SyNSlicerEngine::Algorithm {
 		void generateTopForModel(int wall_count, int top_count);
 		void generateTopBottomUnionAndInfillContoursForModel(int wall_count);
 		void generateInfillForModel(int wall_count, int infill_type);
-		/*
+		
 		void generateSurfaceForSupport();
 		void generateWallForSupport(int wall_count);
 		void generateBottomForSupport(int wall_count, int bottom_count);
 		void generateTopForSupport(int wall_count, int top_count);
 		void generateTopBottomUnionAndInfillContoursForSupport(int wall_count);
 		void generateInfillForSupport(int wall_count, int infill_type);
-		*/
+		
 		int m_infill_type = 0;
 		int m_wall_count = 0;
 		int m_bottom_count = 3;

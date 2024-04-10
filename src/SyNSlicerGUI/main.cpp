@@ -79,12 +79,13 @@ int main(int argc, char *argv[])
     SyNSlicerEngine::Algorithm::AutoSlicer auto_s(source_epick, 0.3, 0.4, main_window.getRenderer());
     SO::PrintingLayerCollection printing_layers = source_epick.getPrintingLayers();
     printing_layers.update();
-    drawer.drawPolylines(printing_layers.getContours(), "Contour");
-    drawer.setColor("Contour", 1, 0, 0);
     SO::PartitionCollection<CgalMesh_EPICK> result;
     result.addPartition(source_epick);
 
     /*
+    drawer.drawPolylines(printing_layers.getContours(), "Contour");
+    drawer.setColor("Contour", 1, 0, 0);
+
     SO::Nozzle nozzle(0.4, 10, 10);
 
     SyNSlicerEngine::Algorithm::AutoPartitioner auto_p(source_epick, nozzle, main_window.getRenderer());
@@ -122,8 +123,9 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < result.numberOfPartitions(); i++)
     {
-        SyNSlicerEngine::Algorithm::ToolpathGenerator generator(result[i], false, main_window.getRenderer());
+        SyNSlicerEngine::Algorithm::ToolpathGenerator generator(result[i], true, main_window.getRenderer());
         generator.setPathPropertyForModel(2, 3, 3, 1, 100, 0.4);
+        generator.setPathPropertyForSupport(2, 3, 3, 1, 100, 0.4);
         generator.generatePath();
     }
 
@@ -131,21 +133,24 @@ int main(int argc, char *argv[])
     {
         for (int j = 0; j < result[i].getPrintingLayers().size(); j++)
         {
-            /*
-            drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPaths().getSurface(), "S" + std::to_string(i) + std::to_string(j));
+            drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPathsForSupport().getSurface(), "S" + std::to_string(i) + std::to_string(j));
             drawer.setColor("S" + std::to_string(i) + std::to_string(j), 1, 0, 0);
-
-            for (int k = 0; k < result[i].getPrintingLayers()[j].getPrintingPaths().getWall().size(); k++)
+ 
+            for (int k = 0; k < result[i].getPrintingLayers()[j].getPrintingPathsForSupport().getWall().size(); k++)
             {
-                drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPaths().getWall()[k],
+                drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPathsForSupport().getWall()[k],
                     "W" + std::to_string(i) + std::to_string(j) + std::to_string(k));
                 drawer.setColor("W" + std::to_string(i) + std::to_string(j) + std::to_string(k), 0, 0, 1);
             }
-
-            drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPaths().getBottomTopUnion(),
+            
+            drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPathsForSupport().getBottomTopUnion(),
+                "BT" + std::to_string(i) + std::to_string(j));
+            drawer.setColor("BT" + std::to_string(i) + std::to_string(j), 0, 1, 0);
+            
+            drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPathsForSupport().getInfill(),
                 "I" + std::to_string(i) + std::to_string(j));
             drawer.setColor("I" + std::to_string(i) + std::to_string(j), 0, 1, 0);
-            */
+
         }
     }
 
