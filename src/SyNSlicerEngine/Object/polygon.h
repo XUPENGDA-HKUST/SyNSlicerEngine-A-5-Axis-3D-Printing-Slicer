@@ -51,6 +51,7 @@ namespace SyNSlicerEngine::Object {
 		double getMinimumDistanceFromPolygon(const Polygon &other);
 
 		Polygon getTransformedPolygon(const SO::Plane &plane) const;
+		Polygon getTransformedPolygon(const SO::Plane &source_plane, const SO::Plane &target_plane) const;
 		Polygon getTranslatedPolygon(const Eigen::Vector3d &new_origin) const;
 		Polygon getConvexHullPolygon() const;
 

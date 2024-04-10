@@ -40,6 +40,7 @@ namespace SyNSlicerEngine::Object {
 		double getMinimumDistanceFromPlane(const SO::Plane &plane, Eigen::Vector3d &point) const;
 
 		PolygonCollection getTransformedPolygons(const SO::Plane &plane) const;
+		PolygonCollection getTransformedPolygons(const SO::Plane &source_plane, const SO::Plane &target_plane) const;
 		PolygonCollection getTranslatedPolygons(const Eigen::Vector3d &new_origin) const;
 		PolygonCollection projectToOtherPlane(const SO::Plane &plane) const;
 

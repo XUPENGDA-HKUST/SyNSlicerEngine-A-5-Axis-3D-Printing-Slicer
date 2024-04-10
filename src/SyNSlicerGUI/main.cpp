@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < result.numberOfPartitions(); i++)
     {
         SyNSlicerEngine::Algorithm::ToolpathGenerator generator(result[i], false, main_window.getRenderer());
-        generator.setPathPropertyForModel(2, 3, 3, 0, 100, 0.4);
+        generator.setPathPropertyForModel(2, 3, 3, 1, 100, 0.4);
         generator.generatePath();
     }
 
@@ -131,6 +131,7 @@ int main(int argc, char *argv[])
     {
         for (int j = 0; j < result[i].getPrintingLayers().size(); j++)
         {
+            /*
             drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPaths().getSurface(), "S" + std::to_string(i) + std::to_string(j));
             drawer.setColor("S" + std::to_string(i) + std::to_string(j), 1, 0, 0);
 
@@ -144,7 +145,7 @@ int main(int argc, char *argv[])
             drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPaths().getBottomTopUnion(),
                 "I" + std::to_string(i) + std::to_string(j));
             drawer.setColor("I" + std::to_string(i) + std::to_string(j), 0, 1, 0);
-            
+            */
         }
     }
 

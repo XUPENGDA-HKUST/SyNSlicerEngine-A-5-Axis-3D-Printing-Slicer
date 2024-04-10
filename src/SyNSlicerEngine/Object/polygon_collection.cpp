@@ -285,6 +285,18 @@ PolygonCollection PolygonCollection::getTransformedPolygons(const SO::Plane &pla
 	return transformed_polygons;
 }
 
+PolygonCollection PolygonCollection::getTransformedPolygons(const SO::Plane &source_plane, const SO::Plane &target_plane) const
+{
+	SO::PolygonCollection transformed_polygons;
+
+	for (auto &polygon : m_polygons)
+	{
+		transformed_polygons.addPolygon(polygon.getTransformedPolygon(source_plane, target_plane));
+	}
+
+	return transformed_polygons;
+}
+
 PolygonCollection PolygonCollection::getTranslatedPolygons(const Eigen::Vector3d &new_origin) const
 {
 	SO::PolygonCollection transformed_polygons;

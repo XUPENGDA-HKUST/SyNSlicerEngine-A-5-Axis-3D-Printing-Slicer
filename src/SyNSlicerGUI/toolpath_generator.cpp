@@ -53,7 +53,7 @@ void ToolpathGenerator::generatePath()
     this->generateBottomForModel(m_wall_count, m_bottom_count);
     this->generateTopForModel(m_wall_count, m_top_count);
     this->generateTopBottomUnionAndInfillContoursForModel(m_wall_count);
-    //this->generateInfillForModel(2, m_infill_type);
+    this->generateInfillForModel(2, m_infill_type);
 
     if (m_with_support == true)
     {
@@ -542,19 +542,6 @@ void ToolpathGenerator::generateTopBottomUnionAndInfillContoursForModel(int wall
         contours = contours.getTranslatedPolygons(m_center_of_infill_cutting_planes);
         contours = contours.getOffset(-0.5 * m_side_step);
 
-        if (layer_index == 0)
-        {
-            for (auto contour : contours.get())
-            {
-                CgalPolygon2D_EPICK cgal_polygon_2;
-                for (auto point : contour.get())
-                {
-                    cgal_polygon_2.push_back(CgalPoint2D_EPICK(point[0], point[1]));
-                }
-                std::cout << cgal_polygon_2.is_simple() << "\n";
-            }
-        }
-
         this->determineCuttingPlanesZigzagInfill(contours, layer_index);
         SO::PolygonCollection infill_contours = contours;
 
@@ -574,7 +561,6 @@ void ToolpathGenerator::generateTopBottomUnionAndInfillContoursForModel(int wall
     }
 }
 
-/*
 void ToolpathGenerator::generateInfillForModel(int wall_count, int infill_type)
 {
     for (int layer_index = 0; layer_index < mp_partition->getPrintingLayers().size(); layer_index++)
@@ -599,9 +585,9 @@ void ToolpathGenerator::generateInfillForModel(int wall_count, int infill_type)
             current_layer.getSlicingPlane(), SO::Plane(local_center, Eigen::Vector3d::UnitZ()));
         direction_1_target = direction_1_target - local_center + m_center_of_infill_cutting_planes;
 
-        contours = geo_algorithm.rotateContoursFromPlaneToPlane(contours,
-            Plane(m_center_of_infill_cutting_planes, direction_1_target - m_center_of_infill_cutting_planes), 
-            Plane(m_center_of_infill_cutting_planes, Eigen::Vector3d::UnitX()));
+        contours = contours.getTransformedPolygons(
+            SO::Plane(m_center_of_infill_cutting_planes, direction_1_target - m_center_of_infill_cutting_planes),
+            SO::Plane(m_center_of_infill_cutting_planes, Eigen::Vector3d::UnitX()));
 
         contours = contours.getOffset(-0.5 * m_side_step);
         
@@ -614,33 +600,30 @@ void ToolpathGenerator::generateInfillForModel(int wall_count, int infill_type)
             this->determineCuttingPlanesGridInfill(contours, m_infill_density);
         }
         
-        InfillPathGenerator infill_generator(contours, m_cutting_planes, m_side_step, m_infill_type);
-        contours = geo_algorithm.rotateContoursFromPlaneToPlane(contours,
-            Plane(m_center_of_infill_cutting_planes, Eigen::Vector3d::UnitX()),
-            Plane(m_center_of_infill_cutting_planes, direction_1_target - m_center_of_infill_cutting_planes));
+        SO::PolygonCollection infill_contours = contours;
 
-        contours = geo_algorithm.rotateContoursFromPlaneToPlane(contours, Plane(), Plane(m_center_of_infill_cutting_planes, current_layer.getSlicingPlane().getNormal()));
-        contours = geo_algorithm.translateContoursFromPlaneToPlane(contours, m_center_of_infill_cutting_planes, local_center);
-        contours.closePolylines();
+        contours = contours.getTransformedPolygons(
+            SO::Plane(m_center_of_infill_cutting_planes, Eigen::Vector3d::UnitX()),
+            SO::Plane(m_center_of_infill_cutting_planes, direction_1_target - m_center_of_infill_cutting_planes));
+        contours = contours.getTransformedPolygons(SO::Plane(m_center_of_infill_cutting_planes, current_layer.getSlicingPlane().getNormal()));
+        contours = contours.getTranslatedPolygons(local_center);
+        contours.closePolygons();
         current_layer.getPrintingPaths().getInfill() = contours;
 
+        InfillPathGenerator infill_generator(infill_contours, m_cutting_planes, m_side_step, m_infill_type);
         infill_generator.generateInfillPath();
-        infill_generator.getOutput(contours);
+        infill_generator.getOutput(infill_contours);
+        infill_contours = infill_contours.getTransformedPolygons(
+            SO::Plane(m_center_of_infill_cutting_planes, Eigen::Vector3d::UnitX()),
+            SO::Plane(m_center_of_infill_cutting_planes, direction_1_target - m_center_of_infill_cutting_planes));
+        infill_contours = infill_contours.getTransformedPolygons(SO::Plane(m_center_of_infill_cutting_planes, current_layer.getSlicingPlane().getNormal()));
+        infill_contours = infill_contours.getTranslatedPolygons(local_center);
 
-        contours = geo_algorithm.rotateContoursFromPlaneToPlane(contours,
-            Plane(m_center_of_infill_cutting_planes, Eigen::Vector3d::UnitX()),
-            Plane(m_center_of_infill_cutting_planes, direction_1_target - m_center_of_infill_cutting_planes));
-
-        contours = geo_algorithm.rotateContoursFromPlaneToPlane(contours, Plane(), Plane(m_center_of_infill_cutting_planes, current_layer.getSlicingPlane().getNormal()));
-        contours = geo_algorithm.translateContoursFromPlaneToPlane(contours, m_center_of_infill_cutting_planes, local_center);
-        current_layer.getPrintingPaths().getInfill().addPolylines(contours);
-        polylines_for_debug->addPolylines(contours);      
+        current_layer.getPrintingPaths().getInfill().addPolygons(infill_contours);
+        m_drawer.drawPolygons(current_layer.getPrintingPaths().getInfill(), std::to_string(layer_index));
     }
     
-    //polylines_for_debug->addToRenderer(mp_renderer);
-    polylines_for_debug->setColor(0, 0, 1);
 }
-*/
 
 /*
 void ToolpathGenerator::generateSurfaceForSupport()

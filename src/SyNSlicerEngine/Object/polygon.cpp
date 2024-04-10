@@ -455,6 +455,28 @@ Polygon Polygon::getTransformedPolygon(const SO::Plane &plane) const
 	return transformed_polygon;
 }
 
+Polygon Polygon::getTransformedPolygon(const SO::Plane &source_plane, const SO::Plane &target_plane) const
+{
+	if (source_plane.isIntersectedWithPlane(target_plane) == false)
+	{
+		return *this;
+	}
+
+	Polygon transformed_polygon;
+	transformed_polygon.setPlane(m_plane);
+
+	Eigen::Transform<double, 3, Eigen::Affine> transformation_matrix;
+	transformation_matrix = this->computeTransformationMatrix(source_plane.getNormal(), target_plane.getNormal());
+	Eigen::Vector3d origin = m_plane.getOrigin();
+
+	for (auto &point : m_polygon)
+	{
+		transformed_polygon.addPointToBack(transformation_matrix * (point - origin) + origin);
+	}
+
+	return transformed_polygon;
+}
+
 Polygon Polygon::getTranslatedPolygon(const Eigen::Vector3d &new_origin) const
 {
 	Polygon transformed_polygon;
