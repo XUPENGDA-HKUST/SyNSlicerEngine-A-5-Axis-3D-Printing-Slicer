@@ -43,6 +43,52 @@ void Polygon::reset()
 	*this = Polygon();
 }
 
+bool Polygon::isClosed() const
+{
+	if ((m_polygon.back() - m_polygon.front()).norm() < 1e-6)
+	{
+		return true;
+	}
+	return false;
+}
+
+void Polygon::closePolygon()
+{
+	if (this->isClosed() == false)
+	{
+		m_polygon.emplace_back(m_polygon.front());
+	}
+}
+
+int Polygon::isClockWise() const
+{
+	if (m_polygon.size() < 3)
+	{
+		return 0;
+	}
+
+	CgalPolygon2D_EPICK cgal_polygon;
+	Plane xy_plane = Plane(m_plane.getOrigin(), Eigen::Vector3d(0, 0, 1));
+	Polygon transformed_polygon = this->getTransformedPolygon(xy_plane);
+	for (auto &point : transformed_polygon.get())
+	{
+		cgal_polygon.push_back(CgalPoint2D_EPICK(point[0], point[1]));
+	}	
+
+	if (cgal_polygon.is_clockwise_oriented())
+	{
+		return 1;
+	}
+	else if (cgal_polygon.is_counterclockwise_oriented())
+	{
+		return -1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 Eigen::Vector3d Polygon::centroid() const
 {
 	if (m_polygon.size() == 0)
@@ -126,6 +172,39 @@ Eigen::Vector3d Polygon::centroid() const
 	return result;
 }
 
+void Polygon::getBoundingBox(double(&bound)[6])
+{
+	if (m_polygon.size() == 0)
+	{
+		return;
+	}
+
+	if (m_boudning_box_calculated == false)
+	{
+		int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0;
+		for (int i = 1; i < m_polygon.size(); i++)
+		{
+			if (m_polygon[i][0] < m_polygon[a][0]) { a = i; };
+			if (m_polygon[i][0] > m_polygon[b][0]) { b = i; };
+			if (m_polygon[i][1] < m_polygon[c][1]) { c = i; };
+			if (m_polygon[i][1] > m_polygon[d][1]) { d = i; };
+			if (m_polygon[i][2] < m_polygon[e][2]) { e = i; };
+			if (m_polygon[i][2] > m_polygon[f][2]) { f = i; };
+		}
+
+		m_bounding_box[0] = m_polygon[a][0];
+		m_bounding_box[1] = m_polygon[b][0];
+		m_bounding_box[2] = m_polygon[c][1];
+		m_bounding_box[3] = m_polygon[d][1];
+		m_bounding_box[4] = m_polygon[e][2];
+		m_bounding_box[5] = m_polygon[f][2];
+
+		m_boudning_box_calculated = true;
+	};
+
+	memcpy(&bound, &m_bounding_box, sizeof(m_bounding_box));
+}
+
 double Polygon::area() const
 {
 	std::vector<Eigen::Vector3d> new_polygon = m_polygon;
@@ -180,6 +259,35 @@ bool Polygon::isIntersectedWithPlane(const SO::Plane &plane)
 	return false;
 }
 
+bool Polygon::isIntersectedWithPlane(const SO::Plane &plane, std::vector<Eigen::Vector3d> &intersecting_points) const
+{
+	if (m_polygon.size() < 3)
+	{
+		return false;
+	}
+
+	Eigen::Vector3d point;
+	int j = 0;
+	for (int i = 1; i < m_polygon.size(); i++)
+	{
+		SO::Line line(m_polygon[i], m_polygon[j]);
+		if (plane.isIntersectedWithLine(line, point))
+		{
+			intersecting_points.push_back(point);
+		}
+		j = i;
+	}
+
+	if (!this->isClosed())
+	{
+		Object::Line line(m_polygon[j], m_polygon[0]);
+		if (plane.isIntersectedWithLine(line, point))
+		{
+			intersecting_points.push_back(point);
+		}
+	}
+}
+
 bool Polygon::isPointInside(const Eigen::Vector3d &point)
 {
 	if (!m_cgal_polygon.size())
@@ -207,6 +315,37 @@ bool Polygon::isPointInside(const Eigen::Vector3d &point)
 		return true;
 	}
 	
+	return false;
+}
+
+bool Polygon::isLineInside(const SO::Line &line)
+{
+	if (!m_cgal_polygon.size())
+	{
+		Polygon transformed_polygon = *this;
+		Plane xy_plane = Plane(m_plane.getOrigin(), Eigen::Vector3d(0, 0, 1));
+		transformed_polygon = transformed_polygon.getTransformedPolygon(xy_plane);
+		for (auto &point : transformed_polygon.get())
+		{
+			m_cgal_polygon.push_back(CgalPoint2D_EPICK(point[0], point[1]));
+		}
+	}
+
+	Eigen::Transform<double, 3, Eigen::Affine> transformation_matrix;
+	transformation_matrix = this->computeTransformationMatrix(m_plane.getNormal(), Eigen::Vector3d(0, 0, 1));
+
+	Eigen::Vector3d temp_point = line.getMiddle();
+	temp_point = m_plane.getProjectionOfPointOntoPlane(temp_point);
+	temp_point = transformation_matrix * (temp_point - m_plane.getOrigin()) + m_plane.getOrigin();
+
+	CgalPoint2D_EPICK cgal_point(temp_point[0], temp_point[1]);
+
+	if (CGAL::bounded_side_2(m_cgal_polygon.begin(), m_cgal_polygon.end(), cgal_point, EPICK())
+		== CGAL::ON_BOUNDED_SIDE)
+	{
+		return true;
+	}
+
 	return false;
 }
 
@@ -306,13 +445,26 @@ Polygon Polygon::getTransformedPolygon(const SO::Plane &plane) const
 
 	Eigen::Transform<double, 3, Eigen::Affine> transformation_matrix;
 	transformation_matrix = this->computeTransformationMatrix(m_plane.getNormal(), plane.getNormal());
-	Eigen::Vector3d origin = m_plane.getOrigin();
+	Eigen::Vector3d origin = plane.getOrigin();
 
 	for (auto &point : m_polygon)
 	{
 		transformed_polygon.addPointToBack(transformation_matrix * (point - origin) + origin);
 	}
 	
+	return transformed_polygon;
+}
+
+Polygon Polygon::getTranslatedPolygon(const Eigen::Vector3d &new_origin) const
+{
+	Polygon transformed_polygon;
+	transformed_polygon.setPlane(SO::Plane(new_origin, m_plane.getNormal()));
+	Eigen::Vector3d old_origin = m_plane.getOrigin();
+	for (auto &point : m_polygon)
+	{
+		transformed_polygon.addPointToBack(point - old_origin + new_origin);
+	}
+
 	return transformed_polygon;
 }
 

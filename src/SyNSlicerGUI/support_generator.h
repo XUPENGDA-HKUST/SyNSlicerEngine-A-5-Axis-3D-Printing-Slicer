@@ -24,22 +24,22 @@ namespace SyNSlicerEngine::Algorithm {
 
 	private:
 		
-		void splitAndGroupContours(const SO::PolygonCollection &contours, std::vector<SO::PolygonCollection> &splited_contours, double epsilon);
+		void splitAndGroupContours(SO::PolygonCollection &contours, std::vector<SO::PolygonCollection> &splited_contours, double epsilon);
 		
 		bool findNeighourContours(std::vector<SO::Polygon> &contours, 
-			const SO::PolygonCollection &contours_to_be_search, 
+			SO::PolygonCollection &contours_to_be_search, 
 			std::vector<bool> &access_table, double epsilon);
 
 		bool extractContoursFromcontours(SO::PolygonCollection &input_contours, SO::PolygonCollection &output_contours, double epsilon);
 
-		void generateSupportStructureForSupportStructure(const SO::PolygonCollection &contours, 
+		void generateSupportStructureForSupportStructure(SO::PolygonCollection &contours, 
 			const SO::Plane &plane, std::vector<SO::Polyhedron<CgalMesh_EPICK>> &support_structures);
 
-		bool generatePolyhedronFromContours(const SO::PolygonCollection &contours, SO::Polyhedron<CgalMesh_EPICK> &polyhedron);
+		bool generatePolyhedronFromContours(SO::PolygonCollection &contours, SO::Polyhedron<CgalMesh_EPICK> &polyhedron);
 
 		void clipSupportStructure(CgalMesh_EPICK sm, CgalMesh_EPICK &sm_U, CgalMesh_EPICK &sm_L, const SO::Plane &clip_plane);
 		void addSupportStructureofSupportStructureToParition(SO::Partition<CgalMesh_EPICK> &parition, const SO::Polyhedron<CgalMesh_EPICK> &support_structure);
-		void addContoursToPrintingLayer(const SO::PolygonCollection &contours, SO::PrintingLayer &printing_layer);
+		void addContoursToPrintingLayer(SO::PolygonCollection &contours, SO::PrintingLayer &printing_layer);
 
 		double side_step;
 

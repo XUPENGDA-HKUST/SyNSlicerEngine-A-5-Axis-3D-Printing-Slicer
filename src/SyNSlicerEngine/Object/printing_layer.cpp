@@ -34,7 +34,7 @@ int PrintingLayer::getNumberOfContours()
 	return m_contours.numberOfPolygons();
 }
 
-const SO::Polygon &PrintingLayer::getContour(int index) const
+SO::Polygon &PrintingLayer::getContour(int index)
 {
 	return m_contours[index];
 }
@@ -49,7 +49,7 @@ void PrintingLayer::setSupportStructureContours(const PolygonCollection &input_s
 	m_support_structure_contours = input_support_structure_contours;
 }
 
-void PrintingLayer::addSupportStructureContours(const PolygonCollection &input_support_structure_contours)
+void PrintingLayer::addSupportStructureContours(PolygonCollection &input_support_structure_contours)
 {
 	for (int i = 0; i < input_support_structure_contours.numberOfPolygons(); i++)
 	{

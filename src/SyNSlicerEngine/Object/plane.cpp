@@ -234,6 +234,18 @@ bool Plane::isIntersectedWithLine(const SO::Line &line) const
 	return false;
 }
 
+bool Plane::isIntersectedWithLine(const SO::Line &line, Eigen::Vector3d &point) const
+{
+	if (this->isIntersectedWithLine(line))
+	{
+		double denominator = this->m_normal.dot(line.getDirection());
+		double t = (this->m_origin - line.getSource()).dot(this->m_normal) / denominator;
+		point = line.getSource() + t * line.getDirection();
+		return true;
+	}
+	return false;
+}
+
 Eigen::Vector3d Plane::getIntersectionWithLine(const SO::Line &line) const
 {
 	Eigen::Vector3d intersecting_point = Eigen::Vector3d(std::numeric_limits<double>::min(), std::numeric_limits<double>::min(), std::numeric_limits<double>::min());

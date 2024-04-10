@@ -22,7 +22,10 @@ namespace SyNSlicerEngine::Object {
 		int numberOfPolygons() const;
 		const std::vector<Polygon> &get() const;
 
+		void closePolygons();
+
 		Eigen::Vector3d centroid() const;
+		void getBoundingBox(double(&bound)[6]);
 
 		double getClosestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const;
 		double getFurthestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const;
@@ -37,10 +40,13 @@ namespace SyNSlicerEngine::Object {
 		double getMinimumDistanceFromPlane(const SO::Plane &plane, Eigen::Vector3d &point) const;
 
 		PolygonCollection getTransformedPolygons(const SO::Plane &plane) const;
+		PolygonCollection getTranslatedPolygons(const Eigen::Vector3d &new_origin) const;
 		PolygonCollection projectToOtherPlane(const SO::Plane &plane) const;
 
-		PolygonCollection offset(double distance);
+		PolygonCollection getOffset(double distance);
 		PolygonCollection getDifference(const PolygonCollection &other);
+		PolygonCollection getIntersection(const PolygonCollection &other);
+		PolygonCollection getUnion(const PolygonCollection &other);
 
 		Polygon getLargestPolygon() const;
 		Polygon getConvexHullPolygon() const;
@@ -57,6 +63,7 @@ namespace SyNSlicerEngine::Object {
 		void reset();
 
 		PolygonCollection &operator=(const PolygonCollection &other);
+		Polygon &operator[](unsigned int index);
 		const Polygon &operator[](unsigned int index) const;
 
 	private:
@@ -65,6 +72,9 @@ namespace SyNSlicerEngine::Object {
 
 		std::vector<Polygon> m_polygons;
 		Plane m_plane;
+
+		bool m_boudning_box_calculated = false;
+		double m_bounding_box[6] = { 0.0, 0.0 ,0.0 ,0.0 ,0.0 ,0.0 };
 	};
 }
 

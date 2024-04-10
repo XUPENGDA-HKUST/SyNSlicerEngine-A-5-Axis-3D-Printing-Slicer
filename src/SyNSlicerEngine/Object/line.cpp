@@ -93,6 +93,11 @@ const Eigen::Vector3d &Line::getDirection() const
 	return m_direction;
 }
 
+Eigen::Vector3d Line::getMiddle() const
+{
+	return (m_source + m_target) / 2;
+}
+
 const double Line::getLength() const
 {
 	return m_length;

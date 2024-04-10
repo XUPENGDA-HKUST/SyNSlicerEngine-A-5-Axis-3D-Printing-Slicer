@@ -54,7 +54,7 @@ void SupportGenerator::generateSupportStructure()
 			SO::PolygonCollection support_projected_contours = support_contours.projectToOtherPlane(p_layer_i_minus_1.getSlicingPlane()); // Subject_1
 
 			SO::PolygonCollection contours_from_layer_i_minus_1 = p_layer_i_minus_1.getContours();
-			contours_from_layer_i_minus_1 = contours_from_layer_i_minus_1.offset(0.5 * side_step); // clip
+			contours_from_layer_i_minus_1 = contours_from_layer_i_minus_1.getOffset(0.5 * side_step); // clip
 
 
 			count += 1;
@@ -124,7 +124,7 @@ void SupportGenerator::generateSupportStructure()
 	}
 }
 
-void SupportGenerator::splitAndGroupContours(const SO::PolygonCollection &contours, std::vector<SO::PolygonCollection> &splited_contours, double epsilon)
+void SupportGenerator::splitAndGroupContours(SO::PolygonCollection &contours, std::vector<SO::PolygonCollection> &splited_contours, double epsilon)
 {
 	SO::PolygonCollection working_contours = contours;
 	SO::PolygonCollection temp_contours;
@@ -136,7 +136,7 @@ void SupportGenerator::splitAndGroupContours(const SO::PolygonCollection &contou
 	splited_contours.push_back(temp_contours);
 }
 
-bool SupportGenerator::findNeighourContours(std::vector<SO::Polygon> &contours, const SO::PolygonCollection &contours_to_be_search, std::vector<bool> &access_table, double epsilon)
+bool SupportGenerator::findNeighourContours(std::vector<SO::Polygon> &contours, SO::PolygonCollection &contours_to_be_search, std::vector<bool> &access_table, double epsilon)
 {
 	std::vector<SO::Polygon> contours_used_in_the_next_searching;
 	double distance = 0.0;
@@ -216,7 +216,7 @@ bool SupportGenerator::extractContoursFromcontours(SO::PolygonCollection &input_
 	}
 }
 
-void SupportGenerator::generateSupportStructureForSupportStructure(const SO::PolygonCollection &contours, 
+void SupportGenerator::generateSupportStructureForSupportStructure(SO::PolygonCollection &contours, 
 	const SO::Plane &plane, std::vector<SO::Polyhedron<CgalMesh_EPICK>> &support_structures)
 {
 	// Step 1: check plane normal.
@@ -306,7 +306,7 @@ void SupportGenerator::generateSupportStructureForSupportStructure(const SO::Pol
 	}
 }
 
-bool SupportGenerator::generatePolyhedronFromContours(const SO::PolygonCollection &contours, 
+bool SupportGenerator::generatePolyhedronFromContours(SO::PolygonCollection &contours, 
 	SO::Polyhedron<CgalMesh_EPICK> &polyhedron)
 {
 	if (contours.numberOfPolygons() < 2)
@@ -437,7 +437,7 @@ void SupportGenerator::addSupportStructureofSupportStructureToParition(
 }
 
 void SupportGenerator::addContoursToPrintingLayer(
-	const SO::PolygonCollection &contours, SO::PrintingLayer &printing_layer)
+	SO::PolygonCollection &contours, SO::PrintingLayer &printing_layer)
 {
 	if (printing_layer.getNumberOfContours() <= 0)
 	{

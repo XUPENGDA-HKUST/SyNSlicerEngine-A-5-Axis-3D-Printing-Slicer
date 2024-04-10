@@ -12,6 +12,11 @@ ObjectDrawer::~ObjectDrawer()
 {
 }
 
+vtkRenderer *ObjectDrawer::getRenderer()
+{
+	return mp_renderer;
+}
+
 void GUI::ObjectDrawer::drawPoint(const Eigen::Vector3d &point, std::string name)
 {
 	vtkNew<vtkPoints> points;
@@ -165,7 +170,7 @@ void GUI::ObjectDrawer::drawPolygon(const SO::Polygon &polygon, std::string name
 	this->addObjectToRenderer(polyline_poly_data, name);
 }
 
-void ObjectDrawer::drawPolygons(const SO::PolygonCollection &polygons, std::string name)
+void ObjectDrawer::drawPolygons(SO::PolygonCollection &polygons, std::string name)
 {
 	int pointID = 0;
 	vtkNew<vtkPoints> points;

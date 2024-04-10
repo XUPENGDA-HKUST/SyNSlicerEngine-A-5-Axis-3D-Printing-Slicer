@@ -31,7 +31,7 @@ namespace SyNSlicerEngine::Object
 
 		void setBasePlane(const SO::Plane &base_plane);
         SO::Plane getBasePlane();
-        const PolygonCollection &getBaseContours();
+        PolygonCollection &getBaseContours();
 
         void addKey(int key);
         std::vector<int> getKeys();
@@ -43,7 +43,7 @@ namespace SyNSlicerEngine::Object
         CgalMesh_EPECK getEPECKMesh();
 
         void setPrintingLayers(const SO::PrintingLayerCollection &printing_layers);
-        SO::PrintingLayerCollection getPrintingLayers() const;
+        SO::PrintingLayerCollection &getPrintingLayers();
 
 		Partition<T> &operator=(const Partition<T> &other);
 
@@ -107,7 +107,7 @@ namespace SyNSlicerEngine::Object
     }
 
     template<class T>
-    inline const PolygonCollection &Partition<T>::getBaseContours()
+    inline PolygonCollection &Partition<T>::getBaseContours()
     {
         return this->m_base_contours;
     }
@@ -312,7 +312,7 @@ namespace SyNSlicerEngine::Object
     }
 
     template<class T>
-    inline SO::PrintingLayerCollection Partition<T>::getPrintingLayers() const
+    inline SO::PrintingLayerCollection &Partition<T>::getPrintingLayers()
     {
         return m_printing_layers;
     }

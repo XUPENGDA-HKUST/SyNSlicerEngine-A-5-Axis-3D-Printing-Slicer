@@ -31,6 +31,7 @@ namespace SyNSlicerEngine::Object
 		const Eigen::Vector3d &getSource() const;
 		const Eigen::Vector3d &getTarget() const;
 		const Eigen::Vector3d &getDirection() const;
+		Eigen::Vector3d getMiddle() const;
 		const double getLength() const;
 		
 		//!  Swap source and target, revert line diretion.

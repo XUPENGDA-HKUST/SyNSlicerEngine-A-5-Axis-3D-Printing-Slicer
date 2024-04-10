@@ -29,11 +29,20 @@ namespace SyNSlicerEngine::Object {
 		const SO::Plane &getPlane() const;
 		void reset();
 		
+		bool isClosed() const;
+		void closePolygon();
+
+		int isClockWise() const;
+
 		Eigen::Vector3d centroid() const;
+		void getBoundingBox(double(&bound)[6]);
 		double area() const;
 		double length() const;
 		bool isIntersectedWithPlane(const SO::Plane &plane);
+		bool isIntersectedWithPlane(const SO::Plane &plane, std::vector<Eigen::Vector3d> &intersecting_points) const;
+
 		bool isPointInside(const Eigen::Vector3d &point);
+		bool isLineInside(const SO::Line &line);
 		bool isOneOfTheVerticesOfTriangleInside(const SO::Triangle &triangle);
 
 		double getClosestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const;
@@ -42,6 +51,7 @@ namespace SyNSlicerEngine::Object {
 		double getMinimumDistanceFromPolygon(const Polygon &other);
 
 		Polygon getTransformedPolygon(const SO::Plane &plane) const;
+		Polygon getTranslatedPolygon(const Eigen::Vector3d &new_origin) const;
 		Polygon getConvexHullPolygon() const;
 
 
@@ -60,6 +70,8 @@ namespace SyNSlicerEngine::Object {
 
 		CgalPolygon2D_EPICK m_cgal_polygon;
 
+		bool m_boudning_box_calculated = false;
+		double m_bounding_box[6] = { 0.0, 0.0 ,0.0 ,0.0 ,0.0 ,0.0 };
 	};
 }
 

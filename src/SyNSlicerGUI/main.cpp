@@ -13,6 +13,7 @@
 #include "auto_slicer.h"
 #include "support_generator.h"
 #include "printing_sequence_determinator.h"
+#include "toolpath_generator.h"
 
 #define getName(var) #var
 
@@ -53,7 +54,8 @@ int main(int argc, char *argv[])
     */
     // SO::Partition<CgalMesh_EPICK> source_epick("../data/firebird_1mm_zero.stl");
     // SO::Partition<CgalMesh_EPICK> source_epick("../data/bunny_Z_zero_1500.stl");
-    SO::Partition<CgalMesh_EPICK> source_epick("../data/Check/Part_0.stl");
+    SO::Partition<CgalMesh_EPICK> source_epick("../data/L_shape.stl");
+    // SO::Partition<CgalMesh_EPICK> source_epick("../data/Check/Part_0.stl");
     
     // SO::Partition source("../data/triceratops.stl");
     SO::Plane plane_0(
@@ -72,7 +74,7 @@ int main(int argc, char *argv[])
     source_epick.setBasePlane(SO::Plane(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 1)));
 
     drawer.drawMesh(source_epick.getEPICKMesh(), "123");
-    //drawer.setOpacity("123", 0.2);
+    drawer.setOpacity("123", 0.2);
 
     SyNSlicerEngine::Algorithm::AutoSlicer auto_s(source_epick, 0.3, 0.4, main_window.getRenderer());
     SO::PrintingLayerCollection printing_layers = source_epick.getPrintingLayers();
@@ -102,8 +104,8 @@ int main(int argc, char *argv[])
             SyNSlicerEngine::Algorithm::AutoSlicer auto_s(result[i], 0.3, 0.4, main_window.getRenderer());
             SO::PrintingLayerCollection printing_layers = result[i].getPrintingLayers();
             printing_layers.update();
-            drawer.drawPolylines(printing_layers.getContours(), "Contour" + std::to_string(i));
-            drawer.setColor("Contour" + std::to_string(i), 1, 0, 0);
+            //drawer.drawPolylines(printing_layers.getContours(), "Contour" + std::to_string(i));
+            //drawer.setColor("Contour" + std::to_string(i), 1, 0, 0);
         }
     }
     */
@@ -114,8 +116,36 @@ int main(int argc, char *argv[])
         SO::PrintingLayerCollection printing_layers = result[i].getPrintingLayers();
         printing_layers.update();
 
-        drawer.drawPolylines(printing_layers.getSupportContours(), "Support" + std::to_string(i));
-        drawer.setColor("Support" + std::to_string(i), 0, 1, 1);
+        //drawer.drawPolylines(printing_layers.getSupportContours(), "Support" + std::to_string(i));
+        //drawer.setColor("Support" + std::to_string(i), 0, 1, 1);
+    }
+
+    for (int i = 0; i < result.numberOfPartitions(); i++)
+    {
+        SyNSlicerEngine::Algorithm::ToolpathGenerator generator(result[i], false, main_window.getRenderer());
+        generator.setPathPropertyForModel(2, 3, 3, 0, 100, 0.4);
+        generator.generatePath();
+    }
+
+    for (int i = 0; i < result.numberOfPartitions(); i++)
+    {
+        for (int j = 0; j < result[i].getPrintingLayers().size(); j++)
+        {
+            drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPaths().getSurface(), "S" + std::to_string(i) + std::to_string(j));
+            drawer.setColor("S" + std::to_string(i) + std::to_string(j), 1, 0, 0);
+
+            for (int k = 0; k < result[i].getPrintingLayers()[j].getPrintingPaths().getWall().size(); k++)
+            {
+                drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPaths().getWall()[k],
+                    "W" + std::to_string(i) + std::to_string(j) + std::to_string(k));
+                drawer.setColor("W" + std::to_string(i) + std::to_string(j) + std::to_string(k), 0, 0, 1);
+            }
+
+            drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPaths().getBottomTopUnion(),
+                "I" + std::to_string(i) + std::to_string(j));
+            drawer.setColor("I" + std::to_string(i) + std::to_string(j), 0, 1, 0);
+            
+        }
     }
 
     main_window.resetCamera();

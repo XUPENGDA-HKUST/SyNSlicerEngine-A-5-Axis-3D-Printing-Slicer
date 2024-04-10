@@ -56,6 +56,7 @@ namespace SyNSlicerEngine::Object {
 
 		bool isLineOnPlane(const SO::Line &line, double epsilon = 1e-6) const;
 		bool isIntersectedWithLine(const SO::Line &line) const;
+		bool isIntersectedWithLine(const SO::Line &line, Eigen::Vector3d &point) const;
 		Eigen::Vector3d getIntersectionWithLine(const SO::Line &line) const;
 		bool isIntersectedWithRay(const SO::Line &ray) const;
 		Eigen::Vector3d getIntersectionWithRay(const SO::Line &ray) const;

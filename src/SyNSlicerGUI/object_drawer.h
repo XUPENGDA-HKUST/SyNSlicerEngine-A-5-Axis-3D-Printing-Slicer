@@ -26,13 +26,15 @@ namespace GUI {
 		ObjectDrawer(vtkRenderer *p_renderer);
 		~ObjectDrawer();
 
+		vtkRenderer *getRenderer();
+
 		void drawPoint(const Eigen::Vector3d &point, std::string name);
 		void drawPoints(const std::vector<Eigen::Vector3d> &points, std::string name);
 		void drawLine(const SO::Line &line, std::string name);
 		void drawPolyline(const SO::Polyline &polygon, std::string name);
 		void drawPolylines(const SO::PolylineCollection &polygons, std::string name);
 		void drawPolygon(const SO::Polygon &polygon, std::string name);
-		void drawPolygons(const SO::PolygonCollection &polygons, std::string name);
+		void drawPolygons(SO::PolygonCollection &polygons, std::string name);
 		void drawPlane(const SO::Plane &plane, std::string name);
 		void drawTriangles(std::vector<int> faces, const CgalMesh_EPICK &mesh, std::string name);
 		void drawTriangles(std::vector<CgalMesh_EPICK::Face_index> faces, const CgalMesh_EPICK &mesh, std::string name);

@@ -55,6 +55,14 @@ const std::vector<SO::Polygon> &PolygonCollection::get() const
 	return m_polygons;
 }
 
+void PolygonCollection::closePolygons()
+{
+	for (auto &polyline : m_polygons)
+	{
+		polyline.closePolygon();
+	}
+}
+
 Eigen::Vector3d PolygonCollection::centroid() const
 {
 	if (m_polygons.size() < 1)
@@ -83,6 +91,32 @@ Eigen::Vector3d PolygonCollection::centroid() const
 	Eigen::Vector3d result(x, y, z);
 	assert(abs(m_plane.getDistanceFromPointToPlane(result)) < 1e-3);
 	return result;
+}
+
+void PolygonCollection::getBoundingBox(double(&bound)[6])
+{
+	if (m_polygons.size() == 0)
+	{
+		return;
+	}
+	if (m_boudning_box_calculated == false)
+	{
+		m_polygons[0].getBoundingBox(m_bounding_box);
+		for (int i = 1; i < m_polygons.size(); i++)
+		{
+			double bound[6];
+			m_polygons[i].getBoundingBox(bound);
+			if (bound[0] < m_bounding_box[0]) { m_bounding_box[0] = bound[0]; };
+			if (bound[1] > m_bounding_box[1]) { m_bounding_box[1] = bound[1]; };
+			if (bound[2] < m_bounding_box[2]) { m_bounding_box[2] = bound[2]; };
+			if (bound[3] > m_bounding_box[3]) { m_bounding_box[3] = bound[3]; };
+			if (bound[4] < m_bounding_box[4]) { m_bounding_box[4] = bound[4]; };
+			if (bound[5] > m_bounding_box[5]) { m_bounding_box[5] = bound[5]; };
+		}
+		m_boudning_box_calculated = true;
+	};
+
+	memcpy(&bound, &m_bounding_box, sizeof(m_bounding_box));
 }
 
 double PolygonCollection::getClosestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const
@@ -251,6 +285,18 @@ PolygonCollection PolygonCollection::getTransformedPolygons(const SO::Plane &pla
 	return transformed_polygons;
 }
 
+PolygonCollection PolygonCollection::getTranslatedPolygons(const Eigen::Vector3d &new_origin) const
+{
+	SO::PolygonCollection transformed_polygons;
+
+	for (auto &polygon : m_polygons)
+	{
+		transformed_polygons.addPolygon(polygon.getTranslatedPolygon(new_origin));
+	}
+
+	return transformed_polygons;
+}
+
 PolygonCollection PolygonCollection::projectToOtherPlane(const SO::Plane &plane) const
 {
 	SO::PolygonCollection projected_contours;
@@ -271,7 +317,7 @@ PolygonCollection PolygonCollection::projectToOtherPlane(const SO::Plane &plane)
 	return projected_contours;
 }
 
-PolygonCollection PolygonCollection::offset(double distance)
+PolygonCollection PolygonCollection::getOffset(double distance)
 {
 	SO::PolygonCollection subject_contours = this->getTransformedPolygons(SO::Plane(m_plane.getOrigin(), Eigen::Vector3d::UnitZ()));
 
@@ -305,6 +351,50 @@ PolygonCollection PolygonCollection::getDifference(const PolygonCollection &othe
 	difference = difference.getTransformedPolygons(m_plane);
 
 	return difference;
+}
+
+PolygonCollection PolygonCollection::getIntersection(const PolygonCollection &other)
+{
+	// Check if this and other are located on the same plane.
+	if (this->m_plane != other.m_plane)
+	{
+		return *this;
+	}
+
+	SO::PolygonCollection contours_1 = this->getTransformedPolygons(SO::Plane(m_plane.getOrigin(), Eigen::Vector3d::UnitZ()));
+	SO::PolygonCollection contours_2 = other.getTransformedPolygons(SO::Plane(m_plane.getOrigin(), Eigen::Vector3d::UnitZ()));
+
+	Clipper2Lib::PathsD op1 = contours_1.getClipper2Polygons();
+	Clipper2Lib::PathsD op2 = contours_2.getClipper2Polygons();
+
+	Clipper2Lib::PathsD solution = Clipper2Lib::Intersect(op1, op2, Clipper2Lib::FillRule::NonZero);
+	solution = Clipper2Lib::SimplifyPaths(solution, 0.1);
+
+	SO::PolygonCollection intersected_contours(solution, SO::Plane(m_plane.getOrigin(), Eigen::Vector3d::UnitZ()));;
+	intersected_contours = intersected_contours.getTransformedPolygons(m_plane);
+	return intersected_contours;
+}
+
+PolygonCollection PolygonCollection::getUnion(const PolygonCollection &other)
+{
+	// Check if this and other are located on the same plane.
+	if (this->m_plane != other.m_plane)
+	{
+		return *this;
+	}
+
+	SO::PolygonCollection contours_1 = this->getTransformedPolygons(SO::Plane(m_plane.getOrigin(), Eigen::Vector3d::UnitZ()));
+	SO::PolygonCollection contours_2 = other.getTransformedPolygons(SO::Plane(m_plane.getOrigin(), Eigen::Vector3d::UnitZ()));
+
+	Clipper2Lib::PathsD op1 = contours_1.getClipper2Polygons();
+	Clipper2Lib::PathsD op2 = contours_2.getClipper2Polygons();
+
+	Clipper2Lib::PathsD solution = Clipper2Lib::Union(op1, op2, Clipper2Lib::FillRule::NonZero);
+	solution = Clipper2Lib::SimplifyPaths(solution, 0.1);
+
+	SO::PolygonCollection union_contours(solution, SO::Plane(m_plane.getOrigin(), Eigen::Vector3d::UnitZ()));;
+	union_contours = union_contours.getTransformedPolygons(m_plane);
+	return union_contours;
 }
 
 SO::Polygon PolygonCollection::getLargestPolygon() const
@@ -470,6 +560,11 @@ PolygonCollection &PolygonCollection::operator=(const PolygonCollection &other)
 	m_polygons = other.m_polygons;
 	m_plane = other.m_plane;
 	return *this;
+}
+
+SO::Polygon &PolygonCollection::operator[](unsigned int index)
+{
+	return m_polygons[index];
 }
 
 const SO::Polygon &PolygonCollection::operator[](unsigned int index) const

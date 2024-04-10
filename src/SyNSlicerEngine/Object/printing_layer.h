@@ -28,11 +28,11 @@ namespace SyNSlicerEngine::Object {
 		~PrintingLayer();
 
 		int getNumberOfContours();
-		const SO::Polygon &getContour(int index) const;
+		SO::Polygon &getContour(int index);
 		SO::PolygonCollection &getContours();
 
 		void setSupportStructureContours(const SO::PolygonCollection &input_support_structure_contours);
-		void addSupportStructureContours(const SO::PolygonCollection &input_support_structure_contours);
+		void addSupportStructureContours(SO::PolygonCollection &input_support_structure_contours);
 		SO::PolygonCollection &getSupportStructureContours();
 
 		Eigen::Vector3d &getOrigin();
