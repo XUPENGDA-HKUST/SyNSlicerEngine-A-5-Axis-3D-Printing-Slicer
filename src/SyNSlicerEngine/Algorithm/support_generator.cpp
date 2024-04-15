@@ -6,10 +6,9 @@
 using namespace Clipper2Lib;
 using SyNSlicerEngine::Algorithm::SupportGenerator;
 
-SupportGenerator::SupportGenerator(SO::PartitionCollection<CgalMesh_EPICK> &input_paritions, vtkRenderer *p_renderer)
+SupportGenerator::SupportGenerator(SO::PartitionCollection<CgalMesh_EPICK> &input_paritions)
 	: side_step(0.4)
 	, m_paritions(input_paritions)
-	, m_drawer(p_renderer)
 {
 	this->generateSupportStructure();
 	spdlog::get("basic_logger")->info("Construct SupportGenerator");

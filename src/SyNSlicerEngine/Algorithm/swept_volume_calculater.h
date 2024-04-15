@@ -25,7 +25,7 @@ namespace SyNSlicerEngine::Algorithm
 			\param p_mesh The partition going to be printed.
 			\param p_renderer The vtkRenderer.
 		*/
-		SweptVolumwCalculator(const SO::Partition<CgalMesh_EPICK> &partition, vtkRenderer *p_renderer = nullptr);
+		SweptVolumwCalculator(const SO::Partition<CgalMesh_EPICK> &partition);
 		~SweptVolumwCalculator();
 
 		// set the cross section of the nozzle here (Not finish yet)
@@ -43,7 +43,6 @@ namespace SyNSlicerEngine::Algorithm
 
 		SO::Partition<CgalMesh_EPICK> m_partition;
 		SO::PrintingLayer *mp_printing_layer;
-		vtkRenderer *mp_renderer;
 	};
 }
 

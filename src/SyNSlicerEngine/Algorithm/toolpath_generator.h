@@ -14,7 +14,6 @@
 #include "Object/toolpath.h"
 #include "Object/toolpath_collection.h"
 #include "Object/partition.h"
-#include "object_drawer.h"
 #include "infill_path_generator.h"
 
 namespace SO = SyNSlicerEngine::Object;
@@ -28,7 +27,7 @@ namespace SyNSlicerEngine::Algorithm {
 	class ToolpathGenerator
 	{
 	public:
-		ToolpathGenerator(SO::Partition<CgalMesh_EPICK> &partition, bool with_support = false, vtkRenderer *p_renderer = nullptr, bool debug = false);
+		ToolpathGenerator(SO::Partition<CgalMesh_EPICK> &partition, bool with_support = false);
 		~ToolpathGenerator();
 
 		void setPathPropertyForModel(int wall_count, int bottom_count, int top_count, int path_type, int infill_density, double side_step);
@@ -81,9 +80,6 @@ namespace SyNSlicerEngine::Algorithm {
 			const Eigen::Vector3d &point, 
 			const SO::Plane &source_plane, 
 			const SO::Plane &target_plane);
-
-		bool m_debug;
-		GUI::ObjectDrawer m_drawer;
 	};
 }
 

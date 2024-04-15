@@ -6,8 +6,7 @@ InfillPathGenerator::InfillPathGenerator(
 	const SO::PolygonCollection &contours,
 	const std::vector<SO::Plane> &cutting_planes,
 	double side_step,
-	int infill_type,
-	vtkRenderer *renderer)
+	int infill_type)
 	: m_contours(contours)
 	, m_cutting_planes(cutting_planes)
 	, m_side_step(side_step)
@@ -16,7 +15,6 @@ InfillPathGenerator::InfillPathGenerator(
 	, m_cgal_outer_contour(CgalPolygon2D_EPICK())
 	, m_cgal_inner_contours(std::vector<CgalPolygon2D_EPICK>())
 	, m_output(SO::PolygonCollection())
-	, m_drawer(renderer)
 {
 	for (size_t i = 0; i < m_contours.numberOfPolygons(); i++)
 	{
@@ -31,7 +29,6 @@ InfillPathGenerator::InfillPathGenerator(
 		else
 		{
 			spdlog::error("Polygon not simple {}", i);
-			m_drawer.drawPolygon(m_contours[i], "error");
 		}
 	}
 

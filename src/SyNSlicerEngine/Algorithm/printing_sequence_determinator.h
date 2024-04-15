@@ -10,7 +10,6 @@
 #include "Object/partition_collection.h"
 #include <Object/printing_layer_collection.h>
 #include "swept_volume_calculater.h"
-#include "object_drawer.h"
 
 namespace SO = SyNSlicerEngine::Object;
 
@@ -34,7 +33,7 @@ namespace SyNSlicerEngine::Algorithm
 			CollisionFreeAndSelfSupportive = 4
 		};
 
-		PrintingSequenceDeterminator(SO::PartitionCollection<CgalMesh_EPICK> &partition_list, vtkRenderer *p_renderer = nullptr);
+		PrintingSequenceDeterminator(SO::PartitionCollection<CgalMesh_EPICK> &partition_list);
 		~PrintingSequenceDeterminator();
 
 		PrintingSequenceStatus determinePrintingSequence();
@@ -49,8 +48,6 @@ namespace SyNSlicerEngine::Algorithm
 		std::vector<CgalMesh_EPICK> m_swept_volume_list;
 		SO::PartitionCollection<CgalMesh_EPICK> &m_printing_sequence; // From bottom to top
 		std::vector<std::pair<int, int>> collided_pairs;
-
-		GUI::ObjectDrawer m_drawer;
 	};
 }
 

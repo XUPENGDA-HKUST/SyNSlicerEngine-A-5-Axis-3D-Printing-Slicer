@@ -3,10 +3,9 @@
 using SyNSlicerEngine::Algorithm::AutoPartitioner;
 
 AutoPartitioner::AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, 
-    const SO::Nozzle &nozzle, vtkRenderer *renderer)
+    const SO::Nozzle &nozzle)
 	: m_partition(partition)
     , m_nozzle(nozzle)
-    , m_drawer(renderer)
 {
 	m_slicing_planes.emplace_back(
 		SO::Plane(
@@ -471,20 +470,6 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
    }
 
     //this->adjustPlaneOriginSoPointsAreOnPostiveSide(points_in_overhanging_triangles, temp_clipping_plane);
-
-    if (partition_time == -4)
-    {
-        SO::Line line(v1_s, v1_t);
-        m_drawer.drawLine(line, "Line");
-        m_drawer.drawTriangles(result_largest_overhanging_region.faces, mesh, std::string("Triangles") + std::to_string(partition_time));
-        m_drawer.setColor(std::string("Triangles") + std::to_string(partition_time), 0, 1, 0);     
-        m_drawer.drawMesh(mesh, std::string("Partition") + std::to_string(partition_time));
-        m_drawer.setOpacity(std::string("Partition") + std::to_string(partition_time), 0.2);
-        m_drawer.drawPolygons(partition.getBaseContours(), std::string("Base_contour") + std::to_string(partition_time));
-        m_drawer.drawPlane(temp_clipping_plane, "plane");
-        //m_drawer.drawPlane(plane_1, "plane1");
-        //m_drawer.drawPoints(vertices_to_ignore_list, "PointCloud");
-    }
 
     if (temp_clipping_plane.getNormal().dot(Eigen::Vector3d::UnitZ()) < 0.0)
     {
@@ -1052,42 +1037,6 @@ int AutoPartitioner::adjustPlaneNormalSoPointsAreOnNegativeSide(const EigenPoint
         clipping_plane = temp_clipping_plane;
     }
 
-    // Determine maximum angle that the normal is allow to shift.
-    /*
-    double c = pow(m_nozzle.getX(), 2) + pow(m_nozzle.getY() / 2, 2);
-    c = sqrt(c);
-    double h = base_plane.getDistanceFromPointToPlane(temp_clipping_plane.getOrigin());
-    double beta = acos(h / c);
-    double alpha = acos(m_nozzle.getX() / c);
-    double max_rotation_angle = M_PI - beta - alpha;
-
-    double value = temp_clipping_plane.getNormal().cross(base_plane.getNormal()).norm();
-    value = asin(value);
-    if (value > max_rotation_angle)
-    {
-        std::cout << value << " " << max_rotation_angle << std::endl;
-        Eigen::Transform<double, 3, Eigen::Affine> transformation_matrix;
-        transformation_matrix = Eigen::AngleAxis<double>(max_rotation_angle, reference_plane.getNormal());
-        Eigen::Vector3d new_normal = transformation_matrix.linear() * base_plane.getNormal();
-
-        if (new_normal.dot(temp_clipping_plane.getNormal()) < 0)
-        {
-            transformation_matrix = Eigen::AngleAxis<double>(max_rotation_angle, -reference_plane.getNormal());
-            new_normal = transformation_matrix.linear() * base_plane.getNormal();
-        }
-
-        temp_clipping_plane.setNormal(new_normal);
-        if (temp_clipping_plane.getNormal().dot(base_plane.getNormal()) < 0)
-        {
-            temp_clipping_plane.setNormal(-temp_clipping_plane.getNormal());
-        }
-        value = temp_clipping_plane.getNormal().cross(base_plane.getNormal()).norm();
-        value = asin(value);
-        std::cout << value << " " << max_rotation_angle << std::endl;
-        m_drawer.drawPlane(temp_clipping_plane, std::string("Plane") + std::to_string(partition_time));
-        clipping_plane = temp_clipping_plane;
-    }
-    */
     return 1;
 }
 

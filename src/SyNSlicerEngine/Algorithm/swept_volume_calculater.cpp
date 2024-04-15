@@ -2,11 +2,10 @@
 
 using SyNSlicerEngine::Algorithm::SweptVolumwCalculator;
 
-SweptVolumwCalculator::SweptVolumwCalculator(const SO::Partition<CgalMesh_EPICK> &partition, vtkRenderer *p_renderer)
+SweptVolumwCalculator::SweptVolumwCalculator(const SO::Partition<CgalMesh_EPICK> &partition)
 	: m_partition(partition)
 {
 	mp_printing_layer = nullptr;;
-	mp_renderer = p_renderer;
 	m_swept_volume_list.clear();
 	std::vector<CgalPoint_EPICK> pointcloud;
 	for (size_t i = 0; i < m_partition.getPrintingLayers().getNumberOfLayers(); i++)

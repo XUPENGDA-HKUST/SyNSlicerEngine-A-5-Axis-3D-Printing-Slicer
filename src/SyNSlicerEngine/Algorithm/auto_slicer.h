@@ -12,8 +12,6 @@
 #include <Object/printing_layer_collection.h>
 #include <Object/plane.h>
 
-#include "object_drawer.h"
-
 namespace SO = SyNSlicerEngine::Object;
 
 namespace SyNSlicerEngine::Algorithm
@@ -25,9 +23,8 @@ namespace SyNSlicerEngine::Algorithm
 	class AutoSlicer
 	{
 	public:
-		explicit AutoSlicer(SO::Partition<CgalMesh_EPICK> &p_partition, 
-			double target_layer_thickness, double side_step,
-			vtkRenderer *p_renderer = nullptr);
+		explicit AutoSlicer(SO::Partition<CgalMesh_EPICK> &p_partition,
+			double target_layer_thickness, double side_step);
 		~AutoSlicer();
 
 	private:
@@ -61,9 +58,6 @@ namespace SyNSlicerEngine::Algorithm
 		std::vector<Eigen::Vector3d> m_points_on_base_plane;
 		std::vector<SO::PolygonCollection> m_temp_slicing_result;
 		std::vector<SO::PolygonCollection> m_slicing_result;
-
-
-		GUI::ObjectDrawer m_drawer;
 	};
 }
 

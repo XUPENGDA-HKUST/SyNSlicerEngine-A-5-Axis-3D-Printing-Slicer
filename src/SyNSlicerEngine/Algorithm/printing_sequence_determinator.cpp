@@ -3,10 +3,8 @@
 using SyNSlicerEngine::Algorithm::PrintingSequenceDeterminator;
 
 PrintingSequenceDeterminator::PrintingSequenceDeterminator(
-	SO::PartitionCollection<CgalMesh_EPICK> &partition_list,
-	vtkRenderer *p_renderer)
+	SO::PartitionCollection<CgalMesh_EPICK> &partition_list)
 	: m_printing_sequence(partition_list)
-	, m_drawer(p_renderer)
 {
 	spdlog::info("Determining Printing Sequence");
 	this->determinePrintingSequence();
@@ -86,7 +84,6 @@ bool PrintingSequenceDeterminator::isSweptVolumeIntersectBuildPlate()
 			distance = plane.getDistanceFromPointToPlane(point);
 			if (distance < 0)
 			{
-				m_drawer.drawMesh(cgal_mesh, "Check" + std::to_string(i));
 				return true;
 			}
 		}
@@ -155,10 +152,6 @@ PrintingSequenceDeterminator::PrintingSequenceStatus PrintingSequenceDeterminato
 		{
 			if (isSweptVolumeIntersectParition(m_swept_volume_list[i], printing_sequence[j].getEPICKMesh()))
 			{
-				//m_drawer.drawMesh(m_swept_volume_list[i], "Check" + std::to_string(i));
-				//m_drawer.setOpacity("Check" + std::to_string(i), 0.2);
-				//m_drawer.drawMesh(printing_sequence[j].getEPICKMesh(), "Check" + std::to_string(j));
-
 				if (isSweptVolumeIntersectParition(m_swept_volume_list[j], printing_sequence[j].getEPICKMesh()))
 				{
 					return PrintingSequenceStatus::CollisionOccurAndCannotBeFixed;

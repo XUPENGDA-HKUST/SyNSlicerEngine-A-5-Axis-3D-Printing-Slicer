@@ -2,14 +2,13 @@
 
 using SyNSlicerEngine::Algorithm::AutoSlicer;
 
-AutoSlicer::AutoSlicer(SO::Partition<CgalMesh_EPICK> &p_partition, double target_layer_thickness, double side_step, vtkRenderer *p_renderer)
+AutoSlicer::AutoSlicer(SO::Partition<CgalMesh_EPICK> &p_partition, double target_layer_thickness, double side_step)
     : mp_operating_partition(&p_partition)
     , m_mesh(mp_operating_partition->getEPICKMesh())
     , m_slicer(m_mesh)
     , m_tree(faces(m_mesh).first, faces(m_mesh).second, m_mesh)
     , m_layer_thickness(target_layer_thickness)
     , m_side_step(side_step)
-    , m_drawer(p_renderer)
 {
     m_max_layer_thickness = 0.35;
     m_min_layer_thickness = 0.25;
@@ -118,12 +117,6 @@ bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contou
                     goto block_1;
                 }
             }
-        }
-
-        if (aaa == -50)
-        {
-            m_drawer.drawPlane(plane_up, "Plane_up");
-            m_drawer.drawPlane(m_temp_slicing_result.front().getPlane(), "Plane_1");
         }
 
         SO::Line intersecting_line = m_temp_slicing_result.front().getPlane().getIntersectionWithPlane(plane_up);

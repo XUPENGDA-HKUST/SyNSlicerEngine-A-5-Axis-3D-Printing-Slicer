@@ -9,12 +9,12 @@
 
 #include "Object_drawer.h"
 #include "Object/partition.h"
-#include "auto_partitioner.h"
-#include "auto_slicer.h"
-#include "support_generator.h"
-#include "printing_sequence_determinator.h"
-#include "toolpath_generator.h"
-#include "gcode_generator.h"
+#include "Algorithm/auto_partitioner.h"
+#include "Algorithm/auto_slicer.h"
+#include "Algorithm/support_generator.h"
+#include "Algorithm/printing_sequence_determinator.h"
+#include "Algorithm/toolpath_generator.h"
+#include "Algorithm/gcode_generator.h"
 #include "custom_slider.h"
 
 int main(int argc, char *argv[])
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
      */
     SO::Nozzle nozzle(0.4, 10, 10);
 
-    SyNSlicerEngine::Algorithm::AutoPartitioner auto_p(source_epick, nozzle, main_window.getRenderer());
+    SyNSlicerEngine::Algorithm::AutoPartitioner auto_p(source_epick, nozzle);
     auto_p.partition();
     SO::PartitionCollection<CgalMesh_EPICK> result = auto_p.getResult();
 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
                 255.0 / result.numberOfPartitions() * i,
                 255.0 / result.numberOfPartitions() * i);
             drawer.setOpacity(std::string("Mesh") + std::to_string(i), 0.2);
-            SyNSlicerEngine::Algorithm::AutoSlicer auto_s(result[i], 0.3, 0.4, main_window.getRenderer());
+            SyNSlicerEngine::Algorithm::AutoSlicer auto_s(result[i], 0.3, 0.4);
             SO::PrintingLayerCollection printing_layers = result[i].getPrintingLayers();
             printing_layers.update();
             //drawer.drawPolylines(printing_layers.getContours(), "Contour" + std::to_string(i));
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
         }
     }
  
-    SyNSlicerEngine::Algorithm::SupportGenerator support_generator(result, main_window.getRenderer());
+    SyNSlicerEngine::Algorithm::SupportGenerator support_generator(result);
 
     for (int i = 0; i < result.numberOfPartitions(); i++)
     {
@@ -124,9 +124,9 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < result.numberOfPartitions(); i++)
     {
-        SyNSlicerEngine::Algorithm::ToolpathGenerator generator(result[i], true, main_window.getRenderer());
-        generator.setPathPropertyForModel(2, 3, 3, 2, 30, 0.4);
-        generator.setPathPropertyForSupport(2, 3, 3, 2, 30, 0.4);
+        SyNSlicerEngine::Algorithm::ToolpathGenerator generator(result[i], true);
+        generator.setPathPropertyForModel(2, 3, 3, 0, 30, 0.4);
+        generator.setPathPropertyForSupport(2, 3, 3, 0, 30, 0.4);
         generator.generatePath();
     }
 

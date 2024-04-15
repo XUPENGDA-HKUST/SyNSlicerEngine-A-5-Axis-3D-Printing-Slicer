@@ -8,8 +8,6 @@
 #include "Object/partition_collection.h"
 #include "Object/polygon_collection.h"
 
-#include "object_drawer.h"
-
 namespace SO = SyNSlicerEngine::Object;
 
 namespace SyNSlicerEngine::Algorithm {
@@ -17,7 +15,7 @@ namespace SyNSlicerEngine::Algorithm {
 	class SupportGenerator
 	{
 	public:
-		SupportGenerator(SO::PartitionCollection<CgalMesh_EPICK> &input_paritions, vtkRenderer *p_renderer = nullptr);
+		SupportGenerator(SO::PartitionCollection<CgalMesh_EPICK> &input_paritions);
 		~SupportGenerator();
 
 		void generateSupportStructure();
@@ -44,8 +42,6 @@ namespace SyNSlicerEngine::Algorithm {
 		double side_step;
 
 		SO::PartitionCollection<CgalMesh_EPICK> &m_paritions;
-
-		GUI::ObjectDrawer m_drawer;
 	};
 }
 

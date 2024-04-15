@@ -6,10 +6,8 @@
 #include <CGAL_CORE_CLASS>
 
 #include "spdlog/spdlog.h"
-#include "vtkRenderer.h"
 
 #include "Object/polygon_collection.h"
-#include "object_drawer.h"
 
 namespace SO = SyNSlicerEngine::Object;
 
@@ -22,8 +20,7 @@ namespace SyNSlicerEngine::Algorithm
 			const SO::PolygonCollection &contours, 
 			const std::vector<SO::Plane> &cutting_planes,
 			double side_step,
-			int infill_type,
-			vtkRenderer *renderer = nullptr);
+			int infill_type);
 		~InfillPathGenerator();
 
 		void generateInfillPath();
@@ -49,7 +46,7 @@ namespace SyNSlicerEngine::Algorithm
 		SO::PolygonCollection m_output;
 
 	private:
-		GUI::ObjectDrawer m_drawer;
+
 	};
 }
 

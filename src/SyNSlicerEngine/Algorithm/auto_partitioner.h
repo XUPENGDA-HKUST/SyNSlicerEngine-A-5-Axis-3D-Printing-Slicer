@@ -16,8 +16,6 @@
 #include "Object/partition_collection.h"
 #include "Object/skeleton.h"
 
-#include "object_drawer.h"
-
 namespace SO = SyNSlicerEngine::Object;
 
 namespace SyNSlicerEngine::Algorithm
@@ -26,7 +24,7 @@ namespace SyNSlicerEngine::Algorithm
 	{
 	public:
 		AutoPartitioner() = delete;
-		AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, const SO::Nozzle &nozzle, vtkRenderer *renderer = nullptr);
+		AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, const SO::Nozzle &nozzle);
 		~AutoPartitioner();
 
 		enum Case { ResultValid = 0, ResultInvalid = 1, TriangleTooSmall = 2 };
@@ -91,8 +89,6 @@ namespace SyNSlicerEngine::Algorithm
 		CgalContours_EPICK m_prev_contours;
 
 		SO::Nozzle m_nozzle;
-
-		GUI::ObjectDrawer m_drawer;
 	};
 }
 
