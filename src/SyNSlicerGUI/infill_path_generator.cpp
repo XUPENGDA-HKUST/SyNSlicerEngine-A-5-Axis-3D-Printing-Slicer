@@ -28,12 +28,21 @@ InfillPathGenerator::InfillPathGenerator(
 		{
 			counter_clockwise_contours.addPolygon(m_contours[i]);
 		}
+		else
+		{
+			spdlog::error("Polygon not simple {}", i);
+			m_drawer.drawPolygon(m_contours[i], "error");
+		}
 	}
 
 	if (counter_clockwise_contours.numberOfPolygons() < 1)
 	{
-		spdlog::error("Input contours have no counter clockwise contour!");
 		m_is_inputs_valid = false;
+	}
+
+	if (clockwise_contours.numberOfPolygons() > 0)
+	{
+		spdlog::error("Input contours have clockwise contour but no counter clockwise contour!");
 	}
 }
 
@@ -49,10 +58,10 @@ void InfillPathGenerator::generateInfillPath()
 		generateContourParallelInfillPath();
 		break;
 	case 1:
-		generateGridInfillPath();
+		generateZigZagInfillPath();
 		break;
 	case 2:
-		generateZigZagInfillPath();
+		generateGridInfillPath();
 		break;
 	default:
 		break;
@@ -63,7 +72,7 @@ void InfillPathGenerator::getOutput(SO::PolygonCollection &ouput)
 {
 	if (m_is_inputs_valid == false)
 	{
-		spdlog::error("No output can be provided because the inputs are not valid!");
+		//spdlog::error("No output can be provided because the inputs are not valid!");
 		return;	
 	}
 	ouput = m_output;
@@ -75,11 +84,12 @@ void InfillPathGenerator::generateGridInfillPath()
 {
 	if (m_is_inputs_valid == false)
 	{
-		spdlog::error("Generation will not be performed because the inputs are not valid!");
+		//spdlog::error("Generation will not be performed because the inputs are not valid!");
 		return;
 	}
 
 	SO::Polygon temp_polygon;
+	temp_polygon.setPlane(m_contours.getPlane());
 
 	int cutting_plane_index = 0;
 	for (auto &cutting_plane : m_cutting_planes)
@@ -140,6 +150,7 @@ void InfillPathGenerator::generateGridInfillPath()
 						temp_polygon.addPointToBack(intersecting_points[i]);
 						m_output.addPolygon(temp_polygon);
 						temp_polygon.reset();
+						temp_polygon.setPlane(m_contours.getPlane());
 					}
 				}
 				j = i;

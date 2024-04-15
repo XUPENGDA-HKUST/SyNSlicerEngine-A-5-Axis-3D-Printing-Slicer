@@ -334,6 +334,7 @@ PolygonCollection PolygonCollection::getOffset(double distance)
 	SO::PolygonCollection subject_contours = this->getTransformedPolygons(SO::Plane(m_plane.getOrigin(), Eigen::Vector3d::UnitZ()));
 
 	Clipper2Lib::PathsD subject = subject_contours.getClipper2Polygons();
+	subject = Clipper2Lib::Union(subject, Clipper2Lib::FillRule::NonZero);
 	subject = Clipper2Lib::InflatePaths(subject, distance, Clipper2Lib::JoinType::Miter, Clipper2Lib::EndType::Polygon);
 	subject = Clipper2Lib::SimplifyPaths(subject, 0.1);
 

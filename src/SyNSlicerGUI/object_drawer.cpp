@@ -321,6 +321,11 @@ void ObjectDrawer::setOpacity(std::string name, double opacity)
 	m_object_in_renderer[name]->setOpacity(opacity);
 }
 
+int ObjectDrawer::numberOfObjectsDrawn()
+{
+	return m_object_in_renderer.size();
+}
+
 GUI::ObjectForVisualization *ObjectDrawer::getObjectDrawn(std::string name)
 {
 	return m_object_in_renderer[name];
@@ -331,6 +336,19 @@ void ObjectDrawer::removeObjectDrawn(std::string name)
 	mp_renderer->RemoveActor(m_object_in_renderer[name]->getActor());
 	delete m_object_in_renderer[name];
 	m_object_in_renderer.erase(name);
+}
+
+int ObjectDrawer::removeAllObjectsDrawn()
+{
+	int number_of_objects_removed = m_object_in_renderer.size();
+	for (auto &[name, actor] : m_object_in_renderer)
+	{
+		mp_renderer->RemoveActor(m_object_in_renderer[name]->getActor());
+		delete m_object_in_renderer[name];
+	}
+	m_object_in_renderer.clear();
+	assert(m_object_in_renderer.size() == 0);
+	return number_of_objects_removed;
 }
 
 void ObjectDrawer::addObjectToRenderer(vtkPolyData *p_polydata, std::string name)

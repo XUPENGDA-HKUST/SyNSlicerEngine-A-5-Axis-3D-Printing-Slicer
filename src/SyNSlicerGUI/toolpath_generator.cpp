@@ -2,10 +2,11 @@
 
 using SyNSlicerEngine::Algorithm::ToolpathGenerator;
 
-ToolpathGenerator::ToolpathGenerator(SO::Partition<CgalMesh_EPICK> &partition, bool with_support, vtkRenderer *p_renderer)
+ToolpathGenerator::ToolpathGenerator(SO::Partition<CgalMesh_EPICK> &partition, bool with_support, vtkRenderer *p_renderer, bool debug)
     : mp_partition(&partition)
     , m_drawer(p_renderer)
     , m_side_step(0.4)
+    , m_debug(debug)
 {
     m_with_support = with_support;
 };
@@ -66,6 +67,7 @@ void ToolpathGenerator::generatePath()
     }
 }
 
+static int aaa = 0;
 void ToolpathGenerator::determineOriginOfAllPrintingLayers()
 {
     if (mp_partition->getPrintingLayers().size() < 1)
@@ -81,6 +83,10 @@ void ToolpathGenerator::determineOriginOfAllPrintingLayers()
     {
         SO::Plane target_plane(intersecting_line.getSource(), first_printing_layer.getPrevSlicingPlane().getNormal());
         contours_of_the_first_layer = contours_of_the_first_layer.getTransformedPolygons(target_plane);
+    }
+    else
+    {
+        contours_of_the_first_layer = contours_of_the_first_layer.projectToOtherPlane(first_printing_layer.getPrevSlicingPlane());
     }
 
     if (first_printing_layer.getPrevSlicingPlane().isIntersectedWithPlane(SO::Plane(), intersecting_line))
@@ -543,7 +549,7 @@ void ToolpathGenerator::generateTopBottomUnionAndInfillContoursForModel(int wall
 
         current_layer.getPrintingPaths().getBottomTopUnion() = contours;
 
-        InfillPathGenerator infill_generator(infill_contours, m_cutting_planes, m_side_step, 2, m_drawer.getRenderer());
+        InfillPathGenerator infill_generator(infill_contours, m_cutting_planes, m_side_step, 1, m_drawer.getRenderer());
         infill_generator.generateInfillPath();
         infill_generator.getOutput(infill_contours);
         infill_contours = infill_contours.getTransformedPolygons(SO::Plane(m_center_of_infill_cutting_planes, current_layer.getSlicingPlane().getNormal()));
@@ -589,15 +595,24 @@ void ToolpathGenerator::generateInfillForModel(int wall_count, int infill_type)
         
         SO::PolygonCollection infill_contours = contours;
 
+        for (size_t i = 0; i < infill_contours.numberOfPolygons(); i++)
+        {
+            if (infill_contours[i].isClockWise() == 0)
+            {
+                //m_drawer.drawPolygon(infill_contours[i], "error");
+            }
+        }
+
         contours = contours.getTransformedPolygons(
             SO::Plane(m_center_of_infill_cutting_planes, Eigen::Vector3d::UnitX()),
             SO::Plane(m_center_of_infill_cutting_planes, direction_1_target - m_center_of_infill_cutting_planes));
+
         contours = contours.getTransformedPolygons(SO::Plane(m_center_of_infill_cutting_planes, current_layer.getSlicingPlane().getNormal()));
         contours = contours.getTranslatedPolygons(local_center);
         contours.closePolygons();
         current_layer.getPrintingPaths().getInfill() = contours;
 
-        InfillPathGenerator infill_generator(infill_contours, m_cutting_planes, m_side_step, m_infill_type);
+        InfillPathGenerator infill_generator(infill_contours, m_cutting_planes, m_side_step, m_infill_type, m_drawer.getRenderer());
         infill_generator.generateInfillPath();
         infill_generator.getOutput(infill_contours);
         infill_contours = infill_contours.getTransformedPolygons(

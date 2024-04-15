@@ -26,6 +26,7 @@ namespace SyNSlicerEngine::Object
 		void addPartition(const SO::Partition<T> &partition);
 		SO::Partition<T> &back();
 		void pop_back();
+		std::vector<SO::Partition<T>> &get();
 
 		int numberOfPartitions() const;
 		void determinePrintingSequence();
@@ -76,6 +77,11 @@ namespace SyNSlicerEngine::Object
 	inline void PartitionCollection<T>::pop_back()
 	{
 		m_partitions.pop_back();
+	}
+	template <class T>
+	inline std::vector<SO::Partition<T>> &PartitionCollection<T>::get()
+	{
+		return m_partitions;
 	}
 
 	template <class T>

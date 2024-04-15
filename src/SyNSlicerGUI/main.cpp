@@ -14,8 +14,8 @@
 #include "support_generator.h"
 #include "printing_sequence_determinator.h"
 #include "toolpath_generator.h"
-
-#define getName(var) #var
+#include "gcode_generator.h"
+#include "custom_slider.h"
 
 int main(int argc, char *argv[])
 {
@@ -53,8 +53,8 @@ int main(int argc, char *argv[])
     drawer.setColor("Check2", 1, 0, 0);
     */
     // SO::Partition<CgalMesh_EPICK> source_epick("../data/firebird_1mm_zero.stl");
-    // SO::Partition<CgalMesh_EPICK> source_epick("../data/bunny_Z_zero_1500.stl");
-    SO::Partition<CgalMesh_EPICK> source_epick("../data/L_shape.stl");
+    SO::Partition<CgalMesh_EPICK> source_epick("../data/bunny_Z_zero_1500.stl");
+    // SO::Partition<CgalMesh_EPICK> source_epick("../data/L_shape.stl");
     // SO::Partition<CgalMesh_EPICK> source_epick("../data/Check/Part_0.stl");
     
     // SO::Partition source("../data/triceratops.stl");
@@ -73,6 +73,7 @@ int main(int argc, char *argv[])
     //source_epick.setBasePlane(plane_up_6);
     source_epick.setBasePlane(SO::Plane(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 1)));
 
+    /*
     drawer.drawMesh(source_epick.getEPICKMesh(), "123");
     drawer.setOpacity("123", 0.2);
 
@@ -81,11 +82,11 @@ int main(int argc, char *argv[])
     printing_layers.update();
     SO::PartitionCollection<CgalMesh_EPICK> result;
     result.addPartition(source_epick);
-
-    /*
+ 
+    
     drawer.drawPolylines(printing_layers.getContours(), "Contour");
     drawer.setColor("Contour", 1, 0, 0);
-
+     */
     SO::Nozzle nozzle(0.4, 10, 10);
 
     SyNSlicerEngine::Algorithm::AutoPartitioner auto_p(source_epick, nozzle, main_window.getRenderer());
@@ -109,7 +110,7 @@ int main(int argc, char *argv[])
             //drawer.setColor("Contour" + std::to_string(i), 1, 0, 0);
         }
     }
-    */
+ 
     SyNSlicerEngine::Algorithm::SupportGenerator support_generator(result, main_window.getRenderer());
 
     for (int i = 0; i < result.numberOfPartitions(); i++)
@@ -124,35 +125,27 @@ int main(int argc, char *argv[])
     for (int i = 0; i < result.numberOfPartitions(); i++)
     {
         SyNSlicerEngine::Algorithm::ToolpathGenerator generator(result[i], true, main_window.getRenderer());
-        generator.setPathPropertyForModel(2, 3, 3, 1, 100, 0.4);
-        generator.setPathPropertyForSupport(2, 3, 3, 1, 100, 0.4);
+        generator.setPathPropertyForModel(2, 3, 3, 2, 30, 0.4);
+        generator.setPathPropertyForSupport(2, 3, 3, 2, 30, 0.4);
         generator.generatePath();
     }
 
-    for (int i = 0; i < result.numberOfPartitions(); i++)
-    {
-        for (int j = 0; j < result[i].getPrintingLayers().size(); j++)
-        {
-            drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPathsForSupport().getSurface(), "S" + std::to_string(i) + std::to_string(j));
-            drawer.setColor("S" + std::to_string(i) + std::to_string(j), 1, 0, 0);
- 
-            for (int k = 0; k < result[i].getPrintingLayers()[j].getPrintingPathsForSupport().getWall().size(); k++)
-            {
-                drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPathsForSupport().getWall()[k],
-                    "W" + std::to_string(i) + std::to_string(j) + std::to_string(k));
-                drawer.setColor("W" + std::to_string(i) + std::to_string(j) + std::to_string(k), 0, 0, 1);
-            }
-            
-            drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPathsForSupport().getBottomTopUnion(),
-                "BT" + std::to_string(i) + std::to_string(j));
-            drawer.setColor("BT" + std::to_string(i) + std::to_string(j), 0, 1, 0);
-            
-            drawer.drawPolygons(result[i].getPrintingLayers()[j].getPrintingPathsForSupport().getInfill(),
-                "I" + std::to_string(i) + std::to_string(j));
-            drawer.setColor("I" + std::to_string(i) + std::to_string(j), 0, 1, 0);
+    SyNSlicerEngine::Algorithm::GcodeGenerator gcode_generator(result);
+    gcode_generator.generateToolpathForEachLayer();
+    gcode_generator.generateCompletedToolpath();
+    gcode_generator.writeGcode();
 
-        }
+    SO::Toolpath m_completed_tool_path = gcode_generator.getCompletedToolpath();
+    SO::Polyline polyline;
+    for (size_t i = 0; i < m_completed_tool_path.size(); i++)
+    {
+        polyline.push_back(m_completed_tool_path[i].getPosition());
     }
+
+    //drawer.drawPolyline(polyline, "ToolPath");
+    //drawer.setColor("ToolPath", 1, 0, 0);
+ 
+    GUI::LayerPreviewSlider layer_preview(result, main_window.getRenderer());
 
     main_window.resetCamera();
     main_window.render();

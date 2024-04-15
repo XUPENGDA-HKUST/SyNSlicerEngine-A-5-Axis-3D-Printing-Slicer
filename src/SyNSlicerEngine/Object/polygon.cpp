@@ -75,6 +75,11 @@ int Polygon::isClockWise() const
 		cgal_polygon.push_back(CgalPoint2D_EPICK(point[0], point[1]));
 	}	
 
+	if (!cgal_polygon.is_simple())
+	{
+		return 0;
+	}
+
 	if (cgal_polygon.is_clockwise_oriented())
 	{
 		return 1;
@@ -525,7 +530,7 @@ void Polygon::addPointToBack(const Eigen::Vector3d &point)
 {
 	if (!this->m_plane.isPointOnPlane(point, 1e-2))
 	{
-		std::cout << "Point add to back is not on plane!" << std::endl;
+		std::cout << "Point add to back is not on plane! " << this->m_plane.getDistanceFromPointToPlane(point) << std::endl;
 	}
 	m_polygon.emplace_back(point);
 }

@@ -44,8 +44,10 @@ namespace GUI {
 		void setColor(std::string name, double r, double g, double b);
 		void setOpacity(std::string name, double opacity);
 
+		int numberOfObjectsDrawn();
 		GUI::ObjectForVisualization *getObjectDrawn(std::string name);
 		void removeObjectDrawn(std::string name);
+		int removeAllObjectsDrawn();
 
 	private:
 		void addObjectToRenderer(vtkPolyData *p_polydata, std::string name);

@@ -28,7 +28,7 @@ namespace SyNSlicerEngine::Algorithm {
 	class ToolpathGenerator
 	{
 	public:
-		ToolpathGenerator(SO::Partition<CgalMesh_EPICK> &partition, bool with_support = false, vtkRenderer *p_renderer = nullptr);
+		ToolpathGenerator(SO::Partition<CgalMesh_EPICK> &partition, bool with_support = false, vtkRenderer *p_renderer = nullptr, bool debug = false);
 		~ToolpathGenerator();
 
 		void setPathPropertyForModel(int wall_count, int bottom_count, int top_count, int path_type, int infill_density, double side_step);
@@ -82,6 +82,7 @@ namespace SyNSlicerEngine::Algorithm {
 			const SO::Plane &source_plane, 
 			const SO::Plane &target_plane);
 
+		bool m_debug;
 		GUI::ObjectDrawer m_drawer;
 	};
 }
