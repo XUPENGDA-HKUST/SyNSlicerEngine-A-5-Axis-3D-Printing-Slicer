@@ -35,9 +35,14 @@ namespace SyNSlicerEngine::Object {
 		int isClockWise() const;
 
 		Eigen::Vector3d centroid() const;
-		void getBoundingBox(double(&bound)[6]);
+		Eigen::Vector3d getCentroid() const;
 		double area() const;
+		double getArea() const;
 		double length() const;
+		double getLength() const;
+
+		void getBoundingBox(double(&bound)[6]);
+
 		bool isIntersectedWithPlane(const SO::Plane &plane);
 		bool isIntersectedWithPlane(const SO::Plane &plane, std::vector<Eigen::Vector3d> &intersecting_points) const;
 
@@ -55,8 +60,13 @@ namespace SyNSlicerEngine::Object {
 		Polygon getTranslatedPolygon(const Eigen::Vector3d &new_origin) const;
 		Polygon getConvexHullPolygon() const;
 
-
 		void addPointToBack(const Eigen::Vector3d &point);
+
+		void push_back(const Eigen::Vector3d &point);
+		void emplace_back(const Eigen::Vector3d &point);
+		void pop_back();
+		int size();
+		void clear();
 
 		Eigen::Vector3d operator[](unsigned int index) const;
 		Polygon &operator=(const Polygon &other);

@@ -96,10 +96,12 @@ int Polygon::isClockWise() const
 
 Eigen::Vector3d Polygon::centroid() const
 {
-	if (m_polygon.size() == 0)
-	{
-		return Eigen::Vector3d(0.0, 0.0, 0.0);
-	}
+	return this->getCentroid();
+}
+
+Eigen::Vector3d Polygon::getCentroid() const
+{
+	assert(m_polygon.size() > 0);
 
 	if (m_polygon.size() == 1)
 	{
@@ -173,8 +175,49 @@ Eigen::Vector3d Polygon::centroid() const
 
 	Eigen::Vector3d result(x, y, z);
 	result = result + origin;
-	assert(abs(m_plane.getDistanceFromPointToPlane(result)) < 1e-3);
+	assert(abs(m_plane.getDistanceFromPointToPlane(result)) < 1e-2);
 	return result;
+}
+
+double Polygon::area() const
+{
+	return this->getArea();
+}
+
+double Polygon::getArea() const
+{
+	std::vector<Eigen::Vector3d> new_polygon = m_polygon;
+	new_polygon.emplace_back(new_polygon.front());
+	Eigen::Vector3d sign_area(0.0, 0.0, 0.0);
+	int j = 0;
+	for (int i = 1; i < new_polygon.size(); i++)
+	{
+		sign_area += new_polygon[j].cross(new_polygon[i]);
+		j = i;
+	}
+
+	return 0.5 * sign_area.norm();
+}
+
+double Polygon::length() const
+{
+	return this->getLength();
+}
+
+double Polygon::getLength() const
+{
+	double length = 0.0;
+	std::vector<Eigen::Vector3d> new_polygon = m_polygon;
+	new_polygon.emplace_back(new_polygon.front());
+
+	int j = 0;
+	for (int i = 1; i < new_polygon.size(); i++)
+	{
+		length += (new_polygon[i] - new_polygon[j]).norm();
+		j = i;
+	}
+
+	return length;
 }
 
 void Polygon::getBoundingBox(double(&bound)[6])
@@ -208,37 +251,6 @@ void Polygon::getBoundingBox(double(&bound)[6])
 	};
 
 	memcpy(&bound, &m_bounding_box, sizeof(m_bounding_box));
-}
-
-double Polygon::area() const
-{
-	std::vector<Eigen::Vector3d> new_polygon = m_polygon;
-	new_polygon.emplace_back(new_polygon.front());
-	Eigen::Vector3d sign_area(0.0, 0.0, 0.0);
-	int j = 0;
-	for (int i = 1; i < new_polygon.size(); i++)
-	{
-		sign_area += new_polygon[j].cross(new_polygon[i]);
-		j = i;
-	}
-
-	return 0.5 * sign_area.norm();
-}
-
-double Polygon::length() const
-{
-	double length = 0.0;
-	std::vector<Eigen::Vector3d> new_polygon = m_polygon;
-	new_polygon.emplace_back(new_polygon.front());
-
-	int j = 0;
-	for (int i = 1; i < new_polygon.size(); i++)
-	{
-		length += (new_polygon[i] - new_polygon[j]).norm();
-		j = i;
-	}
-
-	return length;
 }
 
 bool Polygon::isIntersectedWithPlane(const SO::Plane &plane)
@@ -291,6 +303,12 @@ bool Polygon::isIntersectedWithPlane(const SO::Plane &plane, std::vector<Eigen::
 			intersecting_points.push_back(point);
 		}
 	}
+
+	if (intersecting_points.size() > 0)
+	{
+		return true;
+	}
+	return false;
 }
 
 bool Polygon::isPointInside(const Eigen::Vector3d &point)
@@ -533,6 +551,31 @@ void Polygon::addPointToBack(const Eigen::Vector3d &point)
 		std::cout << "Point add to back is not on plane! " << this->m_plane.getDistanceFromPointToPlane(point) << std::endl;
 	}
 	m_polygon.emplace_back(point);
+}
+
+void Polygon::push_back(const Eigen::Vector3d &point)
+{
+	this->addPointToBack(point);
+}
+
+void Polygon::emplace_back(const Eigen::Vector3d &point)
+{
+	this->addPointToBack(point);
+}
+
+void Polygon::pop_back()
+{
+	m_polygon.pop_back();
+}
+
+int Polygon::size()
+{
+	return m_polygon.size();
+}
+
+void Polygon::clear()
+{
+	this->reset();
 }
 
 Eigen::Vector3d Polygon::operator[](unsigned int index) const

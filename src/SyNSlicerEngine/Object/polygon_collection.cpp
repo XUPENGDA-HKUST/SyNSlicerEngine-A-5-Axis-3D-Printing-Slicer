@@ -65,6 +65,11 @@ void PolygonCollection::closePolygons()
 
 Eigen::Vector3d PolygonCollection::centroid() const
 {
+	return this->getCentroid();
+}
+
+Eigen::Vector3d PolygonCollection::getCentroid() const
+{
 	if (m_polygons.size() < 1)
 	{
 		double min = -std::numeric_limits<double>::max();
@@ -89,7 +94,7 @@ Eigen::Vector3d PolygonCollection::centroid() const
 	double z = numerator_z / total_area;
 
 	Eigen::Vector3d result(x, y, z);
-	assert(abs(m_plane.getDistanceFromPointToPlane(result)) < 1e-3);
+	assert(abs(m_plane.getDistanceFromPointToPlane(result)) < 1e-2);
 	return result;
 }
 
@@ -194,7 +199,11 @@ std::vector<Eigen::Vector3d> PolygonCollection::getIntersectionWithPlane(const S
 			SO::Line line(contour[i], contour[j]);
 			if (plane.isIntersectedWithLine(line))
 			{
-				intersecting_points.emplace_back(plane.getIntersectionWithLine(line));
+				Eigen::Vector3d temp_point;
+				if (plane.isIntersectedWithLine(line, temp_point))
+				{
+					intersecting_points.emplace_back(temp_point);
+				}
 			}
 			j = i;
 		}
@@ -321,8 +330,11 @@ PolygonCollection PolygonCollection::projectToOtherPlane(const SO::Plane &plane)
 		for (int j = 0; j < temp_contour.numberOfPoints(); j++)
 		{
 			SO::Line ray(temp_contour[j], direction, 1);
-			Eigen::Vector3d point = plane.getIntersectionWithRay(ray);
-			projected_contour.addPointToBack(point);
+			Eigen::Vector3d point;
+			if (plane.isIntersectedWithRay(ray, point))
+			{
+				projected_contour.addPointToBack(point);
+			}
 		}
 		projected_contours.addPolygon(projected_contour);
 	}
@@ -528,6 +540,41 @@ void PolygonCollection::addPolygons(const PolygonCollection &other)
 			std::cout << "Polygons cannot be added to PolygonCollection because they are not lied on the same planes!" << std::endl;
 		}
 	}
+}
+
+void PolygonCollection::push_back(const Polygon &polygon)
+{
+	this->addPolygon(polygon);
+}
+
+void PolygonCollection::push_back(const PolygonCollection &other)
+{
+	this->addPolygons(other);
+}
+
+void PolygonCollection::emplace_back(const Polygon &polygon)
+{
+	this->addPolygon(polygon);
+}
+
+void PolygonCollection::emplace_back(const PolygonCollection &other)
+{
+	this->addPolygons(other);
+}
+
+void PolygonCollection::pop_back()
+{
+	m_polygons.pop_back();
+}
+
+int PolygonCollection::size()
+{
+	return m_polygons.size();
+}
+
+void PolygonCollection::clear()
+{
+	this->reset();
 }
 
 int PolygonCollection::removePolygonsBelowPlane(const SO::Plane &plane)

@@ -25,6 +25,8 @@ namespace SyNSlicerEngine::Object {
 		void closePolygons();
 
 		Eigen::Vector3d centroid() const;
+		Eigen::Vector3d getCentroid() const;
+
 		void getBoundingBox(double(&bound)[6]);
 
 		double getClosestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const;
@@ -56,6 +58,16 @@ namespace SyNSlicerEngine::Object {
 		void addPolygon(const Polygon &polygon);
 		void addPolygons(const PolygonCollection &other);
 		
+		void push_back(const Polygon &polygon);
+		void push_back(const PolygonCollection &other);
+
+		void emplace_back(const Polygon &polygon);
+		void emplace_back(const PolygonCollection &other);
+
+		void pop_back();
+		int size();
+		void clear();
+
 		int removePolygonsBelowPlane(const SO::Plane &plane);
 
 		void setPlane(const Plane &plane);
