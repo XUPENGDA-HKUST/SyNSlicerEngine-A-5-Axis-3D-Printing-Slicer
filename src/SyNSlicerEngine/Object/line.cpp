@@ -3,6 +3,11 @@
 using namespace SyNSlicerEngine::Object;
 
 Line::Line()
+	: m_source(Eigen::Vector3d(0, 0, 0))
+	, m_target(Eigen::Vector3d(0, 0, 1))
+	, m_direction(Eigen::Vector3d(0, 0, 1))
+	, m_length(1.0)
+	, m_is_valid(true)
 {
 
 }
@@ -50,6 +55,18 @@ Line::~Line()
 {
 }
 
+bool Line::isValid()
+{
+	if (m_length < 1e-6)
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+
 void Line::printInfo()
 {
 	printf("Source: %f %f %f, Target: %f %f %f, Length: %f\n", m_source[0], m_source[1], m_source[2], m_target[0], m_target[1], m_target[2], m_length);
@@ -64,6 +81,7 @@ void Line::setLine(const Eigen::Vector3d &source, const Eigen::Vector3d &target)
 	{
 		m_direction = (m_target - m_source) / m_length;
 	};
+	m_is_valid = this->isValid();
 }
 
 void Line::setLine(const Eigen::Vector3d &source, const Eigen::Vector3d &direction, double length)
@@ -76,6 +94,7 @@ void Line::setLine(const Eigen::Vector3d &source, const Eigen::Vector3d &directi
 	};
 	m_length = length;
 	m_target = m_source + m_length * m_direction;
+	m_is_valid = this->isValid();
 }
 
 const Eigen::Vector3d &Line::getSource() const
@@ -135,7 +154,8 @@ std::vector<Eigen::Vector3d> Line::getRefinedLine(double gap)
 }
 
 double Line::getDistanceOfPoint(const Eigen::Vector3d &point) const
-{
+{	
+	assert(m_is_valid);
 	Eigen::Vector3d v0(point - m_source);
 	double t = v0.dot(m_direction);
 	Eigen::Vector3d v1 = m_source + t * m_direction;
@@ -144,6 +164,7 @@ double Line::getDistanceOfPoint(const Eigen::Vector3d &point) const
 
 double Line::getDistanceFromPointToLineSegment(const Eigen::Vector3d &point) const
 {
+	assert(m_is_valid);
 	double distance = 0.0;
 	Eigen::Vector3d v0(point - this->m_source);
 	double t = v0.dot(this->m_direction);
@@ -167,6 +188,7 @@ double Line::getDistanceFromPointToLineSegment(const Eigen::Vector3d &point) con
 
 Eigen::Vector3d Line::getProjectionOfPointOntoRay(const Eigen::Vector3d &point)
 {
+	assert(m_is_valid);
 	Eigen::Vector3d result;
 	Eigen::Vector3d v0(point - this->m_source);
 	double t = v0.dot(this->m_direction);
