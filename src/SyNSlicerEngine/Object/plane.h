@@ -57,13 +57,11 @@ namespace SyNSlicerEngine::Object {
 		bool isLineOnPlane(const SO::Line &line, double epsilon = 1e-6) const;
 		bool isIntersectedWithLine(const SO::Line &line) const;
 		bool isIntersectedWithLine(const SO::Line &line, Eigen::Vector3d &point) const;
-		Eigen::Vector3d getIntersectionWithLine(const SO::Line &line) const;
 		bool isIntersectedWithRay(const SO::Line &ray) const;
-		Eigen::Vector3d getIntersectionWithRay(const SO::Line &ray) const;
-
+		bool isIntersectedWithRay(const SO::Line &ray, Eigen::Vector3d &point) const;
 		bool isIntersectedWithPlane(const Plane &other) const;
 		bool isIntersectedWithPlane(const Plane &other, SO::Line &intersecting_line) const;
-		SO::Line getIntersectionWithPlane(const Plane &other) const;
+
 		double getAngleOfRotation(const Plane &destination) const;
 		Eigen::Vector3d getAxisOfRotation(const Plane &destination) const;
 		Eigen::Transform<double, 3, Eigen::Affine> getTransformationMatrix(const Plane &destination) const;
@@ -79,6 +77,7 @@ namespace SyNSlicerEngine::Object {
 		Eigen::Vector3d m_origin;
 		Eigen::Vector3d m_normal;
 		double m_distance;
+		bool m_is_valid;
 
 	private:
 		Eigen::Vector3d findPointLocatedOnPlane();

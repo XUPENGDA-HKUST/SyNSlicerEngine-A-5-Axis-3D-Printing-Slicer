@@ -6,6 +6,7 @@ Plane::Plane()
 	: m_origin(0, 0, 0)
 	, m_normal(0, 0, 1)
 	, m_distance(0.0)
+	, m_is_valid(true)
 { 
 
 }
@@ -45,8 +46,8 @@ bool Plane::isValid()
 	if (isnan(m_origin[1])) { return false; };
 	if (isnan(m_origin[2])) { return false; };
 	if (isnan(m_normal[0])) { return false; };
-	if (isnan(m_normal[0])) { return false; };
-	if (isnan(m_normal[0])) { return false; };
+	if (isnan(m_normal[1])) { return false; };
+	if (isnan(m_normal[2])) { return false; };
 	return true;
 }
 
@@ -61,6 +62,7 @@ void Plane::setOrigin(const Eigen::Vector3d &input_origin)
 {
 	m_origin = input_origin;
 	m_distance = -m_origin.dot(m_normal);
+	m_is_valid = this->isValid();
 }
 
 const Eigen::Vector3d &Plane::getOrigin() const
@@ -72,6 +74,7 @@ void Plane::setNormal(const Eigen::Vector3d &input_normal)
 {
 	m_normal = input_normal/ input_normal.norm(); //make sure unit vector
 	m_distance = -m_origin.dot(m_normal);
+	m_is_valid = this->isValid();
 }
 
 const Eigen::Vector3d &Plane::getNormal() const
@@ -90,10 +93,12 @@ void Plane::setPlaneInGeneralForm(double a, double b, double c, double d)
 	m_normal = n;
 	m_distance = d;
 	findPointLocatedOnPlane();
+	m_is_valid = this->isValid();
 }
 
 void Plane::offset(double input_distance)
 {
+	assert(m_is_valid);
 	Eigen::Vector3d new_origin = m_origin + input_distance * m_normal;
 	setOrigin(new_origin);
 }
@@ -120,6 +125,7 @@ const double Plane::d() const
 
 bool Plane::isPointOnPlane(const Eigen::Vector3d &point, double epsilon) const
 {
+	assert(m_is_valid);
 	double distance = this->getDistanceFromPointToPlane(point);
 	if (abs(distance) < epsilon)
 	{
@@ -130,6 +136,7 @@ bool Plane::isPointOnPlane(const Eigen::Vector3d &point, double epsilon) const
 
 bool Plane::isPointOnPlane(const CgalPoint_EPICK &point, double epsilon) const
 {
+	assert(m_is_valid);
 	Eigen::Vector3d temp_point(point.x(), point.y(), point.z());
 	double distance = this->getDistanceFromPointToPlane(temp_point);
 	if (abs(distance) < epsilon)
@@ -141,6 +148,7 @@ bool Plane::isPointOnPlane(const CgalPoint_EPICK &point, double epsilon) const
 
 double Plane::getDistanceFromPointToPlane(const Eigen::Vector3d &point) const
 {
+	assert(m_is_valid);
 	Eigen::Vector3d v0 = point - m_origin;
 	double distance = v0.dot(m_normal);
 	return distance;
@@ -148,6 +156,7 @@ double Plane::getDistanceFromPointToPlane(const Eigen::Vector3d &point) const
 
 double Plane::getDistanceFromPointToPlane(const CgalPoint_EPICK &point) const
 {
+	assert(m_is_valid);
 	Eigen::Vector3d temp_point(point.x(), point.y(), point.z());
 	Eigen::Vector3d v0 = temp_point - m_origin;
 	double distance = v0.dot(m_normal);
@@ -156,6 +165,7 @@ double Plane::getDistanceFromPointToPlane(const CgalPoint_EPICK &point) const
 
 int Plane::getPositionOfPointWrtPlane(const Eigen::Vector3d &point, double epsilon) const
 {
+	assert(m_is_valid);
 	if (this->isPointOnPlane(point, epsilon))
 	{
 		return 0;
@@ -172,6 +182,7 @@ int Plane::getPositionOfPointWrtPlane(const Eigen::Vector3d &point, double epsil
 
 Eigen::Vector3d Plane::getProjectionOfPointOntoPlane(const Eigen::Vector3d &point) const
 {
+	assert(m_is_valid);
 	Eigen::Vector3d v0 = point - m_origin;
 	double distance = v0.dot(m_normal);
 	Eigen::Vector3d point_projection = v0 - distance * m_normal + m_origin;
@@ -181,6 +192,7 @@ Eigen::Vector3d Plane::getProjectionOfPointOntoPlane(const Eigen::Vector3d &poin
 
 bool Plane::getMostPositivePoint(const std::vector<Eigen::Vector3d> &points, Eigen::Vector3d &result) const
 {
+	assert(m_is_valid);
 	double max = 0.0;
 	double distance = 0.0;
 	bool result_found = false;
@@ -199,6 +211,7 @@ bool Plane::getMostPositivePoint(const std::vector<Eigen::Vector3d> &points, Eig
 
 bool Plane::getMostNegativePoint(const std::vector<Eigen::Vector3d> &points, Eigen::Vector3d &result) const
 {
+	assert(m_is_valid);
 	double min = 0.0;
 	double distance = 0.0;
 	bool result_found = false;
@@ -217,12 +230,14 @@ bool Plane::getMostNegativePoint(const std::vector<Eigen::Vector3d> &points, Eig
 
 bool Plane::isLineOnPlane(const SO::Line &line, double epsilon) const
 {
+	assert(m_is_valid && line.isValid());
 	return isPointOnPlane(line.getSource(), epsilon) &&
 		isPointOnPlane(line.getTarget(), epsilon);
 }
 
 bool Plane::isIntersectedWithLine(const SO::Line &line) const
 {
+	assert(m_is_valid && line.isValid());
 	int a = this->getPositionOfPointWrtPlane(line.getSource());
 	int b = this->getPositionOfPointWrtPlane(line.getTarget());
 
@@ -236,6 +251,7 @@ bool Plane::isIntersectedWithLine(const SO::Line &line) const
 
 bool Plane::isIntersectedWithLine(const SO::Line &line, Eigen::Vector3d &point) const
 {
+	assert(m_is_valid && line.isValid());
 	if (this->isIntersectedWithLine(line))
 	{
 		double denominator = this->m_normal.dot(line.getDirection());
@@ -246,20 +262,9 @@ bool Plane::isIntersectedWithLine(const SO::Line &line, Eigen::Vector3d &point) 
 	return false;
 }
 
-Eigen::Vector3d Plane::getIntersectionWithLine(const SO::Line &line) const
-{
-	Eigen::Vector3d intersecting_point = Eigen::Vector3d(std::numeric_limits<double>::min(), std::numeric_limits<double>::min(), std::numeric_limits<double>::min());
-	if (this->isIntersectedWithLine(line))
-	{
-		double denominator = this->m_normal.dot(line.getDirection());
-		double t = (this->m_origin - line.getSource()).dot(this->m_normal) / denominator;
-		intersecting_point = line.getSource() + t * line.getDirection();
-	}
-	return intersecting_point;
-}
-
 bool Plane::isIntersectedWithRay(const SO::Line &ray) const
 {
+	assert(m_is_valid && ray.isValid());
 	double denominator = this->m_normal.dot(ray.getDirection());
 	if (abs(denominator) > 0)
 	{
@@ -271,20 +276,26 @@ bool Plane::isIntersectedWithRay(const SO::Line &ray) const
 	}
 }
 
-Eigen::Vector3d Plane::getIntersectionWithRay(const SO::Line &ray) const
+bool Plane::isIntersectedWithRay(const SO::Line &ray, Eigen::Vector3d &point) const
 {
-	Eigen::Vector3d intersecting_point = Eigen::Vector3d(std::numeric_limits<double>::min(), std::numeric_limits<double>::min(), std::numeric_limits<double>::min());
-	if (this->isIntersectedWithRay(ray))
+	assert(m_is_valid && ray.isValid());
+	double denominator = this->m_normal.dot(ray.getDirection());
+	if (abs(denominator) > 0)
 	{
 		double denominator = this->m_normal.dot(ray.getDirection());
 		double t = (this->m_origin - ray.getSource()).dot(this->m_normal) / denominator;
-		intersecting_point = ray.getSource() + t * ray.getDirection();
+		point = ray.getSource() + t * ray.getDirection();
+		return true;
 	}
-	return intersecting_point;
+	else
+	{
+		return false;
+	}
 }
 
 bool Plane::isIntersectedWithPlane(const Plane &other) const
 {
+	assert(m_is_valid && other.m_is_valid);
 	Eigen::Vector3d n12 = this->m_normal.cross(other.m_normal);
 	if (n12.norm() < 1e-6)
 	{
@@ -298,10 +309,11 @@ bool Plane::isIntersectedWithPlane(const Plane &other) const
 
 bool Plane::isIntersectedWithPlane(const Plane &other, SO::Line &intersecting_line) const
 {
+	assert(m_is_valid && other.m_is_valid);
 	Eigen::Vector3d n12 = this->m_normal.cross(other.m_normal);
 	if (n12.norm() < 1e-6)
 	{
-		intersecting_line = SO::Line(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0));
+		intersecting_line.setLine(this->m_origin, other.m_origin);
 		return false;
 	}
 	else
@@ -322,34 +334,9 @@ bool Plane::isIntersectedWithPlane(const Plane &other, SO::Line &intersecting_li
 	}
 }
 
-SO::Line Plane::getIntersectionWithPlane(const Plane &other) const
-{
-	if (this->isIntersectedWithPlane(other))
-	{
-		Eigen::Vector3d n12 = this->m_normal.cross(other.getNormal());
-		double numerator_1 = -this->d() * pow(other.getNormal().norm(), 2);
-		double numerator_2 = -other.d() * this->m_normal.dot(other.getNormal());
-		double denominator = pow(n12.norm(), 2);
-		double a1 = (numerator_1 - numerator_2) / denominator;
-
-		numerator_1 = -other.d() * pow(this->m_normal.norm(), 2);
-		numerator_2 = -this->d() * this->m_normal.dot(other.getNormal());
-		double a2 = (numerator_1 - numerator_2) / denominator;
-
-		Eigen::Vector3d line_source = a1 * this->m_normal + a2 * other.getNormal();
-		Eigen::Vector3d line_direction = n12 / n12.norm();
-		SO::Line intersecting_line(line_source, line_direction, 1);
-		return intersecting_line;
-	}
-	else
-	{
-		constexpr double min = std::numeric_limits<double>::min();
-		return SO::Line(Eigen::Vector3d(min, min, min), Eigen::Vector3d(min, min, min));
-	}
-}
-
 double Plane::getAngleOfRotation(const Plane &destination) const
 {
+	assert(m_is_valid && destination.m_is_valid);
 	double rotation_angle = this->m_normal.dot(destination.m_normal) / (this->m_normal.norm() * destination.m_normal.norm());
 	if (rotation_angle > 1.0 || rotation_angle < -1.0)
 	{
@@ -364,6 +351,7 @@ double Plane::getAngleOfRotation(const Plane &destination) const
 
 Eigen::Vector3d Plane::getAxisOfRotation(const Plane &destination) const
 {
+	assert(m_is_valid && destination.m_is_valid);
 	Eigen::Vector3d axis_of_rotation = this->m_normal.cross(destination.m_normal);
 	axis_of_rotation = axis_of_rotation / axis_of_rotation.norm();
 	return axis_of_rotation;
@@ -371,6 +359,7 @@ Eigen::Vector3d Plane::getAxisOfRotation(const Plane &destination) const
 
 Eigen::Transform<double, 3, Eigen::Affine> Plane::getTransformationMatrix(const Plane &destination) const
 {
+	assert(m_is_valid && destination.m_is_valid);
 	Eigen::Transform<double, 3, Eigen::Affine> transformation_matrix;
 	// If loop for getting rid of transformation matrix with Nan
 	// It happens if v1 and v2 pointing to the same direction
@@ -430,6 +419,7 @@ bool Plane::operator!=(const Plane &other) const
 
 Eigen::Vector3d Plane::findPointLocatedOnPlane() 
 {
+	assert(m_is_valid);
 	srand((unsigned)time(NULL));
 
 	bool done = false;

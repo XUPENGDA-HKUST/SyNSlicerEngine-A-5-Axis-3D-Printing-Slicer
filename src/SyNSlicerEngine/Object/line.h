@@ -24,7 +24,7 @@ namespace SyNSlicerEngine::Object
 		Line(CgalMesh_EPECK::Halfedge_index he, CgalMesh_EPECK &mesh);
 		~Line();
 
-		bool isValid();
+		bool isValid() const;
 		void printInfo();
 
 		void setLine(const Eigen::Vector3d &source, const Eigen::Vector3d &target);

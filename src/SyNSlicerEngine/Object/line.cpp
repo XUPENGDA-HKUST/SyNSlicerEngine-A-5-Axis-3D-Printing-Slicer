@@ -55,16 +55,15 @@ Line::~Line()
 {
 }
 
-bool Line::isValid()
+bool Line::isValid() const
 {
-	if (m_length < 1e-6)
-	{
-		return false;
-	}
-	else
-	{
-		return true;
-	}
+	if (isnan(m_source[0])) { return false; };
+	if (isnan(m_source[1])) { return false; };
+	if (isnan(m_source[2])) { return false; };
+	if (isnan(m_target[0])) { return false; };
+	if (isnan(m_target[1])) { return false; };
+	if (isnan(m_target[2])) { return false; };
+	return true;
 }
 
 void Line::printInfo()
