@@ -220,8 +220,15 @@ void SupportGenerator::generateSupportStructureForSupportStructure(SO::PolygonCo
 {
 	// Step 1: check plane normal.
 
-	std::vector<SO::PolygonCollection> contours_of_support_structure_at_different_plane;
-	contours_of_support_structure_at_different_plane.push_back(contours);
+	std::vector<SO::PolylineCollection> contours_of_support_structure_at_different_plane;
+
+	SO::PolylineCollection polylines;
+	for (size_t i = 0; i < contours.numberOfPolygons(); i++)
+	{
+		polylines.addPolyline(SO::Polyline(contours[i].get()));
+	}
+
+	contours_of_support_structure_at_different_plane.push_back(polylines);
 
 	if (plane.getNormal().dot(Eigen::Vector3d(0, 0, 1)) < cos(M_PI_4))
 	{
@@ -252,48 +259,46 @@ void SupportGenerator::generateSupportStructureForSupportStructure(SO::PolygonCo
 
 		SO::Plane forty_five_degree_plane(lowest_point, new_plane_normal);
 
-		SO::PolygonCollection contours_1;
+		SO::PolylineCollection contours_1;
 		for (int i = 0; i < contours.numberOfPolygons(); i++)
 		{
-			SO::Polygon temp_contour;
-			temp_contour.setPlane(forty_five_degree_plane);
+			SO::Polyline temp_contour;
 			for (int j = 0; j < contours[i].numberOfPoints(); j++)
 			{
 				Eigen::Vector3d projected_point = forty_five_degree_plane.getProjectionOfPointOntoPlane(contours[i][j]);
-				temp_contour.addPointToBack(projected_point);
+				temp_contour.push_back(projected_point);
 			}
-			contours_1.addPolygon(temp_contour);
+			contours_1.addPolyline(temp_contour);
 		}
 		contours_of_support_structure_at_different_plane.push_back(contours_1);
 	}
 
-	SO::PolygonCollection contours_2;
+	SO::PolylineCollection contours_2;
 	SO::Plane built_plate;
-	SO::PolygonCollection &temp_contours = contours_of_support_structure_at_different_plane.back();
-	for (int i = 0; i < temp_contours.numberOfPolygons(); i++)
+	SO::PolylineCollection &temp_contours = contours_of_support_structure_at_different_plane.back();
+	for (int i = 0; i < temp_contours.size(); i++)
 	{
-		SO::Polygon temp_contour;
-		temp_contour.setPlane(built_plate);
+		SO::Polyline temp_contour;
 		for (int j = 0; j < temp_contours[i].numberOfPoints(); j++)
 		{
 			Eigen::Vector3d projected_point = built_plate.getProjectionOfPointOntoPlane(temp_contours[i][j]);
-			temp_contour.addPointToBack(projected_point);
+			temp_contour.push_back(projected_point);
 		}
-		contours_2.addPolygon(temp_contour);
+		contours_2.addPolyline(temp_contour);
 	}
-	contours_of_support_structure_at_different_plane.push_back(contours_2);
+	contours_of_support_structure_at_different_plane.emplace_back(contours_2);
 
-	std::vector<SO::PolygonCollection> contours_of_support_structure;
-	for (int i = 0; i < contours_of_support_structure_at_different_plane.front().numberOfPolygons(); i++)
+	std::vector<SO::PolylineCollection> contours_of_support_structure;
+	for (int i = 0; i < contours_of_support_structure_at_different_plane.front().size(); i++)
 	{
-		contours_of_support_structure.emplace_back(SO::PolygonCollection());
+		contours_of_support_structure.emplace_back(SO::PolylineCollection());
 	}
 
 	for (int i = 0; i < contours_of_support_structure_at_different_plane.size(); i++)
 	{
-		for (int j = 0; j < contours_of_support_structure_at_different_plane[i].numberOfPolygons(); j++)
+		for (int j = 0; j < contours_of_support_structure_at_different_plane[i].size(); j++)
 		{
-			contours_of_support_structure[j].addPolygon(contours_of_support_structure_at_different_plane[i][j]);
+			contours_of_support_structure[j].addPolyline(contours_of_support_structure_at_different_plane[i][j]);
 		}
 	}
 
@@ -305,15 +310,15 @@ void SupportGenerator::generateSupportStructureForSupportStructure(SO::PolygonCo
 	}
 }
 
-bool SupportGenerator::generatePolyhedronFromContours(SO::PolygonCollection &contours, 
+bool SupportGenerator::generatePolyhedronFromContours(SO::PolylineCollection &contours,
 	SO::Polyhedron<CgalMesh_EPICK> &polyhedron)
 {
-	if (contours.numberOfPolygons() < 2)
+	if (contours.size() < 2)
 	{
 		return false;
 	}
 
-	for (int i = 0; i < contours.numberOfPolygons(); i++)
+	for (int i = 0; i < contours.size(); i++)
 	{
 		if (contours[i].numberOfPoints()!= contours[0].numberOfPoints())
 		{
@@ -322,10 +327,10 @@ bool SupportGenerator::generatePolyhedronFromContours(SO::PolygonCollection &con
 	}
 
 	CgalMesh_EPICK support_structure;
-	int number_of_contours = contours.numberOfPolygons();
+	int number_of_contours = contours.size();
 	int contour_size = contours[0].numberOfPoints();
 
-	for (int i = 0; i < contours.numberOfPolygons(); i++)
+	for (int i = 0; i < contours.size(); i++)
 	{
 		for (int j = 0; j < contours[i].numberOfPoints(); j++)
 		{

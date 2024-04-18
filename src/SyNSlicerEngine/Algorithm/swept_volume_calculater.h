@@ -29,14 +29,14 @@ namespace SyNSlicerEngine::Algorithm
 		~SweptVolumwCalculator();
 
 		// set the cross section of the nozzle here (Not finish yet)
-		void setCrossSectionOfNozzle(){}
+		virtual void setCrossSectionOfNozzle(){}
 		
-		std::vector<CgalMesh_EPICK> getSweptVolume();
+		virtual std::vector<CgalMesh_EPICK> getSweptVolume();
 
-	private:
-		bool makeVectorUnit(Eigen::Vector3d &vector);
-		CgalMesh_EPICK calculateConvexHull(std::vector<Eigen::Vector3d> contour, Eigen::Vector3d normal);
-		std::vector<CgalPoint_EPICK> calculatePointCloud(std::vector<Eigen::Vector3d> contour, Eigen::Vector3d normal);
+	protected:
+		virtual bool makeVectorUnit(Eigen::Vector3d &vector);
+		virtual CgalMesh_EPICK calculateConvexHull(std::vector<Eigen::Vector3d> contour, Eigen::Vector3d normal);
+		virtual std::vector<CgalPoint_EPICK> calculatePointCloud(std::vector<Eigen::Vector3d> contour, Eigen::Vector3d normal);
 
 		std::vector<CgalMesh_EPICK> m_swept_volume_list;
 		std::vector<SO::Polyhedron<CgalMesh_EPICK> *> m_mesh_list;

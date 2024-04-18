@@ -30,28 +30,28 @@ namespace SyNSlicerEngine::Algorithm {
 		ToolpathGenerator(SO::Partition<CgalMesh_EPICK> &partition, bool with_support = false);
 		~ToolpathGenerator();
 
-		void setPathPropertyForModel(int wall_count, int bottom_count, int top_count, int path_type, int infill_density, double side_step);
-		void setPathPropertyForSupport(int wall_count, int bottom_count, int top_count, int path_type, int infill_density, double side_step);
-		void generatePath();
+		virtual void setPathPropertyForModel(int wall_count, int bottom_count, int top_count, int path_type, int infill_density, double side_step);
+		virtual void setPathPropertyForSupport(int wall_count, int bottom_count, int top_count, int path_type, int infill_density, double side_step);
+		virtual void generatePath();
 
 	protected:
-		void determineOriginOfAllPrintingLayers();
-		void determineCuttingPlanesZigzagInfill(SO::PolygonCollection &contours, int index);
-		void determineCuttingPlanesGridInfill(SO::PolygonCollection &contours, int infill_density);
+		virtual void determineOriginOfAllPrintingLayers();
+		virtual void determineCuttingPlanesZigzagInfill(SO::PolygonCollection &contours, int index);
+		virtual void determineCuttingPlanesGridInfill(SO::PolygonCollection &contours, int infill_density);
 
-		void generateSurfaceForModel();
-		void generateWallForModel(int wall_count);
-		void generateBottomForModel(int wall_count, int bottom_count);
-		void generateTopForModel(int wall_count, int top_count);
-		void generateTopBottomUnionAndInfillContoursForModel(int wall_count);
-		void generateInfillForModel(int wall_count, int infill_type);
+		virtual void generateSurfaceForModel();
+		virtual void generateWallForModel(int wall_count);
+		virtual void generateBottomForModel(int wall_count, int bottom_count);
+		virtual void generateTopForModel(int wall_count, int top_count);
+		virtual void generateTopBottomUnionAndInfillContoursForModel(int wall_count);
+		virtual void generateInfillForModel(int wall_count, int infill_type);
 		
-		void generateSurfaceForSupport();
-		void generateWallForSupport(int wall_count);
-		void generateBottomForSupport(int wall_count, int bottom_count);
-		void generateTopForSupport(int wall_count, int top_count);
-		void generateTopBottomUnionAndInfillContoursForSupport(int wall_count);
-		void generateInfillForSupport(int wall_count, int infill_type);
+		virtual void generateSurfaceForSupport();
+		virtual void generateWallForSupport(int wall_count);
+		virtual void generateBottomForSupport(int wall_count, int bottom_count);
+		virtual void generateTopForSupport(int wall_count, int top_count);
+		virtual void generateTopBottomUnionAndInfillContoursForSupport(int wall_count);
+		virtual void generateInfillForSupport(int wall_count, int infill_type);
 		
 		int m_infill_type = 0;
 		int m_wall_count = 0;

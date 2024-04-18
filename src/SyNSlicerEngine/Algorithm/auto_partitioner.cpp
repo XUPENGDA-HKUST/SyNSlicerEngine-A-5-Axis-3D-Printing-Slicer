@@ -2,14 +2,16 @@
 
 using SyNSlicerEngine::Algorithm::AutoPartitioner;
 
-AutoPartitioner::AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, 
-    const SO::Nozzle &nozzle, double overhanging_angle)
-	: m_partition(partition)
+AutoPartitioner::AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition,
+    const SO::Nozzle &nozzle, double overhanging_angle, double area_threshold_coefficient)
+    : m_partition(partition)
     , m_nozzle(nozzle)
     , m_overhanging_angle(overhanging_angle)
+    , m_area_threshold_coefficient(area_threshold_coefficient)
+    , m_partition_time(0)
 {
-	m_slicing_planes.emplace_back(
-		SO::Plane(
+    m_slicing_planes.emplace_back(
+        SO::Plane(
             m_partition.getBaseContours().centroid(),
             m_partition.getBasePlane().getNormal()));
     m_results.addPartition(partition);
@@ -40,8 +42,8 @@ void AutoPartitioner::partition()
     epeck_partition.setBasePlane(m_partition.getBasePlane());
 
     // Partition the input mesh automatically.
-    //std::vector<SO::PointCloud> vertices_to_ignore;
-    EigenPoints vertices_to_ignore;
+    std::vector<SO::PointCloud> vertices_to_ignore;
+    //EigenPoints vertices_to_ignore;
     this->partitionMesh(epeck_partition, m_partition_list, vertices_to_ignore);
 
     // Save of the output meshes.
@@ -73,19 +75,11 @@ SO::PartitionCollection<CgalMesh_EPICK> AutoPartitioner::getResult()
     return m_results;
 }
 
-static int partition_time = 0;
-static int max_partition_time = 10;
-static double area = 0.0;
 
-void AutoPartitioner::partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO::PartitionCollection<CgalMesh_EPECK> &partition_list, EigenPoints &vertices_to_ignore_list)
+void AutoPartitioner::partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO::PartitionCollection<CgalMesh_EPECK> &partition_list, std::vector<SO::PointCloud> &vertices_to_ignore_list)
 {
     std::cout << std::endl;
-    spdlog::info("The {} times of partition.", ++partition_time);
-
-    if (partition_time > max_partition_time)
-    {
-        //return;
-    }
+    spdlog::info("The {} times of partition.", ++m_partition_time);
 
     // Self-intersection may occur during changing from CgalMesh_EPECK to CgalMesh_EPICK
     SO::Partition<CgalMesh_EPICK> epick_partition = SO::Partition<CgalMesh_EPICK>(partition.getEPICKMesh());
@@ -112,9 +106,9 @@ void AutoPartitioner::partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO
     if (this->clipPartition(partition, result_of_determining_clipping_plane,
         low_partition, up_partition))
     {
-        partition.writeMeshToSTL(std::string("Check/Check_") + std::to_string(partition_time) + std::string(".stl"));
-        low_partition.writeMeshToSTL(std::string("Check/Low_") + std::to_string(partition_time) + std::string(".stl"));
-        up_partition.writeMeshToSTL(std::string("Check/Up_") + std::to_string(partition_time) + std::string(".stl"));
+        partition.writeMeshToSTL(std::string("Check/Check_") + std::to_string(m_partition_time) + std::string(".stl"));
+        low_partition.writeMeshToSTL(std::string("Check/Low_") + std::to_string(m_partition_time) + std::string(".stl"));
+        up_partition.writeMeshToSTL(std::string("Check/Up_") + std::to_string(m_partition_time) + std::string(".stl"));
 
         if (partition_list.numberOfPartitions() > 0)
         {
@@ -131,7 +125,7 @@ void AutoPartitioner::partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO
             partition_list.pop_back();
         }
 
-        spdlog::get("basic_logger")->info("The {} times:", partition_time);
+        spdlog::get("basic_logger")->info("The {} times:", m_partition_time);
         spdlog::get("basic_logger")->info("Base plane: {} {} {} {} {} {}",
             partition.getBasePlane().getOrigin()[0], partition.getBasePlane().getOrigin()[1], partition.getBasePlane().getOrigin()[2],
             partition.getBasePlane().getNormal()[0], partition.getBasePlane().getNormal()[1], partition.getBasePlane().getNormal()[2]);
@@ -143,12 +137,12 @@ void AutoPartitioner::partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO
         partition_list.addPartition(low_partition);
         this->partitionMesh(low_partition, partition_list, vertices_to_ignore_list);
         partition_list.addPartition(up_partition);
-        EigenPoints vertices_to_ignore;
+        std::vector<SO::PointCloud> vertices_to_ignore;
         this->partitionMesh(up_partition, partition_list, vertices_to_ignore);
     }
 }
 
-AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippingPlane(SO::Partition<CgalMesh_EPICK> &partition, SO::Plane &clipping_plane, EigenPoints &vertices_to_ignore_list)
+AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippingPlane(SO::Partition<CgalMesh_EPICK> &partition, SO::Plane &clipping_plane, std::vector<SO::PointCloud> &vertices_to_ignore_list)
 {
     ResultOfDetermineClippingPlane result;
 
@@ -163,7 +157,6 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
     SO::Plane base_plane = partition.getBasePlane();
     EigenPoint centroid_of_base_contours = partition.getBaseContours().getCentroid();
 
-    double total_area = 0.0; 
     std::vector<CgalMesh_EPICK::Face_index> face_ids;
     
     // Start
@@ -179,8 +172,6 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
         for (CgalMesh_EPICK::Face_index fd : mesh.faces())
         {
             SO::Triangle triangle(fd, mesh);
-            total_area += triangle.getArea();
-
             if (triangle.getOverhangingAngle(base_plane) < (m_overhanging_angle / 180.0 * M_PI))
             {
                 if (!triangle.isOneOfTheVerticesOnPlane(base_plane) && !convex_hull_base_contours.isOneOfTheVerticesOfTriangleInside(triangle))
@@ -195,7 +186,6 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
         for (CgalMesh_EPICK::Face_index fd : mesh.faces())
         {
             SO::Triangle triangle(fd, mesh);
-            total_area += triangle.getArea();
             if (triangle.getOverhangingAngle(base_plane) < (m_overhanging_angle / 180.0 * M_PI))
             {
                 if (!triangle.isOneOfTheVerticesOnPlane(base_plane, 1e-3))
@@ -207,14 +197,10 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
     }
     // End
 
-    // average_area is the average area of all overhanging triangle facets.
-    // It is used to stop the partition process if the remaining overhanging region is too small.
-    double average_area = total_area / mesh.number_of_faces();
-
     // Overhanging triangle facets many locate in different regions
     // For each partition operation, deal with the largest overhanging region
     // Try to eliminate the largest overhanging region by partitioning
-    OverhangingRegion result_largest_overhanging_region = this->findLargestOverhangingRegion(face_ids, mesh, base_plane, vertices_to_ignore_list, average_area);
+    OverhangingRegion result_largest_overhanging_region = this->findLargestOverhangingRegion(face_ids, mesh, base_plane, vertices_to_ignore_list, m_area_threshold_coefficient);
 
     if (result_largest_overhanging_region.faces.size() == 0)
     {
@@ -250,19 +236,27 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
     double min = std::numeric_limits<double>::max();
     CgalMesh_EPICK::Vertex_index lowest_vertex;
     EigenPoint sum_point(0, 0, 0); 
+
+    std::vector<bool> is_vertices_recorded_list;
+    is_vertices_recorded_list.resize(mesh.number_of_vertices());
+
     for (auto f_id : result_largest_overhanging_region.faces)
     {
         for (auto v : mesh.vertices_around_face(mesh.halfedge(CgalMesh_EPICK::Face_index(f_id))))
         {
-            points_in_overhanging_triangles.emplace_back(Eigen::Vector3d(mesh.point(v).x(), mesh.point(v).y(), mesh.point(v).z()));
-            sum_point = sum_point + base_plane.getProjectionOfPointOntoPlane(points_in_overhanging_triangles.back());
-            double distance = get(m_vertex_distance, v);
-
-            if (distance < min)
+            if (is_vertices_recorded_list[v.id()] == false)
             {
-                min = distance;
-                temp_clipping_plane.setOrigin(points_in_overhanging_triangles.back());
-                lowest_vertex = v;
+                is_vertices_recorded_list[v.id()] = true;
+                points_in_overhanging_triangles.emplace_back(Eigen::Vector3d(mesh.point(v).x(), mesh.point(v).y(), mesh.point(v).z()));
+                sum_point = sum_point + base_plane.getProjectionOfPointOntoPlane(points_in_overhanging_triangles.back());
+                double distance = get(m_vertex_distance, v);
+
+                if (distance < min)
+                {
+                    min = distance;
+                    temp_clipping_plane.setOrigin(points_in_overhanging_triangles.back());
+                    lowest_vertex = v;
+                }
             }
         }
     }
@@ -270,7 +264,7 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
     result.points_in_overhanging_triangles = points_in_overhanging_triangles;
 
     // sum_point is the middle of the largest_overhanging_region.
-    sum_point = sum_point / (result_largest_overhanging_region.faces.size() * 3);
+    sum_point = sum_point / (result_largest_overhanging_region.faces.size());
     Eigen::Vector3d sum_point_2 = partition.getBaseContours().centroid();
     Eigen::Vector3d axis_of_rotation = (sum_point - sum_point_2).cross(base_plane.getNormal());
     axis_of_rotation = axis_of_rotation / axis_of_rotation.norm();
@@ -495,8 +489,7 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
 
     result.clipping_plane = temp_clipping_plane;
     clipping_plane = temp_clipping_plane;
-    vertices_to_ignore_list.reserve(vertices_to_ignore_list.size() + points_in_overhanging_triangles.size());
-    vertices_to_ignore_list.insert(vertices_to_ignore_list.end(), points_in_overhanging_triangles.begin(), points_in_overhanging_triangles.end());
+    vertices_to_ignore_list.emplace_back(SO::PointCloud(points_in_overhanging_triangles));
     result.status = true;
     return result;
 }
@@ -514,7 +507,7 @@ double AutoPartitioner::getAreaOfOverhangingTrianglesProjectedOnBasePlane(std::v
 
 AutoPartitioner::OverhangingRegion AutoPartitioner::findLargestOverhangingRegion(
     std::vector<CgalMesh_EPICK::Face_index> faces_to_search, CgalMesh_EPICK &mesh,
-    const SO::Plane &base_plane, EigenPoints &vertices_to_ignore_list, double area_threshold)
+    const SO::Plane &base_plane, std::vector<SO::PointCloud> &vertices_to_ignore_list, double area_threshold_coefficient)
 {
     OverhangingRegion overhanging_region;
     std::vector<bool> accessed_list;
@@ -585,21 +578,32 @@ AutoPartitioner::OverhangingRegion AutoPartitioner::findLargestOverhangingRegion
                 return false;
             }
 
+            std::vector<bool> is_vertices_recorded_list;
+            is_vertices_recorded_list.resize(mesh.number_of_vertices());
+
+            SO::PointCloud points_in_resulted_faces;
             for (auto &face : resulted_faces)
             {
                 for (auto vertex : mesh.vertices_around_face(mesh.halfedge(CgalMesh_EPICK::Face_index(face))))
                 {
-                    auto &p = mesh.point(vertex);
-                    EigenPoint temp_point(p.x(), p.y(), p.z());
-                    for (auto &point : vertices_to_ignore_list)
+                    if (is_vertices_recorded_list[vertex.id()] == false)
                     {
-                        if ((temp_point - point).norm() < 1e-3)
-                        {
-                            return true;
-                        }
+                        is_vertices_recorded_list[vertex.id()] = true;
+                        auto &p = mesh.point(vertex);
+                        EigenPoint temp_point(p.x(), p.y(), p.z());
+                        points_in_resulted_faces.addPoint(temp_point);
                     }
                 }
             }
+
+            for (auto &point_cloud : vertices_to_ignore_list)
+            {
+                if (points_in_resulted_faces.hasCommonPoints(point_cloud))
+                {
+                    return true;
+                };
+            }
+
             return false;
         };
 
@@ -619,7 +623,16 @@ AutoPartitioner::OverhangingRegion AutoPartitioner::findLargestOverhangingRegion
         }
     }
 
-    if (max < 1.0 * area_threshold)
+    double total_area = 0.0;
+    for (CgalMesh_EPICK::Face_index fd : mesh.faces())
+    {
+        SO::Triangle triangle(fd, mesh);
+        total_area += triangle.getArea();
+    }
+
+    double average_area = total_area / mesh.number_of_faces();
+
+    if (max < area_threshold_coefficient * average_area)
     {
         overhanging_region.faces.clear();
         overhanging_region.area_projected_on_base_plane = 0;
@@ -845,12 +858,12 @@ bool AutoPartitioner::clipPartition(SO::Partition<CgalMesh_EPECK> &partition, Re
     low_mesh.collect_garbage();
     partition_low = SO::Partition(low_mesh);
     partition_low.setBasePlane(base_plane);
-    partition_low.addKey(partition_time);
+    partition_low.addKey(m_partition_time);
 
     up_mesh.collect_garbage();
     partition_up = SO::Partition(up_mesh);
     partition_up.setBasePlane(clipping_plane.clipping_plane);
-    partition_up.addLock(partition_time);
+    partition_up.addLock(m_partition_time);
 
     spdlog::info("AutoPartitioner::clipPartition(): successful.");
     return true;

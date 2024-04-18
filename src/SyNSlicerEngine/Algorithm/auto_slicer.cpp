@@ -52,10 +52,6 @@ AutoSlicer::~AutoSlicer()
 
 }
 
-static int debug = 0;
-static int aaa = 0; 
-static int bbb = 0;
-
 bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contours, SO::PolygonCollection &next_contours)
 {
     next_contours.reset();
@@ -119,7 +115,8 @@ bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contou
             }
         }
 
-        SO::Line intersecting_line = m_temp_slicing_result.front().getPlane().getIntersectionWithPlane(plane_up);
+        SO::Line intersecting_line;
+        m_temp_slicing_result.front().getPlane().isIntersectedWithPlane(plane_up, intersecting_line);
         double angle_of_rotation = m_temp_slicing_result.front().getPlane().getAngleOfRotation(plane_up);
         Eigen::Vector3d axis_of_rotation = m_temp_slicing_result.front().getPlane().getAxisOfRotation(plane_up);
 
@@ -140,13 +137,6 @@ bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contou
 
         m_temp_slicing_result.clear();
         m_temp_slicing_result.emplace_back(this->slice(plane_up));
-
-        if (aaa == 2)
-        { 
-            //return false;
-        }
-        std::cout << aaa << std::endl;
-        aaa += 1;
     }
     else
     {
@@ -246,10 +236,6 @@ bool AutoSlicer::getIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_belo
     int j = 0;
     for (int i = 1; i < slicing_planes.size(); i++)
     {
-        if (aaa == 9 && i == slicing_planes.size() - 1)
-        {
-            debug = 1;
-        }
         if (tuneConsecutivePlanesValid(slicing_planes[i], slicing_planes[j]))
         {
             m_temp_slicing_result.emplace_back(this->slice(slicing_planes[i]));
@@ -287,11 +273,6 @@ bool AutoSlicer::tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane
     slicing_planes.clear();
     slicing_planes.emplace_back(plane_below);
     double distance = 0.0;
-
-    if (a < distance)
-    {
-        std::cout << aaa << " a < distance" << std::endl;
-    }
 
     while (distance < a)
     {
@@ -415,7 +396,7 @@ bool AutoSlicer::tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane
         {
             Eigen::Vector3d new_point;
             contours.getMaximumDistanceFromPlane(plane_below, new_point);
-            new_point = plane_below.getIntersectionWithRay(SO::Line(new_point, -plane_up.getNormal(), 1));
+            plane_below.isIntersectedWithRay(SO::Line(new_point, -plane_up.getNormal(), 1), new_point);
             new_point = new_point + m_min_layer_thickness * plane_up.getNormal();
 
             Eigen::Vector3d new_normal = (new_point - min_point).cross(intersecting_line.getDirection());

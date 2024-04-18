@@ -311,7 +311,7 @@ int GcodeGenerator::findClosestIntersectionPointOfRayAndBoundingBox(const SO::Li
 		}
 		else
 		{
-			temp_point = planes[i].getIntersectionWithRay(line);
+			planes[i].isIntersectedWithRay(line, temp_point);
 			if (first_time)
 			{
 				distance = (temp_point - line.getSource()).norm();

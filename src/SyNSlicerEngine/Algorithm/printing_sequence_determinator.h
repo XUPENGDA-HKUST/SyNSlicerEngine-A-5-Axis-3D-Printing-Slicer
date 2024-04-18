@@ -36,14 +36,14 @@ namespace SyNSlicerEngine::Algorithm
 		PrintingSequenceDeterminator(SO::PartitionCollection<CgalMesh_EPICK> &partition_list);
 		~PrintingSequenceDeterminator();
 
-		PrintingSequenceStatus determinePrintingSequence();
+		virtual PrintingSequenceStatus determinePrintingSequence();
 
-	private:
-		void findSweptVolumeOfNozzleForAllPartition();
-		bool isSweptVolumeIntersectBuildPlate();
-		bool isSweptVolumeIntersectParition(CgalMesh_EPICK swept_volume, CgalMesh_EPICK partition);
-		bool isPrintingSequenceSelfSupported(SO::PartitionCollection<CgalMesh_EPICK> &printing_sequence);
-		PrintingSequenceStatus isPrintingSequenceCollisionFree(SO::PartitionCollection<CgalMesh_EPICK> &printing_sequence, std::pair<int, int> &collided_pair);
+	protected:
+		virtual void findSweptVolumeOfNozzleForAllPartition();
+		virtual bool isSweptVolumeIntersectBuildPlate();
+		virtual bool isSweptVolumeIntersectParition(CgalMesh_EPICK swept_volume, CgalMesh_EPICK partition);
+		virtual bool isPrintingSequenceSelfSupported(SO::PartitionCollection<CgalMesh_EPICK> &printing_sequence);
+		virtual PrintingSequenceStatus isPrintingSequenceCollisionFree(SO::PartitionCollection<CgalMesh_EPICK> &printing_sequence, std::pair<int, int> &collided_pair);
 
 		std::vector<CgalMesh_EPICK> m_swept_volume_list;
 		SO::PartitionCollection<CgalMesh_EPICK> &m_printing_sequence; // From bottom to top

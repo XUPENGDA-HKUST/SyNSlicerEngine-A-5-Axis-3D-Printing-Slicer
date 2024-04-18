@@ -16,7 +16,7 @@ namespace SO = SyNSlicerEngine::Object;
 
 namespace SyNSlicerEngine::Algorithm
 {
-	//! This class is used to slice a model by a b-spline guided non-parallel plane slicer.
+	//! This class is used to slice a 3D model automatically with non-parallel planes.
 	/*!
 	
 	*/
@@ -27,15 +27,15 @@ namespace SyNSlicerEngine::Algorithm
 			double target_layer_thickness, double side_step);
 		~AutoSlicer();
 
-	private:
-		bool determineNextSlicingPlane(SO::PolygonCollection &current_contours, SO::PolygonCollection &next_contours);
-		bool checkSupportNeeded(SO::PolygonCollection &contours_below, SO::PolygonCollection &contours_up, SO::PolygonCollection &support_contours);
+	protected:
+		virtual bool determineNextSlicingPlane(SO::PolygonCollection &current_contours, SO::PolygonCollection &next_contours);
+		virtual bool checkSupportNeeded(SO::PolygonCollection &contours_below, SO::PolygonCollection &contours_up, SO::PolygonCollection &support_contours);
 
-		bool getIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below);
-		bool tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane plane_below, std::vector<SO::Plane> &slicing_planes);
-		bool tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane_below);
+		virtual bool getIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below);
+		virtual bool tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane plane_below, std::vector<SO::Plane> &slicing_planes);
+		virtual bool tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane_below);
 
-		bool isSlicingPlaneValid(SO::Plane plane_up, SO::Plane plane_below);
+		virtual bool isSlicingPlaneValid(SO::Plane plane_up, SO::Plane plane_below);
 
 		SO::PolygonCollection slice(SO::Plane plane);
 

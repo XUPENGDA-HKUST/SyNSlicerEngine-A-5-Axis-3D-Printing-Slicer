@@ -33,27 +33,27 @@ namespace SyNSlicerEngine::Algorithm {
 		GcodeGenerator(SO::PartitionCollection<CgalMesh_EPICK> partitions, double side_step = 0.4);
 		~GcodeGenerator();
 
-		SO::Toolpath getCompletedToolpath();
+		virtual SO::Toolpath getCompletedToolpath();
 
-		void generateToolpathForEachLayer();
-		void generateCompletedToolpath();
+		virtual void generateToolpathForEachLayer();
+		virtual void generateCompletedToolpath();
 		
 		//!  Write the Gcode file
 		/*!
 			\param filament_diameter The diameter of the filament used by the printer.
 		*/
-		void writeGcode(double filament_diameter = 1.75);
+		virtual void writeGcode(double filament_diameter = 1.75);
 
-	private:
-		void generateToolpath(const SO::PolygonCollection &polygons, SO::ToolpathCollection &toolpaths, double layer_thickness);
-		void generateToolpath(const std::vector<SO::PolygonCollection> &polygons_collection, SO::ToolpathCollection &toolpaths, double layer_thickness);
-		void generateToolpath(const SO::PolygonCollection &polygons, SO::ToolpathCollection &toolpaths, SO::Line intersecting_line, double angle_between_planes);
-		void generateToolpath(const std::vector<SO::PolygonCollection> &polygons_collection, SO::ToolpathCollection &toolpaths, SO::Line intersecting_line, double angle_between_planes);
+	protected:
+		virtual void generateToolpath(const SO::PolygonCollection &polygons, SO::ToolpathCollection &toolpaths, double layer_thickness);
+		virtual void generateToolpath(const std::vector<SO::PolygonCollection> &polygons_collection, SO::ToolpathCollection &toolpaths, double layer_thickness);
+		virtual void generateToolpath(const SO::PolygonCollection &polygons, SO::ToolpathCollection &toolpaths, SO::Line intersecting_line, double angle_between_planes);
+		virtual void generateToolpath(const std::vector<SO::PolygonCollection> &polygons_collection, SO::ToolpathCollection &toolpaths, SO::Line intersecting_line, double angle_between_planes);
 
-		void computeExtrusion(double filament_diameter = 1.75);
+		virtual void computeExtrusion(double filament_diameter = 1.75);
 
-		void offsetBoundingBox(double bound[6], double offset_distance);
-		int findClosestIntersectionPointOfRayAndBoundingBox(const SO::Line &line, double bound[6], Eigen::Vector3d &point);
+		virtual void offsetBoundingBox(double bound[6], double offset_distance);
+		virtual int findClosestIntersectionPointOfRayAndBoundingBox(const SO::Line &line, double bound[6], Eigen::Vector3d &point);
 
 		SO::PartitionCollection<CgalMesh_EPICK> m_partitions;
 		double m_side_step;	

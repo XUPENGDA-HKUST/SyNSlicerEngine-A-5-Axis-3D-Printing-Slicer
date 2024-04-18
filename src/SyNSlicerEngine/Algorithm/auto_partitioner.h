@@ -34,7 +34,7 @@ namespace SyNSlicerEngine::Algorithm
 			\param nozzle The nozzle of the 3D printer.
 			\param overhanging_angle The maximum overhanging angle of the 3D model. Default value: 56.
 		*/
-		AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, const SO::Nozzle &nozzle, double overhanging_angle = 56);
+		AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, const SO::Nozzle &nozzle, double overhanging_angle = 56, double area_threshold_coefficient = 1.0);
 		~AutoPartitioner();
 
 		//! Call this method to start partition.
@@ -71,14 +71,14 @@ namespace SyNSlicerEngine::Algorithm
 			bool status = false;	
 		};
 
-		virtual void partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO::PartitionCollection<CgalMesh_EPECK> &partition_list, EigenPoints &vertices_to_ignore_list);
+		virtual void partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO::PartitionCollection<CgalMesh_EPECK> &partition_list, std::vector<SO::PointCloud> &vertices_to_ignore_list);
 
 		virtual ResultOfDetermineClippingPlane determineClippingPlane(SO::Partition<CgalMesh_EPICK> &partition,
-			SO::Plane &clipping_plane, EigenPoints &vertices_to_ignore_list);
+			SO::Plane &clipping_plane, std::vector<SO::PointCloud> &vertices_to_ignore_list);
 
 		virtual double getAreaOfOverhangingTrianglesProjectedOnBasePlane(std::vector<int> faces, const CgalMesh_EPICK &mesh, const SO::Plane &base_plane);
-		OverhangingRegion findLargestOverhangingRegion(std::vector<CgalMesh_EPICK::Face_index> faces_to_search,
-			CgalMesh_EPICK &mesh, const SO::Plane &base_plane, EigenPoints &vertices_to_ignore_list, double area_threshold = 0);
+		virtual OverhangingRegion findLargestOverhangingRegion(std::vector<CgalMesh_EPICK::Face_index> faces_to_search,
+			CgalMesh_EPICK &mesh, const SO::Plane &base_plane, std::vector<SO::PointCloud> &vertices_to_ignore_list, double area_threshold_coefficient = 1);
 
 		virtual bool clipPartition(SO::Partition<CgalMesh_EPECK> &partition,
 			ResultOfDetermineClippingPlane &clipping_plane,
@@ -102,6 +102,9 @@ namespace SyNSlicerEngine::Algorithm
 
 		SO::Nozzle m_nozzle;
 		double m_overhanging_angle;
+		double m_area_threshold_coefficient;
+
+		int m_partition_time;
 	};
 }
 

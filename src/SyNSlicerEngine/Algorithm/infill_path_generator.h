@@ -13,6 +13,7 @@ namespace SO = SyNSlicerEngine::Object;
 
 namespace SyNSlicerEngine::Algorithm
 {
+	//! This class is used to generate infill path.
 	class InfillPathGenerator
 	{
 	public:
@@ -23,13 +24,13 @@ namespace SyNSlicerEngine::Algorithm
 			int infill_type);
 		~InfillPathGenerator();
 
-		void generateInfillPath();
-		void getOutput(SO::PolygonCollection &ouput);
+		virtual void generateInfillPath();
+		virtual void getOutput(SO::PolygonCollection &ouput);
 
 	protected:
-		void generateGridInfillPath();
-		void generateZigZagInfillPath();
-		void generateContourParallelInfillPath();
+		virtual void generateGridInfillPath();
+		virtual void generateZigZagInfillPath();
+		virtual void generateContourParallelInfillPath();
 
 		const SO::PolygonCollection &m_contours;
 		const std::vector<SO::Plane> &m_cutting_planes;
@@ -44,9 +45,6 @@ namespace SyNSlicerEngine::Algorithm
 		std::vector<CgalPolygon2D_EPICK> m_cgal_inner_contours;
 
 		SO::PolygonCollection m_output;
-
-	private:
-
 	};
 }
 
