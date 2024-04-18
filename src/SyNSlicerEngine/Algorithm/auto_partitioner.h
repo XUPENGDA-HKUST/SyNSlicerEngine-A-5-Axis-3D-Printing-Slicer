@@ -10,6 +10,7 @@
 
 #include "spdlog/spdlog.h"
 
+#include "Object/point_cloud.h"
 #include "Object/nozzle.h"
 #include "Object/triangle.h"
 #include "Object/partition.h"
@@ -18,22 +19,31 @@
 
 namespace SO = SyNSlicerEngine::Object;
 
+//!  This namespace is used to hold all the algorithm.
 namespace SyNSlicerEngine::Algorithm
 {
+	//!  This class is used to partition a 3D model automatically.
 	class AutoPartitioner
 	{
 	public:
 		AutoPartitioner() = delete;
-		AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, const SO::Nozzle &nozzle);
+
+		//! Constructer
+		/*!
+			\param partition The partition to be partitioned.
+			\param nozzle The nozzle of the 3D printer.
+			\param overhanging_angle The maximum overhanging angle of the 3D model. Default value: 56.
+		*/
+		AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, const SO::Nozzle &nozzle, double overhanging_angle = 56);
 		~AutoPartitioner();
 
-		enum Case { ResultValid = 0, ResultInvalid = 1, TriangleTooSmall = 2 };
+		//! Call this method to start partition.
+		virtual void partition();
 
-		void partition();
-
+		//! Call this method to obtain the result.
 		SO::PartitionCollection<CgalMesh_EPICK> getResult();
 
-	private:
+	protected:
 		using EigenPoint = Eigen::Vector3d;
 		using EigenPoints = std::vector<Eigen::Vector3d>;
 		using EigenContour = std::vector<Eigen::Vector3d>;
@@ -61,26 +71,28 @@ namespace SyNSlicerEngine::Algorithm
 			bool status = false;	
 		};
 
-		void partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO::PartitionCollection<CgalMesh_EPECK> &partition_list, EigenPoints &vertices_to_ignore_list);
+		virtual void partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO::PartitionCollection<CgalMesh_EPECK> &partition_list, EigenPoints &vertices_to_ignore_list);
 
-		ResultOfDetermineClippingPlane determineClippingPlane(SO::Partition<CgalMesh_EPICK> &partition,
+		virtual ResultOfDetermineClippingPlane determineClippingPlane(SO::Partition<CgalMesh_EPICK> &partition,
 			SO::Plane &clipping_plane, EigenPoints &vertices_to_ignore_list);
 
-		double getAreaOfOverhangingTrianglesProjectedOnBasePlane(std::vector<int> faces, const CgalMesh_EPICK &mesh, const SO::Plane &base_plane);
+		virtual double getAreaOfOverhangingTrianglesProjectedOnBasePlane(std::vector<int> faces, const CgalMesh_EPICK &mesh, const SO::Plane &base_plane);
 		OverhangingRegion findLargestOverhangingRegion(std::vector<CgalMesh_EPICK::Face_index> faces_to_search,
 			CgalMesh_EPICK &mesh, const SO::Plane &base_plane, EigenPoints &vertices_to_ignore_list, double area_threshold = 0);
 
-		bool clipPartition(SO::Partition<CgalMesh_EPECK> &partition,
+		virtual bool clipPartition(SO::Partition<CgalMesh_EPECK> &partition,
 			ResultOfDetermineClippingPlane &clipping_plane,
 			SO::Partition<CgalMesh_EPECK> &partition_low, SO::Partition<CgalMesh_EPECK> &partition_up);
 
-		bool hasPointsOnNegativeSide(const EigenPoints &points, SO::Plane &plane);
-		bool hasPointsOnPositiveSide(const EigenPoints &points, SO::Plane &plane);
+		virtual bool hasPointsOnNegativeSide(const EigenPoints &points, SO::Plane &plane);
+		virtual bool hasPointsOnPositiveSide(const EigenPoints &points, SO::Plane &plane);
 
-		bool adjustPlaneOriginSoPointsAreOnPostiveSide(const EigenPoints &points, SO::Plane &plane);
+		virtual bool adjustPlaneOriginSoPointsAreOnPostiveSide(const EigenPoints &points, SO::Plane &plane);
 
-		bool adjustPlaneOriginSoPointsAreOnNegativeSide(const EigenPoints &points, SO::Plane &plane);
-		int adjustPlaneNormalSoPointsAreOnNegativeSide(const EigenPoints &points, const SO::Plane &reference_plane, const SO::Plane &base_plane, SO::Plane &clipping_plane);
+		virtual bool adjustPlaneOriginSoPointsAreOnNegativeSide(const EigenPoints &points, SO::Plane &plane);
+		virtual bool adjustPlaneNormalSoPointsAreOnNegativeSide(const EigenPoints &points, const SO::Plane &reference_plane, const SO::Plane &base_plane, SO::Plane &clipping_plane);
+
+		virtual bool checkClippingPlaneNormal(SO::Plane &clipping_plane, const EigenPoint &centroid_of_base_contours);
 
 		SO::Partition<CgalMesh_EPICK> m_partition;
 		SO::PartitionCollection<CgalMesh_EPECK> m_partition_list;
@@ -89,6 +101,7 @@ namespace SyNSlicerEngine::Algorithm
 		CgalContours_EPICK m_prev_contours;
 
 		SO::Nozzle m_nozzle;
+		double m_overhanging_angle;
 	};
 }
 

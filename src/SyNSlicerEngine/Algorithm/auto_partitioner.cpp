@@ -3,14 +3,16 @@
 using SyNSlicerEngine::Algorithm::AutoPartitioner;
 
 AutoPartitioner::AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, 
-    const SO::Nozzle &nozzle)
+    const SO::Nozzle &nozzle, double overhanging_angle)
 	: m_partition(partition)
     , m_nozzle(nozzle)
+    , m_overhanging_angle(overhanging_angle)
 {
 	m_slicing_planes.emplace_back(
 		SO::Plane(
             m_partition.getBaseContours().centroid(),
             m_partition.getBasePlane().getNormal()));
+    m_results.addPartition(partition);
 }
 
 AutoPartitioner::~AutoPartitioner()
@@ -19,6 +21,8 @@ AutoPartitioner::~AutoPartitioner()
 
 void AutoPartitioner::partition()
 {
+    m_results.reset();
+
     // Repair input mesh if needed.
     if (!m_partition.repaireSelfIntersection())
     {
@@ -36,6 +40,7 @@ void AutoPartitioner::partition()
     epeck_partition.setBasePlane(m_partition.getBasePlane());
 
     // Partition the input mesh automatically.
+    //std::vector<SO::PointCloud> vertices_to_ignore;
     EigenPoints vertices_to_ignore;
     this->partitionMesh(epeck_partition, m_partition_list, vertices_to_ignore);
 
@@ -61,6 +66,11 @@ void AutoPartitioner::partition()
             }
         }
     }
+}
+
+SO::PartitionCollection<CgalMesh_EPICK> AutoPartitioner::getResult()
+{
+    return m_results;
 }
 
 static int partition_time = 0;
@@ -151,10 +161,16 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
 
     CgalMesh_EPICK mesh = partition.getEPICKMesh();
     SO::Plane base_plane = partition.getBasePlane();
+    EigenPoint centroid_of_base_contours = partition.getBaseContours().getCentroid();
 
     double total_area = 0.0; 
     std::vector<CgalMesh_EPICK::Face_index> face_ids;
-
+    
+    // Start
+    // This if loop is to find all overhanging triangles and decide how many of them are used to calculate the clipping plane.
+    // If number of base contours are greater than 1, it means some overhanging region cannot be remove by partitioning.
+    // The region is all the triangle facets inside the convex hull of the base contours.
+    // Base contours are fromed
     if (partition.getBaseContours().numberOfPolygons() > 1)
     {
         SO::Polygon convex_hull_base_contours;
@@ -165,7 +181,7 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
             SO::Triangle triangle(fd, mesh);
             total_area += triangle.getArea();
 
-            if (triangle.getOverhangingAngle(base_plane) < (56.0 / 180.0 * M_PI))
+            if (triangle.getOverhangingAngle(base_plane) < (m_overhanging_angle / 180.0 * M_PI))
             {
                 if (!triangle.isOneOfTheVerticesOnPlane(base_plane) && !convex_hull_base_contours.isOneOfTheVerticesOfTriangleInside(triangle))
                 {
@@ -180,7 +196,7 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
         {
             SO::Triangle triangle(fd, mesh);
             total_area += triangle.getArea();
-            if (triangle.getOverhangingAngle(base_plane) < (56.0 / 180.0 * M_PI))
+            if (triangle.getOverhangingAngle(base_plane) < (m_overhanging_angle / 180.0 * M_PI))
             {
                 if (!triangle.isOneOfTheVerticesOnPlane(base_plane, 1e-3))
                 {
@@ -189,9 +205,15 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
             }
         }
     }
+    // End
 
+    // average_area is the average area of all overhanging triangle facets.
+    // It is used to stop the partition process if the remaining overhanging region is too small.
     double average_area = total_area / mesh.number_of_faces();
 
+    // Overhanging triangle facets many locate in different regions
+    // For each partition operation, deal with the largest overhanging region
+    // Try to eliminate the largest overhanging region by partitioning
     OverhangingRegion result_largest_overhanging_region = this->findLargestOverhangingRegion(face_ids, mesh, base_plane, vertices_to_ignore_list, average_area);
 
     if (result_largest_overhanging_region.faces.size() == 0)
@@ -201,19 +223,9 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
         return result;
     }
 
-    Skeleton_EPICK skeleton_epick;
-
-    CGAL::extract_mean_curvature_flow_skeleton(mesh, skeleton_epick);
-    SO::Skeleton skeleton(skeleton_epick, mesh, base_plane);
-
-    std::vector<SO::SkeletonNode *> nodes_has_no_children;
-    skeleton.skeleton_root->findNodesHaveNoChildren(nodes_has_no_children);
-
-    auto m_vertex_distance = mesh.add_property_map<vertex_descriptor, double>("v:distance", 0).first;
-
+    // Start
+    // Geodesic distance is used to determine the origin of the clipping plane.
     Heat_method hm(mesh);
-
-    int number_of_source = 0;
     for (auto f_idx : mesh.faces())
     {
         bool point_on_plane = true;
@@ -226,29 +238,24 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
             for (auto v_idx : mesh.vertices_around_face(mesh.halfedge(f_idx)))
             {
                 hm.add_source(v_idx);
-                ++number_of_source;
             }
         }
     }
-
+    auto m_vertex_distance = mesh.add_property_map<vertex_descriptor, double>("v:distance", 0).first;
     hm.estimate_geodesic_distances(m_vertex_distance);
+    // End
 
     SO::Plane temp_clipping_plane;
-
-    std::vector<EigenPoint> points;
     EigenPoints points_in_overhanging_triangles;
-
     double min = std::numeric_limits<double>::max();
     CgalMesh_EPICK::Vertex_index lowest_vertex;
-    EigenPoint sum_point(0, 0, 0);
+    EigenPoint sum_point(0, 0, 0); 
     for (auto f_id : result_largest_overhanging_region.faces)
     {
         for (auto v : mesh.vertices_around_face(mesh.halfedge(CgalMesh_EPICK::Face_index(f_id))))
         {
             points_in_overhanging_triangles.emplace_back(Eigen::Vector3d(mesh.point(v).x(), mesh.point(v).y(), mesh.point(v).z()));
-            points.emplace_back(base_plane.getProjectionOfPointOntoPlane(points_in_overhanging_triangles.back()));
-            sum_point = sum_point + points.back();
-            double perpendicular_distance = base_plane.getDistanceFromPointToPlane(points_in_overhanging_triangles.back());
+            sum_point = sum_point + base_plane.getProjectionOfPointOntoPlane(points_in_overhanging_triangles.back());
             double distance = get(m_vertex_distance, v);
 
             if (distance < min)
@@ -260,12 +267,19 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
         }
     }
 
-    sum_point = sum_point / (result_largest_overhanging_region.faces.size() * 3);
-
     result.points_in_overhanging_triangles = points_in_overhanging_triangles;
 
+    // sum_point is the middle of the largest_overhanging_region.
+    sum_point = sum_point / (result_largest_overhanging_region.faces.size() * 3);
     Eigen::Vector3d sum_point_2 = partition.getBaseContours().centroid();
+    Eigen::Vector3d axis_of_rotation = (sum_point - sum_point_2).cross(base_plane.getNormal());
+    axis_of_rotation = axis_of_rotation / axis_of_rotation.norm();
 
+    // reference_plane is the plane that the normal of the clipping must lie on.
+    SO::Plane reference_plane(sum_point, axis_of_rotation);
+
+    // Start
+    // Find most_overhanging_face and then use it to determine the normal of the clipping plane.
     double max = std::numeric_limits<double>::min();
     CgalMesh_EPICK::Face_index most_overhanging_face;
     for (auto &f : result_largest_overhanging_region.faces)
@@ -278,11 +292,12 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
             most_overhanging_face = CgalMesh_EPICK::Face_index(f);
         }
     }
+    // End
 
-    Eigen::Vector3d axis_of_rotation = (sum_point - sum_point_2).cross(base_plane.getNormal());
-    axis_of_rotation = axis_of_rotation / axis_of_rotation.norm();
-
-    SO::Plane reference_plane(sum_point, axis_of_rotation);
+    // Start
+    // Determine the origin of the clipping plane.
+    // The origin is one of the vertices of the triangle facets in largest_overhanging_region
+    // The vertices is the closest point to the reference_plane and having the least geodesic distance to the base plane
     min = std::numeric_limits<double>::max();
     for (auto f_id : result_largest_overhanging_region.faces)
     {
@@ -300,14 +315,21 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
             }
         }
     }
+    // End
 
+    // Start
+    // Determine the normal of the clipping plane.
     Eigen::Vector3d v1_s(0, 0, 0);
     SO::Triangle triangle(most_overhanging_face, mesh);
     Eigen::Vector3d v1_t = triangle.getNormal();
     v1_s = reference_plane.getProjectionOfPointOntoPlane(v1_s);
     v1_t = reference_plane.getProjectionOfPointOntoPlane(v1_t);
-    temp_clipping_plane.setNormal(-(v1_t - v1_s).cross(axis_of_rotation));
+    temp_clipping_plane.setNormal((v1_s - v1_t).cross(axis_of_rotation));
+    // End
 
+    // Start
+    // Store all the point in base contours into base_contour_points
+    // And adjust the origin of the plane so that the clipping do not intersect the base contours
     auto is_two_point_cloud_has_comment_point = [](EigenPoints &points_1, EigenPoints &points_2) {
         for (auto &point_1 : points_1)
         {
@@ -349,50 +371,12 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
         }
         temp_clipping_plane.setOrigin(new_origin);
     }
+    // End
 
-    std::vector<std::vector<int>> vertices_all;
-
-    int skeleton_index = skeleton.findSkeletonVertex(lowest_vertex);
-    if (skeleton.skeleton_root->findNode(skeleton_index) != nullptr)
-    {
-        for (auto node : skeleton.skeleton_root->findNode(skeleton_index)->m_nodes)
-        {
-            auto &cgal_p0 = skeleton.m_skeleton[Skeleton_EPICK::vertex_descriptor(skeleton_index)].point;
-            auto &cgal_p1 = skeleton.m_skeleton[Skeleton_EPICK::vertex_descriptor(node->m_point)].point;
-            EigenPoint p0(cgal_p0.x(), cgal_p0.y(), cgal_p0.z());
-            EigenPoint p1(cgal_p1.x(), cgal_p1.y(), cgal_p1.z());
-        }
-        vertices_all = skeleton.skeleton_root->findPathsStartedFromNode(skeleton.skeleton_root->findNode(skeleton_index));
-    }
-
-    std::vector<bool> vertices_list;
-    vertices_list.resize(mesh.number_of_vertices());
-
-    for (auto &vertices : vertices_all)
-    {
-        for (auto &index : vertices)
-        {
-            for (auto &vd : skeleton.m_skeleton[index].vertices)
-            {
-                vertices_list[vd.id()] = true;
-            }
-        }
-    }
-
+    // Start
+    // points_to_check is the vertices that we want them to be on the negative side of the clipping plane.
     EigenPoints points_to_check;
-    std::vector<CgalMesh_EPICK::Vertex_index> vertices_n;
-    for (int i = 0; i < vertices_list.size(); i++)
-    {
-        if (vertices_list[i] == false)
-        {
-            vertices_n.emplace_back(CgalMesh_EPICK::Vertex_index(i));
-            auto &cgal_p = mesh.point(CgalMesh_EPICK::Vertex_index(i));
-            EigenPoint p(cgal_p.x(), cgal_p.y(), cgal_p.z());
-            points_to_check.emplace_back(p);
-        }
-    }
     SO::Plane plane_0 = temp_clipping_plane;
-
     if (partition.getBaseContours().numberOfPolygons() > 1)
     {
         std::vector<bool> vertices_status;
@@ -412,7 +396,6 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
             }
         }
 
-        points_to_check.clear();
         for (size_t i = 0; i < vertices_status.size(); i++)
         {
             if (vertices_status[i])
@@ -422,54 +405,86 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
                 points_to_check.emplace_back(p);
             }
         }
-
-        if (this->adjustPlaneNormalSoPointsAreOnNegativeSide(points_to_check, reference_plane, base_plane, temp_clipping_plane) == 1)
-        {
-            if (temp_clipping_plane.getNormal().dot(base_plane.getNormal()) < 0)
-            {
-                if (temp_clipping_plane.getNormal().dot(plane_0.getNormal()) > 0)
-                {
-                    temp_clipping_plane = plane_0;
-                }
-                else
-                {
-                    temp_clipping_plane.setNormal(-temp_clipping_plane.getNormal());
-                }
-            }
-        }
     }
     else
     {
-        if (this->adjustPlaneNormalSoPointsAreOnNegativeSide(points_to_check, reference_plane, base_plane, temp_clipping_plane) == 1)
+        Skeleton_EPICK skeleton_epick;
+
+        CGAL::extract_mean_curvature_flow_skeleton(mesh, skeleton_epick);
+        SO::Skeleton skeleton(skeleton_epick, mesh, base_plane);
+
+        std::vector<SO::SkeletonNode *> nodes_has_no_children;
+        skeleton.skeleton_root->findNodesHaveNoChildren(nodes_has_no_children);
+
+        std::vector<std::vector<int>> vertices_all;
+
+        int skeleton_index = skeleton.findSkeletonVertex(lowest_vertex);
+        if (skeleton.skeleton_root->findNode(skeleton_index) != nullptr)
         {
-            if (temp_clipping_plane.getNormal().dot(base_plane.getNormal()) < 0)
+            for (auto node : skeleton.skeleton_root->findNode(skeleton_index)->m_nodes)
             {
-                if (temp_clipping_plane.getNormal().dot(plane_0.getNormal()) > 0)
+                auto &cgal_p0 = skeleton.m_skeleton[Skeleton_EPICK::vertex_descriptor(skeleton_index)].point;
+                auto &cgal_p1 = skeleton.m_skeleton[Skeleton_EPICK::vertex_descriptor(node->m_point)].point;
+                EigenPoint p0(cgal_p0.x(), cgal_p0.y(), cgal_p0.z());
+                EigenPoint p1(cgal_p1.x(), cgal_p1.y(), cgal_p1.z());
+            }
+            vertices_all = skeleton.skeleton_root->findPathsStartedFromNode(skeleton.skeleton_root->findNode(skeleton_index));
+        }
+
+        std::vector<bool> vertices_list;
+        vertices_list.resize(mesh.number_of_vertices());
+
+        for (auto &vertices : vertices_all)
+        {
+            for (auto &index : vertices)
+            {
+                for (auto &vd : skeleton.m_skeleton[index].vertices)
                 {
-                    temp_clipping_plane = plane_0;
+                    vertices_list[vd.id()] = true;
                 }
-                else
-                {
-                    temp_clipping_plane.setNormal(-temp_clipping_plane.getNormal());
-                }
+            }
+        }
+
+        std::vector<CgalMesh_EPICK::Vertex_index> vertices_n;
+        for (int i = 0; i < vertices_list.size(); i++)
+        {
+            if (vertices_list[i] == false)
+            {
+                vertices_n.emplace_back(CgalMesh_EPICK::Vertex_index(i));
+                auto &cgal_p = mesh.point(CgalMesh_EPICK::Vertex_index(i));
+                EigenPoint p(cgal_p.x(), cgal_p.y(), cgal_p.z());
+                points_to_check.emplace_back(p);
+            }
+        }
+    }
+    // End
+
+    if (this->adjustPlaneNormalSoPointsAreOnNegativeSide(points_to_check, reference_plane, base_plane, temp_clipping_plane) == true)
+    {
+        if (temp_clipping_plane.getNormal().dot(base_plane.getNormal()) < 0)
+        {
+            if (temp_clipping_plane.getNormal().dot(plane_0.getNormal()) > 0)
+            {
+                temp_clipping_plane = plane_0;
+            }
+            else
+            {
+                temp_clipping_plane.setNormal(-temp_clipping_plane.getNormal());
             }
         }
     }
 
-   SO::Plane plane_1 = temp_clipping_plane;
-    
+    SO::Plane plane_1 = temp_clipping_plane;
 
-   this->adjustPlaneOriginSoPointsAreOnNegativeSide(base_contour_points, temp_clipping_plane);
+    this->adjustPlaneOriginSoPointsAreOnNegativeSide(base_contour_points, temp_clipping_plane);
 
-   if (this->adjustPlaneOriginSoPointsAreOnPostiveSide(points_in_overhanging_triangles, temp_clipping_plane))
-   {
-       if (this->hasPointsOnPositiveSide(base_contour_points, temp_clipping_plane))
-       {
-           temp_clipping_plane = plane_1;
-       }
-   }
-
-    //this->adjustPlaneOriginSoPointsAreOnPostiveSide(points_in_overhanging_triangles, temp_clipping_plane);
+    if (this->adjustPlaneOriginSoPointsAreOnPostiveSide(points_in_overhanging_triangles, temp_clipping_plane))
+    {
+        if (this->hasPointsOnPositiveSide(base_contour_points, temp_clipping_plane))
+        {
+            temp_clipping_plane = plane_1;
+        }
+    }
 
     if (temp_clipping_plane.getNormal().dot(Eigen::Vector3d::UnitZ()) < 0.0)
     {
@@ -488,28 +503,12 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
 
 double AutoPartitioner::getAreaOfOverhangingTrianglesProjectedOnBasePlane(std::vector<int> faces, const CgalMesh_EPICK &mesh, const SO::Plane &base_plane)
 {
-    auto getAreaOfTriangle = [](Eigen::Vector3d &p0, Eigen::Vector3d &p1, Eigen::Vector3d &p2) {
-        Eigen::Vector3d v0 = p1 - p0;
-        Eigen::Vector3d v1 = p2 - p0;
-        double area = 0.5 * v1.cross(v0).norm();
-        return area;
-    };
-
     double total_area = 0.0;
-
     for (auto index : faces)
     {
-        std::vector<Eigen::Vector3d> vertices;
-        vertices.reserve(3);
-        for (auto v : mesh.vertices_around_face(mesh.halfedge(CgalMesh_EPICK::Face_index(index))))
-        {
-            auto &p = mesh.point(v);
-            EigenPoint point(p.x(), p.y(), p.z());
-            vertices.emplace_back(base_plane.getProjectionOfPointOntoPlane(point));
-        }
-        total_area += getAreaOfTriangle(vertices[0], vertices[1], vertices[2]);
+        SO::Triangle triangle(CgalMesh_EPICK::Face_index(index), mesh);
+        total_area += triangle.getArea();
     }
-
     return total_area;
 }
 
@@ -578,6 +577,7 @@ AutoPartitioner::OverhangingRegion AutoPartitioner::findLargestOverhangingRegion
         }
 
         // Check if result faces has vertex in vertices_to_ignore_list
+        // Performance issue here
         auto check_vertices_in_resulted_face_contained_in_ignore_list = [&resulted_faces, &mesh, &vertices_to_ignore_list]() {
 
             if (vertices_to_ignore_list.size() == 0)
@@ -609,7 +609,6 @@ AutoPartitioner::OverhangingRegion AutoPartitioner::findLargestOverhangingRegion
             continue;
         }
 
-
         double area = this->getAreaOfOverhangingTrianglesProjectedOnBasePlane(resulted_faces, mesh, base_plane);
 
         if (area > max)
@@ -629,7 +628,6 @@ AutoPartitioner::OverhangingRegion AutoPartitioner::findLargestOverhangingRegion
     return overhanging_region;
 }
 
-
 bool AutoPartitioner::clipPartition(SO::Partition<CgalMesh_EPECK> &partition, ResultOfDetermineClippingPlane &clipping_plane,
     SO::Partition<CgalMesh_EPECK> &partition_low, SO::Partition<CgalMesh_EPECK> &partition_up)
 {
@@ -648,6 +646,12 @@ bool AutoPartitioner::clipPartition(SO::Partition<CgalMesh_EPECK> &partition, Re
     CgalMesh_EPECK temp_up_mesh = mesh;
     bool result = CGAL::Polygon_mesh_processing::clip(temp_low_mesh, clip_plane, CGAL::parameters::throw_on_self_intersection(true).clip_volume(true)) &&
         CGAL::Polygon_mesh_processing::clip(temp_up_mesh, clip_plane.opposite(), CGAL::parameters::throw_on_self_intersection(true).clip_volume(true));
+
+    if (!result)
+    {
+        spdlog::error("Abort AutoPartitioner::clipMesh() due to problem occur in CGAL::Polygon_mesh_processing::clip()!");
+        return false;
+    }
 
     auto is_mesh_touch_base_plane = [&base_plane](CgalMesh_EPECK &mesh) {
 
@@ -680,12 +684,6 @@ bool AutoPartitioner::clipPartition(SO::Partition<CgalMesh_EPECK> &partition, Re
         low_mesh = temp_up_mesh;
         up_mesh = temp_low_mesh;
         clipping_plane.clipping_plane.setNormal(-clipping_plane.clipping_plane.getOrigin());
-    }
-
-    if (!result)
-    {
-        spdlog::error("Abort AutoPartitioner::clipMesh() due to problem occur in CGAL::Polygon_mesh_processing::clip()!");
-        return false;
     }
 
     low_mesh.collect_garbage();
@@ -928,7 +926,7 @@ bool AutoPartitioner::adjustPlaneOriginSoPointsAreOnNegativeSide(const EigenPoin
     return false;
 }
 
-int AutoPartitioner::adjustPlaneNormalSoPointsAreOnNegativeSide(const EigenPoints &points, const SO::Plane &reference_plane, const SO::Plane &base_plane, SO::Plane &clipping_plane)
+bool AutoPartitioner::adjustPlaneNormalSoPointsAreOnNegativeSide(const EigenPoints &points, const SO::Plane &reference_plane, const SO::Plane &base_plane, SO::Plane &clipping_plane)
 {
     SO::Plane temp_clipping_plane = clipping_plane;
     SO::Plane plane_to_check_up_and_down = clipping_plane;
@@ -1009,12 +1007,11 @@ int AutoPartitioner::adjustPlaneNormalSoPointsAreOnNegativeSide(const EigenPoint
     {
         if (points_to_check_2.size())
         {
-            return 0;
+            return false;
         }
 
-        while (this->hasPointsOnPositiveSide(points_to_check_1, temp_clipping_plane))
+        if (this->hasPointsOnPositiveSide(points_to_check_1, temp_clipping_plane))
         {
-            std::cout << "enter loop" << std::endl;
             max = std::numeric_limits<double>::min();
             for (auto &point : points_to_check_1)
             {
@@ -1032,15 +1029,19 @@ int AutoPartitioner::adjustPlaneNormalSoPointsAreOnNegativeSide(const EigenPoint
             {
                 temp_clipping_plane.setNormal(-temp_clipping_plane.getNormal());
             }
-            break;
         }
         clipping_plane = temp_clipping_plane;
     }
 
-    return 1;
+    return true;
 }
 
-SO::PartitionCollection<CgalMesh_EPICK> AutoPartitioner::getResult()
+bool AutoPartitioner::checkClippingPlaneNormal(SO::Plane &clipping_plane, const EigenPoint &centroid_of_base_contours)
 {
-	return m_results;
+    if (clipping_plane.getPositionOfPointWrtPlane(centroid_of_base_contours) == 1)
+    {
+        clipping_plane.setNormal(-clipping_plane.getNormal());
+        return true;
+    }
+    return false;
 }
