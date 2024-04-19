@@ -1,7 +1,6 @@
 #include "object_for_visualization.h"
 
-using GUI::ObjectForVisualization;
-using GUI::TriangleForVisualization;
+using SyNSlicerEngine::GUI::ObjectForVisualization;
 
 ObjectForVisualization::ObjectForVisualization()
 	: mp_poly_data(nullptr)
@@ -249,43 +248,4 @@ void ObjectForVisualization::update()
 		mp_property = mp_actor->GetProperty();
 		break;
 	}
-}
-
-TriangleForVisualization::TriangleForVisualization()
-{
-}
-
-TriangleForVisualization::TriangleForVisualization(std::vector<Eigen::Vector3d> vertices)
-{
-	// Create a triangle.
-	vtkNew<vtkPoints> points;
-	points->InsertNextPoint(vertices[0][0], vertices[0][1], vertices[0][2]);
-	points->InsertNextPoint(vertices[1][0], vertices[1][1], vertices[1][2]);
-	points->InsertNextPoint(vertices[2][0], vertices[2][1], vertices[2][2]);
-
-	vtkNew<vtkTriangle> triangle;
-	triangle->GetPointIds()->SetId(0, 0);
-	triangle->GetPointIds()->SetId(1, 1);
-	triangle->GetPointIds()->SetId(2, 2);
-
-	vtkNew<vtkCellArray> triangles;
-	triangles->InsertNextCell(triangle);
-
-	// Create a polydata object
-	vtkNew<vtkPolyData> trianglePolyData;
-
-	// Add the geometry and topology to the polydata.
-	trianglePolyData->SetPoints(points);
-	trianglePolyData->SetPolys(triangles);
-
-	this->setPolyData(trianglePolyData);
-}
-
-TriangleForVisualization::~TriangleForVisualization()
-{
-}
-
-void TriangleForVisualization::addToRenderer(vtkRenderer *p_renderer)
-{
-	ObjectForVisualization::addToRenderer(p_renderer);
 }

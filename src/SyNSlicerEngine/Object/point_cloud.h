@@ -18,9 +18,11 @@ namespace SyNSlicerEngine::Object
 	public:
 		PointCloud();
 		PointCloud(const PointCloud &other);
+		PointCloud(const std::vector<Eigen::Vector3d> &points);
 		~PointCloud();
 		
 		void reset();
+		bool hasCommonPoints(const PointCloud &other);
 
 		void addPoint(Eigen::Vector3d point);
 		void getBound(double bound[6]);

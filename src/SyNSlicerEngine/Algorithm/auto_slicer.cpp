@@ -2,26 +2,36 @@
 
 using SyNSlicerEngine::Algorithm::AutoSlicer;
 
-AutoSlicer::AutoSlicer(SO::Partition<CgalMesh_EPICK> &p_partition, double target_layer_thickness, double side_step)
+AutoSlicer::AutoSlicer(SO::Partition<CgalMesh_EPICK> &p_partition, double target_layer_thickness, double side_step,
+    double min_layer_thickness, double m_max_layer_thickness)
     : mp_operating_partition(&p_partition)
     , m_mesh(mp_operating_partition->getEPICKMesh())
     , m_slicer(m_mesh)
     , m_tree(faces(m_mesh).first, faces(m_mesh).second, m_mesh)
     , m_layer_thickness(target_layer_thickness)
     , m_side_step(side_step)
+    , m_min_layer_thickness(min_layer_thickness)
+    , m_max_layer_thickness(m_max_layer_thickness)
 {
-    m_max_layer_thickness = 0.35;
-    m_min_layer_thickness = 0.25;
+    this->slice();
+}
 
+AutoSlicer::~AutoSlicer()
+{ 
+
+}
+
+void AutoSlicer::slice()
+{
     SO::Plane base_plane = mp_operating_partition->getBasePlane();
     SO::PolygonCollection current_contours = mp_operating_partition->getBaseContours();
 
-    Eigen::Vector3d new_origin = current_contours.centroid();
+    Eigen::Vector3d new_origin = current_contours.getCentroid();
     new_origin = base_plane.getProjectionOfPointOntoPlane(new_origin);
     current_contours.setPlane(SO::Plane(new_origin, base_plane.getNormal()));
 
     m_temp_slicing_result.emplace_back(current_contours);
-    
+
     SO::PolygonCollection next_contours;
     while (this->determineNextSlicingPlane(current_contours, next_contours) == true)
     {
@@ -35,7 +45,7 @@ AutoSlicer::AutoSlicer(SO::Partition<CgalMesh_EPICK> &p_partition, double target
 
     SO::PrintingLayerCollection printing_layers;
     for (size_t i = 1; i < m_slicing_result.size(); i++)
-    {   
+    {
         if (!this->isSlicingPlaneValid(m_slicing_result[i].getPlane(), m_slicing_result[i - 1].getPlane()))
         {
             std::cout << "Layer " << i << " not_valid" << std::endl;
@@ -44,12 +54,7 @@ AutoSlicer::AutoSlicer(SO::Partition<CgalMesh_EPICK> &p_partition, double target
         printing_layers.addPrintingLayer(printing_layer);
     }
 
-    p_partition.setPrintingLayers(printing_layers);
-}
-
-AutoSlicer::~AutoSlicer()
-{ 
-
+    mp_operating_partition->setPrintingLayers(printing_layers);
 }
 
 bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contours, SO::PolygonCollection &next_contours)
@@ -60,7 +65,9 @@ bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contou
     SO::Plane plane_up = current_contours.getPlane();
     plane_up.offset(0.3);
     SO::PolygonCollection contours_up = this->slice(plane_up);
-    if (!contours_up.get().size())
+
+    // Slicing end here.
+    if (!contours_up.size())
     {
         return false;
     }
@@ -69,7 +76,7 @@ bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contou
 
     this->checkSupportNeeded(contours_below, contours_up, support_contours);
 
-    if (support_contours.get().size())
+    if (support_contours.size())
     {
         SO::Polygon largest_polygon = support_contours.getLargestPolygon();
         Eigen::Vector3d target_point = largest_polygon.centroid();
@@ -144,6 +151,11 @@ bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contou
         m_temp_slicing_result.emplace_back(this->slice(plane_up));
     }
 
+    if (plane_up == current_contours.getPlane())
+    {
+        return false;
+    }
+
     next_contours = m_temp_slicing_result.back();
     return true;
 }
@@ -151,7 +163,6 @@ bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contou
 bool AutoSlicer::checkSupportNeeded(SO::PolygonCollection &contours_below, SO::PolygonCollection &contours_up, SO::PolygonCollection &support_contours)
 {
     bool support_needed = false;
-    double side_step = 0.3;
 
     Eigen::Transform<double, 3, Eigen::Affine> transformation_matrix;
     Eigen::Transform<double, 3, Eigen::Affine> inverse_transformation_matrix;
@@ -164,54 +175,18 @@ bool AutoSlicer::checkSupportNeeded(SO::PolygonCollection &contours_below, SO::P
 
     SO::PolygonCollection projected_contours;
     projected_contours = contours_up.projectToOtherPlane(contours_below.getPlane());
-    projected_contours = projected_contours.getTransformedPolygons(SO::Plane(origin, Eigen::Vector3d(0, 0, 1)));
-
-    for (auto &contour : projected_contours.get())
-    {
-        Clipper2Lib::PathD temp_path;
-        for (auto &point : contour.get())
-        {
-            temp_path.push_back(Clipper2Lib::PointD(point[0], point[1]));
-        }
-        subject.push_back(temp_path);
-    }
 
     SO::PolygonCollection contours_from_layer_i_minus_1 = contours_below;
-    contours_from_layer_i_minus_1 = contours_from_layer_i_minus_1.getTransformedPolygons(SO::Plane(origin, Eigen::Vector3d(0, 0, 1)));
 
-    for (auto &contour : contours_from_layer_i_minus_1.get())
+    // 0.25 control how the slicing planes sensitive to model surface
+    contours_from_layer_i_minus_1 = contours_from_layer_i_minus_1.getOffset(0.25 * m_side_step);
+    support_contours = projected_contours.getDifference(contours_from_layer_i_minus_1);
+
+    if (support_contours.size())
     {
-        Clipper2Lib::PathD temp_path;
-        for (auto &point : contour.get())
-        {
-            temp_path.push_back(Clipper2Lib::PointD(point[0], point[1]));
-        }
-        clip.push_back(temp_path);
-    }
-
-    clip = Clipper2Lib::InflatePaths(clip, 0.25 * side_step, Clipper2Lib::JoinType::Miter, Clipper2Lib::EndType::Polygon);
-    clip = Clipper2Lib::SimplifyPaths(clip, 0.1);
-  
-    solution = Difference(subject, clip, Clipper2Lib::FillRule::NonZero);
-    solution = Clipper2Lib::SimplifyPaths(solution, 0.01);
-
-    if (solution.size() > 0)
-    {
-        support_contours.reset();
         support_needed = true;
-        for (int i = 0; i < solution.size(); i++)
-        {
-            SO::Polygon temp_contour;
-            temp_contour.setPlane(contours_below.getPlane());
-            for (int j = 0; j < solution[i].size(); j++)
-            {
-                Eigen::Vector3d point(solution[i][j].x, solution[i][j].y, contours_below.getPlane().getOrigin()[2]);
-                point = inverse_transformation_matrix * (point - origin) + origin;
-                temp_contour.addPointToBack(point);
-            }
-            support_contours.addPolygon(temp_contour);
-        }
     }
+
     return support_needed;
 }
 
@@ -220,7 +195,7 @@ bool AutoSlicer::getIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_belo
     int number_of_gaps = 0;
     std::vector<SO::Plane> slicing_planes;
 
-    if (!this->tunePlaneUpUntilMimimumSideValid(plane_up, plane_below, slicing_planes))
+    if (!this->computeDefaultIntermediatePlanes(plane_up, plane_below, slicing_planes))
     {
         return false;
     }
@@ -244,7 +219,7 @@ bool AutoSlicer::getIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_belo
         {
             plane_up = m_temp_slicing_result.back().getPlane();
             m_temp_slicing_result.pop_back();
-            return true;
+            return false;
         }
         j = i;
     }
@@ -254,7 +229,7 @@ bool AutoSlicer::getIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_belo
     return true;
 }
 
-bool AutoSlicer::tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane plane_below, std::vector<SO::Plane> &slicing_planes)
+bool AutoSlicer::computeDefaultIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below, std::vector<SO::Plane> &slicing_planes)
 {
     SO::Line intersecting_line;
     if (!plane_below.isIntersectedWithPlane(plane_up, intersecting_line))
@@ -263,6 +238,11 @@ bool AutoSlicer::tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane
     }
 
     SO::PolygonCollection contours = this->slice(plane_up);
+    if (contours.size() < 1)
+    {
+        return false;
+    }
+
     contours.removePolygonsBelowPlane(plane_below);
 
     Eigen::Vector3d closest_point;
@@ -315,6 +295,8 @@ bool AutoSlicer::tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane
     double min_last_time = 0;
     int time = 0;
 
+    // Make sure smallest layer thickness greater than the minimum layer thickness
+    // that the printer can print
     while (min < m_min_layer_thickness && abs(min - min_last_time) > 1e-6)
     {
         Eigen::Vector3d new_origin = plane_below.getProjectionOfPointOntoPlane(min_point) 
@@ -333,11 +315,12 @@ bool AutoSlicer::tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane
 
     SO::Plane plane_before = plane_up;
     SO::PolygonCollection contours_before = contours;
-    // some problem in this step 
+
     SO::Line intersecting_line;
     if (plane_below.isIntersectedWithPlane(plane_up, intersecting_line))
     {
         Eigen::Vector3d new_point;
+        // m_temp_slicing_result.back() is this->slice(plane_below)
         m_temp_slicing_result.back().getFurthestPointFromLine(intersecting_line, new_point);
         new_point = new_point + m_max_layer_thickness * plane_up.getNormal();
 
@@ -383,12 +366,15 @@ bool AutoSlicer::tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane
         max = contours.getMaximumDistanceFromPlane(plane_below, max_point);
     }
     
+    // Eliminate wrong result for plane up.
     if (plane_up.getPositionOfPointWrtPlane(contours_before.centroid()) == -1)
     {
         plane_up = plane_before;
         contours = contours_before;
     }
 
+    // Adjust plane up to meet the requirement of max and min layer thickness iteratively untill
+    // both requirements are met
     while (max > m_max_layer_thickness && abs(max - max_last_time) > 1e-6)
     {
         SO::Line intersecting_line;
@@ -412,7 +398,6 @@ bool AutoSlicer::tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane
             min = contours.getMinimumDistanceFromPlane(plane_below, min_point);
             min_last_time = 0;
 
-            // Sometime min > m_max_layer_thickness  
             while (min > m_max_layer_thickness && min != std::numeric_limits<double>::max())
             {
                 Eigen::Vector3d new_origin = plane_below.getProjectionOfPointOntoPlane(min_point);
@@ -439,6 +424,13 @@ bool AutoSlicer::tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane
             max_last_time = max;
             max = contours.getMaximumDistanceFromPlane(plane_below, max_point);
         }
+    }
+
+    if (plane_up.getNormal()[2] < 0.0)
+    {
+        plane_up.setNormal(Eigen::Vector3d(plane_up.getNormal()[0], plane_up.getNormal()[1], 1e-5));
+        contours = this->slice(plane_up);
+        contours.removePolygonsBelowPlane(plane_below);
     }
 
     if (contours.numberOfPolygons() < 1)
@@ -472,9 +464,9 @@ bool AutoSlicer::isSlicingPlaneValid(SO::Plane plane_up, SO::Plane plane_below)
         }
     }
     //std::cout << min << " " << max << std::endl;
-    if ((max - m_max_layer_thickness) > 1e-3 || (m_min_layer_thickness - min) > 1e-3)
+    if ((max - m_max_layer_thickness) > 1e-3 || (m_min_layer_thickness - min) > 1e-3 || plane_up.getNormal()[2] < 0.0)
     {
-        std::cout << min << " " << max << std::endl;
+        std::cout << min << " " << max << " " << plane_up.getNormal()[2] << std::endl;
         return false;
     }
 

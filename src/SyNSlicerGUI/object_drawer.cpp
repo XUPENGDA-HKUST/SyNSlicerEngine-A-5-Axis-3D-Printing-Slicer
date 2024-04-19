@@ -1,6 +1,7 @@
 #include "object_drawer.h"
 
-using GUI::ObjectDrawer;
+using SyNSlicerEngine::GUI::ObjectDrawer;
+using SyNSlicerEngine::GUI::ObjectForVisualization;
 
 ObjectDrawer::ObjectDrawer(vtkRenderer *p_renderer)
 	: mp_renderer(p_renderer)
@@ -17,7 +18,7 @@ vtkRenderer *ObjectDrawer::getRenderer()
 	return mp_renderer;
 }
 
-void GUI::ObjectDrawer::drawPoint(const Eigen::Vector3d &point, std::string name)
+void ObjectDrawer::drawPoint(const Eigen::Vector3d &point, std::string name)
 {
 	vtkNew<vtkPoints> points;
 	// Create the topology of the point (a vertex)
@@ -40,7 +41,7 @@ void GUI::ObjectDrawer::drawPoint(const Eigen::Vector3d &point, std::string name
 	m_object_in_renderer[name]->setColor(1, 0, 0);
 }
 
-void GUI::ObjectDrawer::drawPoints(const std::vector<Eigen::Vector3d> &points, std::string name)
+void ObjectDrawer::drawPoints(const std::vector<Eigen::Vector3d> &points, std::string name)
 {
 	vtkNew<vtkPoints> vtk_points;
 	// Create the topology of the point (a vertex)
@@ -66,7 +67,7 @@ void GUI::ObjectDrawer::drawPoints(const std::vector<Eigen::Vector3d> &points, s
 	m_object_in_renderer[name]->setColor(1, 0, 0);
 }
 
-void GUI::ObjectDrawer::drawLine(const SO::Line &line, std::string name)
+void ObjectDrawer::drawLine(const SO::Line &line, std::string name)
 {
 	int pointID = 0;
 	vtkNew<vtkPoints> points;
@@ -89,7 +90,7 @@ void GUI::ObjectDrawer::drawLine(const SO::Line &line, std::string name)
 
 }
 
-void GUI::ObjectDrawer::drawPolyline(const SO::Polyline &polyline, std::string name)
+void ObjectDrawer::drawPolyline(const SO::Polyline &polyline, std::string name)
 {
 	int pointID = 0;
 	vtkNew<vtkPoints> points;
@@ -115,7 +116,7 @@ void GUI::ObjectDrawer::drawPolyline(const SO::Polyline &polyline, std::string n
 	this->addObjectToRenderer(polyline_poly_data, name);
 }
 
-void GUI::ObjectDrawer::drawPolylines(const SO::PolylineCollection &polylines, std::string name)
+void ObjectDrawer::drawPolylines(const SO::PolylineCollection &polylines, std::string name)
 {
 	int pointID = 0;
 	vtkNew<vtkPoints> points;
@@ -144,7 +145,7 @@ void GUI::ObjectDrawer::drawPolylines(const SO::PolylineCollection &polylines, s
 	this->addObjectToRenderer(polyline_poly_data, name);
 }
 
-void GUI::ObjectDrawer::drawPolygon(const SO::Polygon &polygon, std::string name)
+void ObjectDrawer::drawPolygon(const SO::Polygon &polygon, std::string name)
 {
 	int pointID = 0;
 	vtkNew<vtkPoints> points;
@@ -326,7 +327,7 @@ int ObjectDrawer::numberOfObjectsDrawn()
 	return m_object_in_renderer.size();
 }
 
-GUI::ObjectForVisualization *ObjectDrawer::getObjectDrawn(std::string name)
+ObjectForVisualization *ObjectDrawer::getObjectDrawn(std::string name)
 {
 	return m_object_in_renderer[name];
 }
@@ -353,7 +354,7 @@ int ObjectDrawer::removeAllObjectsDrawn()
 
 void ObjectDrawer::addObjectToRenderer(vtkPolyData *p_polydata, std::string name)
 {
-	GUI::ObjectForVisualization *object = new GUI::ObjectForVisualization();
+	ObjectForVisualization *object = new GUI::ObjectForVisualization();
 	object->setPolyData(p_polydata);
 	object->addToRenderer(mp_renderer);
 	m_object_in_renderer.insert(std::make_pair(name, object));

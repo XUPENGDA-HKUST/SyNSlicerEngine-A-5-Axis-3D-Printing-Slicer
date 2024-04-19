@@ -17,7 +17,7 @@ Triangle::Triangle(Eigen::Vector3d v0, Eigen::Vector3d v1, Eigen::Vector3d v2)
 	m_v2 = v2;
 }
 
-Triangle::Triangle(CgalMesh_EPICK::Face_index f, CgalMesh_EPICK &mesh)
+Triangle::Triangle(const CgalMesh_EPICK::Face_index &f, const CgalMesh_EPICK &mesh)
 {
 	std::vector<Eigen::Vector3d> vertices;
 	for (auto v : mesh.vertices_around_face(mesh.halfedge(f)))

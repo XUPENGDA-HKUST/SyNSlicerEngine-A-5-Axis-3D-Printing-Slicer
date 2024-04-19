@@ -24,15 +24,17 @@ namespace SyNSlicerEngine::Algorithm
 	{
 	public:
 		explicit AutoSlicer(SO::Partition<CgalMesh_EPICK> &p_partition,
-			double target_layer_thickness, double side_step);
+			double target_layer_thickness, double side_step, double min_layer_thickness = 0.25,
+			double m_max_layer_thickness = 0.35);
 		~AutoSlicer();
 
 	protected:
+		virtual void slice();
 		virtual bool determineNextSlicingPlane(SO::PolygonCollection &current_contours, SO::PolygonCollection &next_contours);
 		virtual bool checkSupportNeeded(SO::PolygonCollection &contours_below, SO::PolygonCollection &contours_up, SO::PolygonCollection &support_contours);
 
 		virtual bool getIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below);
-		virtual bool tunePlaneUpUntilMimimumSideValid(SO::Plane &plane_up, SO::Plane plane_below, std::vector<SO::Plane> &slicing_planes);
+		virtual bool computeDefaultIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below, std::vector<SO::Plane> &slicing_planes);
 		virtual bool tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane_below);
 
 		virtual bool isSlicingPlaneValid(SO::Plane plane_up, SO::Plane plane_below);
@@ -58,6 +60,8 @@ namespace SyNSlicerEngine::Algorithm
 		std::vector<Eigen::Vector3d> m_points_on_base_plane;
 		std::vector<SO::PolygonCollection> m_temp_slicing_result;
 		std::vector<SO::PolygonCollection> m_slicing_result;
+
+		int number_for_debug = 0;
 	};
 }
 

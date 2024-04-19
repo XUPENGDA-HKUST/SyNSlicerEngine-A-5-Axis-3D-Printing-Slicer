@@ -16,7 +16,7 @@
 
 namespace SO = SyNSlicerEngine::Object;
 
-namespace GUI {
+namespace SyNSlicerEngine::GUI {
 
 	class ObjectDrawer
 	{
@@ -45,7 +45,7 @@ namespace GUI {
 		void setOpacity(std::string name, double opacity);
 
 		int numberOfObjectsDrawn();
-		GUI::ObjectForVisualization *getObjectDrawn(std::string name);
+		SyNSlicerEngine::GUI::ObjectForVisualization *getObjectDrawn(std::string name);
 		void removeObjectDrawn(std::string name);
 		int removeAllObjectsDrawn();
 

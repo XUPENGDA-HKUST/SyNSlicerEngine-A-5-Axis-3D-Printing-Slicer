@@ -12,6 +12,14 @@ PointCloud::PointCloud(const PointCloud &other)
 	*this = other;
 }
 
+PointCloud::PointCloud(const std::vector<Eigen::Vector3d> &points)
+{
+	for (auto &point : points)
+	{
+		this->addPoint(point);
+	}
+}
+
 PointCloud::~PointCloud()
 {
 
@@ -21,6 +29,27 @@ void PointCloud::reset()
 {
 	m_points.clear();
 	m_status = Empty;
+}
+
+bool PointCloud::hasCommonPoints(const PointCloud &other)
+{
+	// check is bound intersect
+	if (this->m_bound[1] >= other.m_bound[0] && other.m_bound[1] >= this->m_bound[0] &&
+		this->m_bound[3] >= other.m_bound[2] && other.m_bound[3] >= this->m_bound[2] && 
+		this->m_bound[5] >= other.m_bound[4] && other.m_bound[5] >= this->m_bound[4])
+	{
+		for (auto &point_1 : this->m_points)
+		{
+			for (auto &point_2 : other.m_points)
+			{
+				if ((point_1 - point_2).norm() < 1e-3)
+				{
+					return true;
+				}
+			}
+		}
+	};
+	return false;
 }
 
 void PointCloud::addPoint(Eigen::Vector3d point)

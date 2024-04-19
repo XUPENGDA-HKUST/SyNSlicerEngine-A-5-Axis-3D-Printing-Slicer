@@ -35,6 +35,7 @@ void GcodeGenerator::generateToolpathForEachLayer()
 			
 			if (current_layer.getSlicingPlane().isIntersectedWithPlane(current_layer.getPrevSlicingPlane(), intersecting_line))
 			{
+				// non parallel consecutive layers
 				angle_between_planes = abs(current_layer.getSlicingPlane().getAngleOfRotation(current_layer.getPrevSlicingPlane())); //????
 				this->generateToolpath(current_layer.getPrintingPaths().getSurface(), toolpaths, intersecting_line, angle_between_planes);
 				this->generateToolpath(current_layer.getPrintingPaths().getWall(), toolpaths, intersecting_line, angle_between_planes);
@@ -47,6 +48,7 @@ void GcodeGenerator::generateToolpathForEachLayer()
 			}
 			else
 			{
+				// parallel consecutive layers
 				local_layer_thickness = abs(current_layer.getSlicingPlane().d() - current_layer.getPrevSlicingPlane().d())
 					/ current_layer.getPrevSlicingPlane().getNormal().norm();
 

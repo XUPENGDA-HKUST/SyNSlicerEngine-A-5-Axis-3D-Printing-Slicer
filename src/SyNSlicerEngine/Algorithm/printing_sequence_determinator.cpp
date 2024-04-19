@@ -6,8 +6,7 @@ PrintingSequenceDeterminator::PrintingSequenceDeterminator(
 	SO::PartitionCollection<CgalMesh_EPICK> &partition_list)
 	: m_printing_sequence(partition_list)
 {
-	spdlog::info("Determining Printing Sequence");
-	this->determinePrintingSequence();
+
 }
 
 PrintingSequenceDeterminator::~PrintingSequenceDeterminator()
@@ -17,10 +16,10 @@ PrintingSequenceDeterminator::~PrintingSequenceDeterminator()
 
 PrintingSequenceDeterminator::PrintingSequenceStatus PrintingSequenceDeterminator::determinePrintingSequence()
 {
+	spdlog::info("Determining Printing Sequence");
 	this->findSweptVolumeOfNozzleForAllPartition();
 
-	//if (isSweptVolumeIntersectBuildPlate())
-	if (false)
+	if (this->isSweptVolumeIntersectBuildPlate() == true)
 	{
 		std::cout << "Nozzle collides with build plate during printing!" << std::endl;
 		return PrintingSequenceStatus::CollisionOccurAndCannotBeFixed;

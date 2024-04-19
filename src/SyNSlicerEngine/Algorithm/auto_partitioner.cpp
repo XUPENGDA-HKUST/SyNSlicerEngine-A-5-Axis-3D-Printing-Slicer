@@ -244,9 +244,9 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
     {
         for (auto v : mesh.vertices_around_face(mesh.halfedge(CgalMesh_EPICK::Face_index(f_id))))
         {
-            if (is_vertices_recorded_list[v.id()] == false)
+            //if (is_vertices_recorded_list[v.id()] == false)
             {
-                is_vertices_recorded_list[v.id()] = true;
+                //is_vertices_recorded_list[v.id()] = true;
                 points_in_overhanging_triangles.emplace_back(Eigen::Vector3d(mesh.point(v).x(), mesh.point(v).y(), mesh.point(v).z()));
                 sum_point = sum_point + base_plane.getProjectionOfPointOntoPlane(points_in_overhanging_triangles.back());
                 double distance = get(m_vertex_distance, v);
@@ -264,7 +264,7 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
     result.points_in_overhanging_triangles = points_in_overhanging_triangles;
 
     // sum_point is the middle of the largest_overhanging_region.
-    sum_point = sum_point / (result_largest_overhanging_region.faces.size());
+    sum_point = sum_point / (result_largest_overhanging_region.faces.size() * 3);
     Eigen::Vector3d sum_point_2 = partition.getBaseContours().centroid();
     Eigen::Vector3d axis_of_rotation = (sum_point - sum_point_2).cross(base_plane.getNormal());
     axis_of_rotation = axis_of_rotation / axis_of_rotation.norm();
@@ -487,6 +487,18 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
         return result;
     }
 
+    // Check nozzle intersect built plate
+    Eigen::Vector3d direction = temp_clipping_plane.getNormal().cross(reference_plane.getNormal());
+    direction = direction / direction.norm();
+
+    Eigen::Vector3d point_to_check_below_built_plate = temp_clipping_plane.getOrigin() + m_nozzle.getX() * temp_clipping_plane.getNormal();
+    point_to_check_below_built_plate = point_to_check_below_built_plate + m_nozzle.getY() / 2 * direction;
+
+    if (point_to_check_below_built_plate[2] < 0.0)
+    {
+        spdlog::error("Clipping plane result to nozzle intersect built plate.");
+    }
+
     result.clipping_plane = temp_clipping_plane;
     clipping_plane = temp_clipping_plane;
     vertices_to_ignore_list.emplace_back(SO::PointCloud(points_in_overhanging_triangles));
@@ -696,7 +708,7 @@ bool AutoPartitioner::clipPartition(SO::Partition<CgalMesh_EPECK> &partition, Re
     {
         low_mesh = temp_up_mesh;
         up_mesh = temp_low_mesh;
-        clipping_plane.clipping_plane.setNormal(-clipping_plane.clipping_plane.getOrigin());
+        clipping_plane.clipping_plane.setNormal(-clipping_plane.clipping_plane.getNormal());
     }
 
     low_mesh.collect_garbage();

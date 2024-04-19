@@ -11,7 +11,7 @@
 
 namespace SO = SyNSlicerEngine::Object;
 
-namespace GUI {
+namespace SyNSlicerEngine::GUI {
 
 	//!  This class is used to store a object for visualizing in the renderer 
 	/*!
@@ -67,16 +67,6 @@ namespace GUI {
 		bool ready_to_be_visualized;
 		vtkRenderer *mp_renderer;
 		InputType m_input_type; //!< InputType determine how to perform update();
-	};
-
-	class TriangleForVisualization : public ObjectForVisualization
-	{
-	public:
-		TriangleForVisualization();
-		TriangleForVisualization(std::vector<Eigen::Vector3d> points);
-		~TriangleForVisualization();
-
-		void addToRenderer(vtkRenderer *p_renderer);
 	};
 }
 
