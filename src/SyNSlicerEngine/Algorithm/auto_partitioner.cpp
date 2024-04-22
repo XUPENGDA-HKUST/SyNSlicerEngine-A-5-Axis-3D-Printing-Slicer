@@ -10,10 +10,6 @@ AutoPartitioner::AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition,
     , m_area_threshold_coefficient(area_threshold_coefficient)
     , m_partition_time(0)
 {
-    m_slicing_planes.emplace_back(
-        SO::Plane(
-            m_partition.getBaseContours().centroid(),
-            m_partition.getBasePlane().getNormal()));
     m_results.addPartition(partition);
 }
 
@@ -106,10 +102,6 @@ void AutoPartitioner::partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO
     if (this->clipPartition(partition, result_of_determining_clipping_plane,
         low_partition, up_partition))
     {
-        partition.writeMeshToSTL(std::string("Check/Check_") + std::to_string(m_partition_time) + std::string(".stl"));
-        low_partition.writeMeshToSTL(std::string("Check/Low_") + std::to_string(m_partition_time) + std::string(".stl"));
-        up_partition.writeMeshToSTL(std::string("Check/Up_") + std::to_string(m_partition_time) + std::string(".stl"));
-
         if (partition_list.numberOfPartitions() > 0)
         {
             for (auto lock : partition_list.back().getLocks())
@@ -124,16 +116,6 @@ void AutoPartitioner::partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO
 
             partition_list.pop_back();
         }
-
-        spdlog::get("basic_logger")->info("The {} times:", m_partition_time);
-        spdlog::get("basic_logger")->info("Base plane: {} {} {} {} {} {}",
-            partition.getBasePlane().getOrigin()[0], partition.getBasePlane().getOrigin()[1], partition.getBasePlane().getOrigin()[2],
-            partition.getBasePlane().getNormal()[0], partition.getBasePlane().getNormal()[1], partition.getBasePlane().getNormal()[2]);
-        spdlog::get("basic_logger")->info("Clip plane: {} {} {} {} {} {}",
-            clipping_plane.getOrigin()[0], clipping_plane.getOrigin()[1], clipping_plane.getOrigin()[2],
-            clipping_plane.getNormal()[0], clipping_plane.getNormal()[1], clipping_plane.getNormal()[2]);
-        spdlog::get("basic_logger")->flush();
-
         partition_list.addPartition(low_partition);
         this->partitionMesh(low_partition, partition_list, vertices_to_ignore_list);
         partition_list.addPartition(up_partition);
@@ -477,6 +459,19 @@ AutoPartitioner::ResultOfDetermineClippingPlane AutoPartitioner::determineClippi
         if (this->hasPointsOnPositiveSide(base_contour_points, temp_clipping_plane))
         {
             temp_clipping_plane = plane_1;
+        }
+    }
+
+    if (temp_clipping_plane.getPositionOfPointWrtPlane(centroid_of_base_contours) == 1)
+    {
+        temp_clipping_plane.setNormal(-temp_clipping_plane.getNormal());
+        if (temp_clipping_plane.getNormal().dot(Eigen::Vector3d::UnitZ()) < 0.0)
+        {
+            temp_clipping_plane.setNormal(Eigen::Vector3d(temp_clipping_plane.getNormal()[0], temp_clipping_plane.getNormal()[1], 0));
+            if (temp_clipping_plane.getPositionOfPointWrtPlane(centroid_of_base_contours) == 1)
+            {
+                spdlog::error("Centroid on positive side");
+            }
         }
     }
 
@@ -1059,14 +1054,4 @@ bool AutoPartitioner::adjustPlaneNormalSoPointsAreOnNegativeSide(const EigenPoin
     }
 
     return true;
-}
-
-bool AutoPartitioner::checkClippingPlaneNormal(SO::Plane &clipping_plane, const EigenPoint &centroid_of_base_contours)
-{
-    if (clipping_plane.getPositionOfPointWrtPlane(centroid_of_base_contours) == 1)
-    {
-        clipping_plane.setNormal(-clipping_plane.getNormal());
-        return true;
-    }
-    return false;
 }
