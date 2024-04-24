@@ -10,7 +10,6 @@ SupportGenerator::SupportGenerator(SO::PartitionCollection<CgalMesh_EPICK> &inpu
 	: side_step(0.4)
 	, m_paritions(input_paritions)
 {
-	this->generateSupportStructure();
 	spdlog::get("basic_logger")->info("Construct SupportGenerator");
 }
 
@@ -24,6 +23,7 @@ static int count = 0;
 void SupportGenerator::generateSupportStructure()
 {
 	spdlog::info("Generate support structure!");
+	m_paritions.revert();
 	for (int partition_index = 0; partition_index < m_paritions.numberOfPartitions(); partition_index++) // from 0 means from top to down
 	{
 		SO::PrintingLayerCollection working_printing_layers = m_paritions[partition_index].getPrintingLayers();
@@ -121,6 +121,7 @@ void SupportGenerator::generateSupportStructure()
 
 		m_paritions[partition_index].setPrintingLayers(working_printing_layers);
 	}
+	m_paritions.revert();
 }
 
 void SupportGenerator::splitAndGroupContours(SO::PolygonCollection &contours, std::vector<SO::PolygonCollection> &splited_contours, double epsilon)
@@ -135,38 +136,16 @@ void SupportGenerator::splitAndGroupContours(SO::PolygonCollection &contours, st
 	splited_contours.push_back(temp_contours);
 }
 
-bool SupportGenerator::findNeighourContours(std::vector<SO::Polygon> &contours, SO::PolygonCollection &contours_to_be_search, std::vector<bool> &access_table, double epsilon)
-{
-	std::vector<SO::Polygon> contours_used_in_the_next_searching;
-	double distance = 0.0;
-	for (int i = 0; i < contours.size(); i++)
-	{
-		for (int j = 0; j < contours_to_be_search.numberOfPolygons(); j++)
-		{	
-			distance = contours[i].getMinimumDistanceFromPolygon(contours_to_be_search[j]);
-			if (distance <= epsilon && access_table[j] == false)
-			{
-				access_table[j] = true;
-				contours_used_in_the_next_searching.emplace_back(contours_to_be_search[j]);
-			}
-		}
-	}
-	if (contours_used_in_the_next_searching.size() != 0)
-	{
-		contours = contours_used_in_the_next_searching;
-		return true;
-	}
-	return false;
-}
-
-bool SupportGenerator::extractContoursFromcontours(SO::PolygonCollection &input_contours, 
+bool SupportGenerator::extractContoursFromcontours(SO::PolygonCollection &input_contours,
 	SO::PolygonCollection &output_contours, double epsilon)
 {
+	// Check if input_contours is empty.
 	if (input_contours.numberOfPolygons() <= 0)
 	{
 		return false;
 	}
 
+	// Find first non empty polygon in input_contours.
 	int index = 0;
 	while (input_contours[index].numberOfPoints() == 0)
 	{
@@ -207,12 +186,38 @@ bool SupportGenerator::extractContoursFromcontours(SO::PolygonCollection &input_
 	input_contours = temp_contours;
 	if (input_contours.numberOfPolygons() > 0)
 	{
+		// Some contours are waiting for grouping.
 		return true;
 	}
 	else
 	{
+		// No contours are waiting for grouping.
 		return false;
 	}
+}
+
+bool SupportGenerator::findNeighourContours(std::vector<SO::Polygon> &contours, SO::PolygonCollection &contours_to_be_search, std::vector<bool> &access_table, double epsilon)
+{
+	std::vector<SO::Polygon> contours_used_in_the_next_searching;
+	double distance = 0.0;
+	for (int i = 0; i < contours.size(); i++)
+	{
+		for (int j = 0; j < contours_to_be_search.numberOfPolygons(); j++)
+		{	
+			distance = contours[i].getMinimumDistanceFromPolygon(contours_to_be_search[j]);
+			if (distance <= epsilon && access_table[j] == false)
+			{
+				access_table[j] = true;
+				contours_used_in_the_next_searching.emplace_back(contours_to_be_search[j]);
+			}
+		}
+	}
+	if (contours_used_in_the_next_searching.size() != 0)
+	{
+		contours = contours_used_in_the_next_searching;
+		return true;
+	}
+	return false;
 }
 
 void SupportGenerator::generateSupportStructureForSupportStructure(SO::PolygonCollection &contours, 
@@ -385,6 +390,8 @@ void SupportGenerator::clipSupportStructure(CgalMesh_EPICK sm, CgalMesh_EPICK &s
 		CgalPlane_EPICK cgal_plane(clip_plane.a(), clip_plane.b(), clip_plane.c(), clip_plane.d());
 		CGAL::Polygon_mesh_processing::clip(sm_L, cgal_plane, CGAL::parameters::clip_volume(true));
 		CGAL::Polygon_mesh_processing::clip(sm_U, cgal_plane.opposite(), CGAL::parameters::clip_volume(true));
+		sm_L.collect_garbage();
+		sm_U.collect_garbage();
 	}
 }
 
