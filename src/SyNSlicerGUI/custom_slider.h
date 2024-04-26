@@ -8,7 +8,7 @@
 #include "Object/printing_layer_collection.h"
 #include "object_drawer.h"
 
-namespace GUI {
+namespace SyNSlicerEngine::GUI {
 
     class LayerPreviewSlider : public QSlider
     {
@@ -62,6 +62,21 @@ namespace GUI {
 
             m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPaths().getInfill(), "I" + std::to_string(current_value));
             m_drawer.setColor("I" + std::to_string(current_value), (double)255 / 255, (double)165 / 255, 0);
+
+            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPathsForSupport().getSurface(), "SS" + std::to_string(current_value));
+            m_drawer.setColor("SS" + std::to_string(current_value), 1, 0, 0);
+
+            for (size_t i = 0; i < m_printing_layers[current_value].getPrintingPathsForSupport().getWall().size(); i++)
+            {
+                m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPathsForSupport().getWall()[i], "WW" + std::to_string(i) + std::to_string(current_value));
+                m_drawer.setColor("WW" + std::to_string(i) + std::to_string(current_value), 0, 1, 0);
+            }
+
+            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPathsForSupport().getBottomTopUnion(), "BTBT" + std::to_string(current_value));
+            m_drawer.setColor("BTBT" + std::to_string(current_value), 1, 1, 0);
+
+            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPathsForSupport().getInfill(), "II" + std::to_string(current_value));
+            m_drawer.setColor("II" + std::to_string(current_value), (double)255 / 255, (double)165 / 255, 0);
 
             last_value = value;
         }

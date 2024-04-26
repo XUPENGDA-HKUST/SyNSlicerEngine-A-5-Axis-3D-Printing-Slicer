@@ -2,10 +2,20 @@
 
 using SyNSlicerEngine::Algorithm::SweptVolumwCalculator;
 
-SweptVolumwCalculator::SweptVolumwCalculator(const SO::Partition<CgalMesh_EPICK> &partition)
+SweptVolumwCalculator::SweptVolumwCalculator(
+	const SO::Partition<CgalMesh_EPICK> &partition, SO::Nozzle nozzle)
 	: m_partition(partition)
+	, m_nozzle(nozzle)
 {
-	mp_printing_layer = nullptr;;
+
+}
+
+SweptVolumwCalculator::~SweptVolumwCalculator()
+{
+}
+
+void SweptVolumwCalculator::calculateSweptVolume()
+{
 	m_swept_volume_list.clear();
 	std::vector<CgalPoint_EPICK> pointcloud;
 	for (size_t i = 0; i < m_partition.getPrintingLayers().getNumberOfLayers(); i++)
@@ -28,10 +38,6 @@ SweptVolumwCalculator::SweptVolumwCalculator(const SO::Partition<CgalMesh_EPICK>
 	CgalMesh_EPICK sm;
 	CGAL::convex_hull_3(pointcloud.begin(), pointcloud.end(), sm);
 	m_swept_volume_list.push_back(sm);
-}
-
-SweptVolumwCalculator::~SweptVolumwCalculator()
-{
 }
 
 std::vector<CgalMesh_EPICK> SweptVolumwCalculator::getSweptVolume()
@@ -109,7 +115,8 @@ std::vector<CgalPoint_EPICK> SweptVolumwCalculator::calculatePointCloud(std::vec
 		makeVectorUnit(point_offset_direction);
 		makeVectorUnit(normal);
 
-		Eigen::Vector3d offset_point = cuurent_point + 10 * normal + 5 * point_offset_direction;
+		Eigen::Vector3d offset_point = cuurent_point + m_nozzle.getX() * normal + 
+			m_nozzle.getY() * 0.5 * point_offset_direction;
 		points.push_back(CgalPoint_EPICK(cuurent_point[0], cuurent_point[1], cuurent_point[2]));
 		points.push_back(CgalPoint_EPICK(offset_point[0], offset_point[1], offset_point[2]));
 	}

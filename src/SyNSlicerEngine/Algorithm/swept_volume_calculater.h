@@ -4,6 +4,7 @@
 #include <vector>
 #include <fstream>
 
+#include "Object/nozzle.h"
 #include "Object/printing_layer.h"
 #include "Object/partition.h"
 
@@ -18,31 +19,56 @@ namespace SyNSlicerEngine::Algorithm
 	class SweptVolumwCalculator
 	{
 	public:
+		//! Default constructor is not allowed.
 		SweptVolumwCalculator() = delete;
 
-		//!  Calculate the convex hull of the volume swept by the nozzle during printing this partition
+		//! Constructor
 		/*!
-			\param p_mesh The partition going to be printed.
-			\param p_renderer The vtkRenderer.
+			\param[in] partition_list All the partitions.
+			\param[in] nozzle The printer nozzle.
 		*/
-		SweptVolumwCalculator(const SO::Partition<CgalMesh_EPICK> &partition);
-		~SweptVolumwCalculator();
-
-		// set the cross section of the nozzle here (Not finish yet)
-		virtual void setCrossSectionOfNozzle(){}
+		SweptVolumwCalculator(const SO::Partition<CgalMesh_EPICK> &partition, SO::Nozzle nozzle);
 		
+		//! Destructor
+		~SweptVolumwCalculator();
+		
+		//! Call to start calculation.
+		virtual void calculateSweptVolume();
+
+		//! Call to calculate the convex hull of the volume swept by the nozzle during printing this partition
 		virtual std::vector<CgalMesh_EPICK> getSweptVolume();
 
 	protected:
+
+		//! Convert a vector to unit vector
+		/*!
+			\param[in,out] vector Vector to convert.
+			\return Return \b True \b  if it is a unit vector. Return \b False \b if it is a zero vector.
+		*/
 		virtual bool makeVectorUnit(Eigen::Vector3d &vector);
+
+		//! Calculate the Swept volume of the nozzle for one layer
+		/*!
+			\param[in] contour The path of the nozzle.
+			\param[in] normal The normal of the nozzle.
+		*/
 		virtual CgalMesh_EPICK calculateConvexHull(std::vector<Eigen::Vector3d> contour, Eigen::Vector3d normal);
+
+		//! Calculate the point cloud of the nozzle.
+		/*!
+			\param[in] contour The path of the nozzle.
+			\param[in] normal The normal of the nozzle.
+		*/
 		virtual std::vector<CgalPoint_EPICK> calculatePointCloud(std::vector<Eigen::Vector3d> contour, Eigen::Vector3d normal);
 
+		//! The swept volume of the nozzle for when printing each partition.
 		std::vector<CgalMesh_EPICK> m_swept_volume_list;
-		std::vector<SO::Polyhedron<CgalMesh_EPICK> *> m_mesh_list;
 
+		//! The partitions to be printed.
 		SO::Partition<CgalMesh_EPICK> m_partition;
-		SO::PrintingLayer *mp_printing_layer;
+
+		//! The nozzle of the printer.
+		SO::Nozzle m_nozzle;
 	};
 }
 

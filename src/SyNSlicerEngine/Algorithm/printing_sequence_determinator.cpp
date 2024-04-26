@@ -3,8 +3,9 @@
 using SyNSlicerEngine::Algorithm::PrintingSequenceDeterminator;
 
 PrintingSequenceDeterminator::PrintingSequenceDeterminator(
-	SO::PartitionCollection<CgalMesh_EPICK> &partition_list)
+	SO::PartitionCollection<CgalMesh_EPICK> &partition_list, SO::Nozzle nozzle)
 	: m_printing_sequence(partition_list)
+	, m_nozzle(nozzle)
 {
 
 }
@@ -63,7 +64,8 @@ void PrintingSequenceDeterminator::findSweptVolumeOfNozzleForAllPartition()
 {
 	for (size_t i = 0; i < m_printing_sequence.numberOfPartitions(); i++)
 	{
-		SweptVolumwCalculator swept_volume_calculator(m_printing_sequence[i]);
+		SweptVolumwCalculator swept_volume_calculator(m_printing_sequence[i], m_nozzle);
+		swept_volume_calculator.calculateSweptVolume();
 		m_swept_volume_list.push_back(swept_volume_calculator.getSweptVolume()[0]);
 	}
 }
@@ -88,6 +90,29 @@ bool PrintingSequenceDeterminator::isSweptVolumeIntersectBuildPlate()
 		}
 	}
 	return false;
+}
+
+PrintingSequenceDeterminator::PrintingSequenceStatus PrintingSequenceDeterminator::isPrintingSequenceCollisionFree(SO::PartitionCollection<CgalMesh_EPICK> &printing_sequence, std::pair<int, int> &collided_pair)
+{
+	for (int i = 1; i < m_swept_volume_list.size(); i++)
+	{
+		for (int j = i - 1; j < i; j++)
+		{
+			if (isSweptVolumeIntersectParition(m_swept_volume_list[i], printing_sequence[j].getEPICKMesh()))
+			{
+				if (isSweptVolumeIntersectParition(m_swept_volume_list[j], printing_sequence[j].getEPICKMesh()))
+				{
+					return PrintingSequenceStatus::CollisionOccurAndCannotBeFixed;
+				}
+				else
+				{
+					collided_pair = std::pair<int, int>(i, j);
+					return PrintingSequenceStatus::CollisionOccurAndCanBeFixed;
+				}
+			}
+		}
+	}
+	return PrintingSequenceStatus::CollisionFree;
 }
 
 bool PrintingSequenceDeterminator::isSweptVolumeIntersectParition(CgalMesh_EPICK swept_volume, CgalMesh_EPICK partition)
@@ -143,26 +168,5 @@ bool PrintingSequenceDeterminator::isPrintingSequenceSelfSupported(SO::Partition
 	return true;
 }
 
-PrintingSequenceDeterminator::PrintingSequenceStatus PrintingSequenceDeterminator::isPrintingSequenceCollisionFree(SO::PartitionCollection<CgalMesh_EPICK> &printing_sequence, std::pair<int, int> &collided_pair)
-{
-	for (int i = 1; i < m_swept_volume_list.size(); i++)
-	{
-		for (int j = i - 1; j < i; j++)
-		{
-			if (isSweptVolumeIntersectParition(m_swept_volume_list[i], printing_sequence[j].getEPICKMesh()))
-			{
-				if (isSweptVolumeIntersectParition(m_swept_volume_list[j], printing_sequence[j].getEPICKMesh()))
-				{
-					return PrintingSequenceStatus::CollisionOccurAndCannotBeFixed;
-				}
-				else
-				{
-					collided_pair = std::pair<int, int>(i, j);
-					return PrintingSequenceStatus::CollisionOccurAndCanBeFixed;
-				}
-			}
-		}
-	}
-	return PrintingSequenceStatus::CollisionFree;
-}
+
 

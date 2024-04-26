@@ -21,7 +21,10 @@ namespace SyNSlicerEngine::Object {
 		Plane(const Plane &other);
 		Plane(const Eigen::Vector3d &input_origin, const Eigen::Vector3d &input_normal);
 		Plane(double a, double b, double c, double d);
+		Plane(std::string file_name);
 		~Plane();
+
+		bool writeToTXT(std::string file_name);
 
 		bool isValid();
 

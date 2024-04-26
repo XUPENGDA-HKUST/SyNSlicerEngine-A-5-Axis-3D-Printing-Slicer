@@ -3,17 +3,16 @@
 using SyNSlicerEngine::Algorithm::AutoSlicer;
 
 AutoSlicer::AutoSlicer(SO::Partition<CgalMesh_EPICK> &p_partition, double target_layer_thickness, double side_step,
-    double min_layer_thickness, double m_max_layer_thickness)
+    double min_layer_thickness, double max_layer_thickness)
     : mp_operating_partition(&p_partition)
     , m_mesh(mp_operating_partition->getEPICKMesh())
     , m_slicer(m_mesh)
-    , m_tree(faces(m_mesh).first, faces(m_mesh).second, m_mesh)
-    , m_layer_thickness(target_layer_thickness)
+    , m_target_layer_thickness(target_layer_thickness)
     , m_side_step(side_step)
     , m_min_layer_thickness(min_layer_thickness)
-    , m_max_layer_thickness(m_max_layer_thickness)
+    , m_max_layer_thickness(max_layer_thickness)
 {
-    this->slice();
+
 }
 
 AutoSlicer::~AutoSlicer()
@@ -57,13 +56,13 @@ void AutoSlicer::slice()
     mp_operating_partition->setPrintingLayers(printing_layers);
 }
 
-bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contours, SO::PolygonCollection &next_contours)
+bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_starting_contours, SO::PolygonCollection &next_starting_contours)
 {
-    next_contours.reset();
+    next_starting_contours.reset();
 
-    SO::PolygonCollection contours_below = current_contours;
-    SO::Plane plane_up = current_contours.getPlane();
-    plane_up.offset(0.3);
+    SO::PolygonCollection contours_below = current_starting_contours;
+    SO::Plane plane_up = current_starting_contours.getPlane();
+    plane_up.offset(m_target_layer_thickness);
     SO::PolygonCollection contours_up = this->slice(plane_up);
 
     // Slicing end here.
@@ -132,7 +131,7 @@ bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contou
             goto block_1;
         }
 
-        if (!this->getIntermediatePlanes(plane_up, m_temp_slicing_result.front().getPlane()))
+        if (!this->calculateIntermediatePlanes(plane_up, m_temp_slicing_result.front().getPlane()))
         {
             goto block_1;
         };
@@ -151,12 +150,12 @@ bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_contou
         m_temp_slicing_result.emplace_back(this->slice(plane_up));
     }
 
-    if (plane_up == current_contours.getPlane())
+    if (plane_up == current_starting_contours.getPlane())
     {
         return false;
     }
 
-    next_contours = m_temp_slicing_result.back();
+    next_starting_contours = m_temp_slicing_result.back();
     return true;
 }
 
@@ -190,7 +189,7 @@ bool AutoSlicer::checkSupportNeeded(SO::PolygonCollection &contours_below, SO::P
     return support_needed;
 }
 
-bool AutoSlicer::getIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below)
+bool AutoSlicer::calculateIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below)
 {
     int number_of_gaps = 0;
     std::vector<SO::Plane> slicing_planes;
@@ -373,7 +372,7 @@ bool AutoSlicer::tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane
         contours = contours_before;
     }
 
-    // Adjust plane up to meet the requirement of max and min layer thickness iteratively untill
+    // Adjust plane up to meet the requirement of max and min layer thickness iteratively until
     // both requirements are met
     while (max > m_max_layer_thickness && abs(max - max_last_time) > 1e-6)
     {
@@ -426,11 +425,23 @@ bool AutoSlicer::tuneConsecutivePlanesValid(SO::Plane &plane_up, SO::Plane plane
         }
     }
 
+    // if Plane_up z-normal < 0, assertion will trigger in GcodeGenerator.
+    // Method to fix:
+    // Step 1: Set z-normal to zero.
+    // Step 2: Offset the plane to met the min layer thickness requirement.
     if (plane_up.getNormal()[2] < 0.0)
     {
+        spdlog::warn("plane_up.getNormal()[2] < 0.0");
         plane_up.setNormal(Eigen::Vector3d(plane_up.getNormal()[0], plane_up.getNormal()[1], 1e-5));
         contours = this->slice(plane_up);
         contours.removePolygonsBelowPlane(plane_below);
+        min = contours.getMinimumDistanceFromPlane(plane_below, min_point);
+        if (min < m_min_layer_thickness)
+        {
+            plane_up.offset(m_min_layer_thickness - min);
+            contours = this->slice(plane_up);
+            contours.removePolygonsBelowPlane(plane_below);
+        }
     }
 
     if (contours.numberOfPolygons() < 1)

@@ -17,7 +17,10 @@ namespace SyNSlicerEngine::Object {
 		PolygonCollection(const PolygonCollection &other);
 		PolygonCollection(const Clipper2Lib::PathsD &polygons, const SO::Plane &plane);
 		PolygonCollection(const std::vector<CgalPolyline_EPICK> &polygons, const SO::Plane &plane);
+		PolygonCollection(std::string file_name);
 		~PolygonCollection();
+
+		bool writeToTXT(std::string file_name);
 
 		int numberOfPolygons() const;
 		const std::vector<Polygon> &get() const;
@@ -33,8 +36,8 @@ namespace SyNSlicerEngine::Object {
 		double getFurthestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const;
 
 		bool isIntersectedWithPlane(const SO::Plane &plane) const;
-
 		std::vector<Eigen::Vector3d> getIntersectionWithPlane(const SO::Plane &plane) const;
+		bool clipWithPlane(const SO::Plane &plane, SO::PolygonCollection &positive_side, SO::PolygonCollection &negative_side) const;
 
 		double getMaximumDistanceFromPlane(const SO::Plane &plane) const;
 		double getMaximumDistanceFromPlane(const SO::Plane &plane, Eigen::Vector3d &point) const;
@@ -45,6 +48,7 @@ namespace SyNSlicerEngine::Object {
 		PolygonCollection getTransformedPolygons(const SO::Plane &source_plane, const SO::Plane &target_plane) const;
 		PolygonCollection getTranslatedPolygons(const Eigen::Vector3d &new_origin) const;
 		PolygonCollection projectToOtherPlane(const SO::Plane &plane) const;
+		PolygonCollection getProjection(const PolygonCollection &other);
 
 		PolygonCollection getOffset(double distance);
 		PolygonCollection getDifference(const PolygonCollection &other);

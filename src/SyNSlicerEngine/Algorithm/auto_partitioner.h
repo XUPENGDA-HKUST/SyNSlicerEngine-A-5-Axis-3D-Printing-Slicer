@@ -26,6 +26,7 @@ namespace SyNSlicerEngine::Algorithm
 	class AutoPartitioner
 	{
 	public:
+		//! Defualt constructer is not allowed.
 		AutoPartitioner() = delete;
 
 		//! Constructer
@@ -37,6 +38,8 @@ namespace SyNSlicerEngine::Algorithm
 					mimimum_area = area_threshold_coefficient * average_area_of_triangle_facets.
 		*/
 		AutoPartitioner(const SO::Partition<CgalMesh_EPICK> &partition, const SO::Nozzle &nozzle, double overhanging_angle = 56, double area_threshold_coefficient = 1.0);
+
+		//! Destructer
 		~AutoPartitioner();
 
 		//! Call this method to start partition.
@@ -155,7 +158,9 @@ namespace SyNSlicerEngine::Algorithm
 		/*!
 			Alert! Not all the points can be moved to negative side.
 			\param points The point cloud.
-			\param plane The given plane.
+			\param reference_plane The new normal of the given clipping plane must lies on reference_plane.
+			\param base_plane The plane where the 3D model locate on.
+			\param clipping_plane The given clipping plane.
 		*/
 		virtual bool adjustPlaneNormalSoPointsAreOnNegativeSide(const EigenPoints &points, const SO::Plane &reference_plane, const SO::Plane &base_plane, SO::Plane &clipping_plane);
 

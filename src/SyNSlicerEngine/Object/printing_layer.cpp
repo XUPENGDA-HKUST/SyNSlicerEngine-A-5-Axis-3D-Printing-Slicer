@@ -55,6 +55,7 @@ void PrintingLayer::addSupportStructureContours(PolygonCollection &input_support
 	{
 		m_support_structure_contours.addPolygon(input_support_structure_contours[i]);
 	}
+	m_support_structure_contours = m_support_structure_contours.getUnion(m_support_structure_contours);
 }
 
 SO::PolygonCollection &PrintingLayer::getSupportStructureContours()

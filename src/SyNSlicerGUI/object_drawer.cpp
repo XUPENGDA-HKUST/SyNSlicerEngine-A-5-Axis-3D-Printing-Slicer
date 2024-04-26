@@ -209,8 +209,11 @@ void ObjectDrawer::drawPlane(const SO::Plane &plane, std::string name)
 	p_plane_source->SetCenter(plane.getOrigin()[0], plane.getOrigin()[1], plane.getOrigin()[2]);
 	p_plane_source->SetNormal(plane.getNormal()[0], plane.getNormal()[1], plane.getNormal()[2]);
 	p_plane_source->Update();
-
 	this->addObjectToRenderer(p_plane_source->GetOutput(), name);
+
+	this->drawPoint(plane.getOrigin(), "Origin" + name);
+	this->drawLine(SO::Line(plane.getOrigin(), plane.getNormal(), 10), "Normal" + name);
+	this->setColor("Normal" + name, 1, 0, 0);
 }
 
 void ObjectDrawer::drawTriangles(std::vector<int> faces, const CgalMesh_EPICK &mesh, std::string name)

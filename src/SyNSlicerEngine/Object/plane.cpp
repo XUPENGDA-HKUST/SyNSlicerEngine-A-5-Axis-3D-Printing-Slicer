@@ -35,9 +35,50 @@ Plane::Plane(double a, double b, double c, double d)
 	setPlaneInGeneralForm(a, b, c, d);
 }
 
+Plane::Plane(std::string file_name)
+{
+	FILE *pathFile;
+	const char *c = file_name.c_str();
+	pathFile = fopen(c, "r");
+
+	Eigen::Vector3d temp_point;
+	int current_index = 0;
+
+	while (!feof(pathFile))
+	{
+		fscanf(pathFile, "%d %lf %lf %lf\n", &current_index, &temp_point[0], &temp_point[1], &temp_point[2]);
+		if (current_index == -2)
+		{
+			this->setOrigin(temp_point);
+			continue;
+		}
+		if (current_index == -1)
+		{
+			this->setNormal(temp_point);
+			continue;
+		}
+	}
+}
+
 Plane::~Plane()
 {
 
+}
+
+bool Plane::writeToTXT(std::string file_name)
+{
+	std::ofstream myfile(file_name);
+
+	if (myfile.is_open()) {
+		myfile << -2 << " " << m_origin[0] << " " << m_origin[1] << " " << m_origin[2] << "\n";
+		myfile << -1 << " " << m_normal[0] << " " << m_normal[1] << " " << m_normal[2] << "\n";
+		myfile.close();
+		return true;
+	}
+	else 
+	{
+		return false;
+	}
 }
 
 bool Plane::isValid()

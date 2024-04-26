@@ -16,7 +16,7 @@ namespace SO = SyNSlicerEngine::Object;
 
 namespace SyNSlicerEngine::Algorithm
 {
-	//! This class is used to slice a 3D model automatically with non-parallel planes.
+	//! This class is used to slice a 3D model with already calculated planes.
 	/*!
 	
 	*/
@@ -28,11 +28,7 @@ namespace SyNSlicerEngine::Algorithm
 
 		//! Constructor.
 		/*!
-			\param partition				The partition to be sliced.
-			\param target_layer_thickness	The average layer thickness want to achieve.
-			\param side_step				The distance between consecutive paths.
-			\param min_layer_thickness		The minimum layer thickness that the printer can print.
-			\param m_max_layer_thickness	The maximum layer thickness that the printer can print.
+			\param	partition	The partition to be sliced.
 		*/
 		explicit Slicer(SO::Partition<CgalMesh_EPICK> &p_partition);
 
@@ -45,7 +41,7 @@ namespace SyNSlicerEngine::Algorithm
 	protected:
 		//! Slice the 3D model with a plane, obtain the contours.
 		/*!
-			\param plane	The plane used to slice the 3D model.
+			\param	plane	The plane used to slice the 3D model.
 		*/
 		SO::PolygonCollection slice(SO::Plane plane);
 

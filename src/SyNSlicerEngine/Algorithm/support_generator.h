@@ -41,7 +41,7 @@ namespace SyNSlicerEngine::Algorithm {
 		*/
 		virtual void splitAndGroupContours(SO::PolygonCollection &contours, std::vector<SO::PolygonCollection> &splited_contours, double epsilon);
 
-		//! Extract contours from contours one by one.
+		//! Extract contours that are close to each other from contours one by one.
 		/*!
 			\param[in,out]	input_contours		The contours waiting to group in this round.
 			\param[out]		output_contours		The contours removed from input_contours in this round.
@@ -69,14 +69,42 @@ namespace SyNSlicerEngine::Algorithm {
 		virtual void generateSupportStructureForSupportStructure(SO::PolygonCollection &contours,
 			const SO::Plane &plane, std::vector<SO::Polyhedron<CgalMesh_EPICK>> &support_structures);
 
+		//! Generate 3D model given some contours.
+		/*!
+			\param[in]	contours	The contours.
+			\param[out]	polyhedron	The 3D model.
+			\return \b True if 3D model is generated. \b False if 3D model is not generated.
+		*/
 		virtual bool generatePolyhedronFromContours(SO::PolylineCollection &contours, SO::Polyhedron<CgalMesh_EPICK> &polyhedron);
 
+		//! Clip a 3d model with a plane.
+		/*!
+			\param[in]	sm			The 3D model.
+			\param[out]	sm_U		The part on postive side of clip_plane.
+			\param[out]	sm_L		The part on negative side of clip_plane.
+			\param[in]	clip_plane	The clipping plane.
+			\return \b True if sm_U and sm_L are not empty. \b False if sm_U or sm_L is empty.
+		*/
 		virtual bool clipSupportStructure(CgalMesh_EPICK sm, CgalMesh_EPICK &sm_U, CgalMesh_EPICK &sm_L, const SO::Plane &clip_plane);
+		
+		//! Slice the 3d model of support structure and added the contours to partition.
+		/*!
+			\param[in,out]	parition			The partition.
+			\param[in]		support_structure	The 3D model of the support structure.
+		*/
 		virtual void addSupportStructureofSupportStructureToParition(SO::Partition<CgalMesh_EPICK> &parition, const SO::Polyhedron<CgalMesh_EPICK> &support_structure);
+
+		//! Slice the 3d model of support structure and added the contours to partition.
+		/*!
+			\param[in]		contours		The contours of the support structure.
+			\param[in,out]	printing_layer	The printing layer that the contours add to.
+		*/
 		virtual void addContoursToPrintingLayer(SO::PolygonCollection &contours, SO::PrintingLayer &printing_layer);
 
+		//! Distance between two consecutive contours.
 		double side_step;
 
+		//! Container store all partitions.
 		SO::PartitionCollection<CgalMesh_EPICK> &m_paritions;
 	};
 }

@@ -61,6 +61,8 @@ void PrintingLayerCollection::update()
 		}		
 	}
 
+	m_contours.closePolylines();
+
 	for (auto &layer : m_printing_layers)
 	{
 		for (auto &contour : layer.getSupportStructureContours().get())
@@ -68,6 +70,8 @@ void PrintingLayerCollection::update()
 			m_support.addPolyline(contour.get());
 		}
 	}
+
+	m_support.closePolylines();
 }
 
 void PrintingLayerCollection::generateToolpath(int toolpath_type)

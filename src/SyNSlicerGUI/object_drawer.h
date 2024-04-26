@@ -45,7 +45,7 @@ namespace SyNSlicerEngine::GUI {
 		void setOpacity(std::string name, double opacity);
 
 		int numberOfObjectsDrawn();
-		SyNSlicerEngine::GUI::ObjectForVisualization *getObjectDrawn(std::string name);
+		ObjectForVisualization *getObjectDrawn(std::string name);
 		void removeObjectDrawn(std::string name);
 		int removeAllObjectsDrawn();
 

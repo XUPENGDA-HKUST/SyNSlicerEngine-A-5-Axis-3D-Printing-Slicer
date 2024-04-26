@@ -41,8 +41,79 @@ PolygonCollection::PolygonCollection(const std::vector<CgalPolyline_EPICK> &poly
 	}
 }
 
+PolygonCollection::PolygonCollection(std::string file_name)
+{
+	FILE *pathFile;
+	const char *c = file_name.c_str();
+	pathFile = fopen(c, "r");
+
+	Eigen::Vector3d temp_point;
+	int current_index = 0;
+	int last_index = -1;
+	SO::Polygon temp_polygon;
+
+	while (!feof(pathFile))
+	{
+		fscanf(pathFile, "%d %lf %lf %lf\n", &current_index, &temp_point[0], &temp_point[1], &temp_point[2]);
+		if (current_index == -2)
+		{
+			m_plane.setOrigin(temp_point);
+			continue;
+		}
+		if (current_index == -1)
+		{
+			m_plane.setNormal(temp_point);
+			continue;
+		}
+		if (current_index >= 0 && current_index != last_index)
+		{
+			if (temp_polygon.size() > 0)
+			{
+				this->addPolygon(temp_polygon);
+			}
+			temp_polygon.reset();
+			temp_polygon.setPlane(m_plane);
+			temp_polygon.addPointToBack(temp_point);
+			last_index = current_index;
+			continue;
+		}
+		temp_polygon.addPointToBack(temp_point);
+		last_index = current_index;
+	}
+	if (temp_polygon.size() > 0)
+	{
+		this->addPolygon(temp_polygon);
+	}
+}
+
 PolygonCollection::~PolygonCollection()
 {
+}
+
+bool PolygonCollection::writeToTXT(std::string file_name)
+{
+	std::ofstream myfile(file_name);
+
+	if (myfile.is_open()) {
+		// Write some lines to the file
+
+		myfile << -2 << " " << m_plane.getOrigin()[0] << " " << m_plane.getOrigin()[1] << " " << m_plane.getOrigin()[2] << "\n";
+		myfile << -1 << " " << m_plane.getNormal()[0] << " " << m_plane.getNormal()[1] << " " << m_plane.getNormal()[2] << "\n";
+
+		for (size_t i = 0; i < m_polygons.size(); i++)
+		{
+			for (size_t j = 0; j < m_polygons[i].get().size(); j++)
+			{
+				myfile << i << " " << m_polygons[i][j][0] << " " << m_polygons[i][j][1] << " " << m_polygons[i][j][2] << "\n";
+			}
+		}
+		// Close the file
+		myfile.close();
+		return true;
+	}
+	else {
+		return false;
+	}
 }
 
 int PolygonCollection::numberOfPolygons() const
@@ -194,7 +265,7 @@ std::vector<Eigen::Vector3d> PolygonCollection::getIntersectionWithPlane(const S
 			contour.emplace_back(contour.front());
 		};
 		int j = 0;
-		for (int i = 0; i < contour.size(); i++)
+		for (int i = 1; i < contour.size(); i++)
 		{
 			SO::Line line(contour[i], contour[j]);
 			if (plane.isIntersectedWithLine(line))
@@ -210,6 +281,76 @@ std::vector<Eigen::Vector3d> PolygonCollection::getIntersectionWithPlane(const S
 	};
 
 	return intersecting_points;
+}
+
+bool PolygonCollection::clipWithPlane(const SO::Plane &plane, SO::PolygonCollection &positive_side, SO::PolygonCollection &negative_side) const
+{
+	positive_side.clear();
+	negative_side.clear();
+
+	for (auto &polygon : this->m_polygons)
+	{
+		std::vector<Eigen::Vector3d> contour = polygon.get();
+		if ((contour.front() - contour.back()).norm() > 1e-6)
+		{
+			contour.emplace_back(contour.front());
+		};
+
+		SO::Polygon neg_side;
+		neg_side.setPlane(this->m_plane);
+		SO::Polygon pos_side;
+		pos_side.setPlane(this->m_plane);
+
+		int j = 0;
+		for (int i = 1; i < contour.size(); i++)
+		{
+			SO::Line line(contour[j], contour[i]);
+			Eigen::Vector3d temp_point;
+			if (plane.isIntersectedWithLine(line, temp_point))
+			{
+				if (plane.getPositionOfPointWrtPlane(contour[j]) == 1)
+				{
+					pos_side.push_back(contour[j]);
+					pos_side.push_back(temp_point);
+					neg_side.push_back(temp_point);
+				}
+				else
+				{
+					neg_side.push_back(contour[j]);
+					neg_side.push_back(temp_point);
+					pos_side.push_back(temp_point);
+				}
+			}
+			else
+			{
+				if (plane.getPositionOfPointWrtPlane(contour[j]) == 1)
+				{
+					pos_side.push_back(contour[j]);
+				}
+				else
+				{
+					neg_side.push_back(contour[j]);
+				}
+			}
+			j = i;
+		}
+
+		if (neg_side.size() > 0)
+		{
+			negative_side.addPolygon(neg_side);
+		}
+		if (pos_side.size() > 0)
+		{
+			positive_side.addPolygon(pos_side);
+		}
+	};
+
+	if (negative_side.size() > 0 && positive_side.size() > 0)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 double PolygonCollection::getMaximumDistanceFromPlane(const SO::Plane &plane) const
@@ -335,6 +476,23 @@ PolygonCollection PolygonCollection::projectToOtherPlane(const SO::Plane &plane)
 			{
 				projected_contour.addPointToBack(point);
 			}
+		}
+		projected_contours.addPolygon(projected_contour);
+	}
+	return projected_contours;
+}
+
+PolygonCollection PolygonCollection::getProjection(const PolygonCollection &other)
+{
+	SO::PolygonCollection projected_contours;
+	for (int i = 0; i < other.m_polygons.size(); i++)
+	{
+		const SO::Polygon temp_contour = other.m_polygons[i];
+		SO::Polygon projected_contour;
+		projected_contour.setPlane(this->m_plane);
+		for (int j = 0; j < temp_contour.numberOfPoints(); j++)
+		{
+			projected_contour.push_back(this->m_plane.getProjectionOfPointOntoPlane(temp_contour[j]));
 		}
 		projected_contours.addPolygon(projected_contour);
 	}
