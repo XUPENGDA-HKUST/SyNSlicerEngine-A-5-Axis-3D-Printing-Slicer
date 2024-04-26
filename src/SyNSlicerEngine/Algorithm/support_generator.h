@@ -71,7 +71,7 @@ namespace SyNSlicerEngine::Algorithm {
 
 		virtual bool generatePolyhedronFromContours(SO::PolylineCollection &contours, SO::Polyhedron<CgalMesh_EPICK> &polyhedron);
 
-		virtual void clipSupportStructure(CgalMesh_EPICK sm, CgalMesh_EPICK &sm_U, CgalMesh_EPICK &sm_L, const SO::Plane &clip_plane);
+		virtual bool clipSupportStructure(CgalMesh_EPICK sm, CgalMesh_EPICK &sm_U, CgalMesh_EPICK &sm_L, const SO::Plane &clip_plane);
 		virtual void addSupportStructureofSupportStructureToParition(SO::Partition<CgalMesh_EPICK> &parition, const SO::Polyhedron<CgalMesh_EPICK> &support_structure);
 		virtual void addContoursToPrintingLayer(SO::PolygonCollection &contours, SO::PrintingLayer &printing_layer);
 

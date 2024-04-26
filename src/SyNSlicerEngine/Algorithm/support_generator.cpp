@@ -28,15 +28,8 @@ void SupportGenerator::generateSupportStructure()
 	{
 		SO::PrintingLayerCollection working_printing_layers = m_paritions[partition_index].getPrintingLayers();
 
-		for (int layer_number = working_printing_layers.getNumberOfLayers() - 1; layer_number >= 0; --layer_number)
-		{
-			working_printing_layers.getLayer(layer_number).getSupportStructureContours().reset();
-		}
-
 		for (int layer_number = working_printing_layers.getNumberOfLayers() - 1; layer_number >= 1; --layer_number)
 		{
-			//spdlog::info("{}", layer_number);
-
 			if (working_printing_layers.getLayer(layer_number - 1).getNumberOfContours() <= 0)
 			{
 				continue;
@@ -44,25 +37,21 @@ void SupportGenerator::generateSupportStructure()
 
 			SO::PrintingLayer p_layer_i = working_printing_layers.getLayer(layer_number);
 			SO::PrintingLayer p_layer_i_minus_1 = working_printing_layers.getLayer(layer_number - 1);
-			SO::Plane xy_plane(p_layer_i_minus_1.getSlicingPlane().getOrigin(), Eigen::Vector3d::UnitZ());
 
 			SO::PolygonCollection contours = p_layer_i.getContours();
-			SO::PolygonCollection projected_contours = contours.projectToOtherPlane(p_layer_i_minus_1.getSlicingPlane()); // Subject_0
+			SO::PolygonCollection projected_contours = contours.projectToOtherPlane(p_layer_i_minus_1.getSlicingPlane());
 
 			SO::PolygonCollection support_contours = p_layer_i.getSupportStructureContours();
-			SO::PolygonCollection support_projected_contours = support_contours.projectToOtherPlane(p_layer_i_minus_1.getSlicingPlane()); // Subject_1
+			SO::PolygonCollection support_projected_contours = support_contours.projectToOtherPlane(p_layer_i_minus_1.getSlicingPlane());
 
 			SO::PolygonCollection contours_from_layer_i_minus_1 = p_layer_i_minus_1.getContours();
-			contours_from_layer_i_minus_1 = contours_from_layer_i_minus_1.getOffset(0.5 * side_step); // clip
-
-
-			count += 1;
+			SO::PolygonCollection offsetted_contours_from_layer_i_minus_1 = contours_from_layer_i_minus_1.getOffset(0.5 * side_step);
 
 			SO::PolygonCollection support_contours_from_layer_i_minus_1 = p_layer_i_minus_1.getSupportStructureContours();
-			support_contours_from_layer_i_minus_1 = support_contours_from_layer_i_minus_1.getTransformedPolygons(xy_plane);
+			SO::PolygonCollection offsetted_support_contours_from_layer_i_minus_1 = support_contours_from_layer_i_minus_1.getOffset(0.5 * side_step);
 
-			SO::PolygonCollection all_contours_from_layer_i_minus_1 = contours_from_layer_i_minus_1; 
-			all_contours_from_layer_i_minus_1.addPolygons(support_contours_from_layer_i_minus_1); // clip_1
+			SO::PolygonCollection all_contours_from_layer_i_minus_1 = offsetted_contours_from_layer_i_minus_1;
+			all_contours_from_layer_i_minus_1.addPolygons(offsetted_support_contours_from_layer_i_minus_1);
 
 			SO::PolygonCollection support_contours_at_layer_i_minus_1 = projected_contours.getDifference(all_contours_from_layer_i_minus_1);
 			support_contours_at_layer_i_minus_1.addPolygons(support_projected_contours.getDifference(all_contours_from_layer_i_minus_1));
@@ -79,17 +68,20 @@ void SupportGenerator::generateSupportStructure()
 			for (int i = 0; i < splited_contours.size(); i++)
 			{
 				convexhulls_of_contours.addPolygon(splited_contours[i].getConvexHullPolygon()); // subject_2
-			}	
+			}
 
 			support_contours_at_layer_i_minus_1.reset();
-			support_contours_at_layer_i_minus_1 = convexhulls_of_contours.getDifference(contours_from_layer_i_minus_1);
+			support_contours_at_layer_i_minus_1 = convexhulls_of_contours.getDifference(offsetted_contours_from_layer_i_minus_1);
 
 			p_layer_i_minus_1.setSupportStructureContours(support_contours_at_layer_i_minus_1);
 			working_printing_layers.setPrintingLayer(layer_number - 1, p_layer_i_minus_1);
 		}
 
+		m_paritions[partition_index].setPrintingLayers(working_printing_layers);
+
 		std::vector<SO::Polyhedron<CgalMesh_EPICK>> temp_polyhedrons;
 
+		int index = partition_index + 1;
 		if (m_paritions[partition_index].getBasePlane() != SO::Plane())
 		{
 			SO::PrintingLayer p_layer_i = working_printing_layers.getLayer(0);
@@ -97,29 +89,48 @@ void SupportGenerator::generateSupportStructure()
 			{
 				SO::Plane slicing_plane = m_paritions[partition_index].getBasePlane();
 				SO::PolygonCollection projected_contours = p_layer_i.getSupportStructureContours().projectToOtherPlane(slicing_plane);
-				generateSupportStructureForSupportStructure(projected_contours, m_paritions[partition_index].getBasePlane(), temp_polyhedrons);
+
+				SO::PolygonCollection pos, neg;
+				for (int i = partition_index - 1; i >= 0; i--)
+				{
+					if (projected_contours.clipWithPlane(m_paritions[i].getBasePlane(), pos, neg))
+					{
+						projected_contours = neg;
+					}
+				}
+
+				while (projected_contours.clipWithPlane(m_paritions[index].getBasePlane(), pos, neg))
+				{
+					index += 1;
+				}
+				while (neg.numberOfPolygons() > 0)
+				{
+					index += 1;
+					projected_contours.clipWithPlane(m_paritions[index].getBasePlane(), pos, neg);
+				}
+				generateSupportStructureForSupportStructure(projected_contours, m_paritions[index].getBasePlane(), temp_polyhedrons);
 			}
 		}
 
 		// clip temp_polyhedron and then store into the corresponding partition
-		for (int i = partition_index + 1; i < m_paritions.numberOfPartitions() - 1; i++)
+		for (int i = partition_index + 1; i < index; i++)
 		{
 			CgalMesh_EPICK up_mesh;
 			CgalMesh_EPICK low_mesh;
 			for (int j = 0; j < temp_polyhedrons.size(); j++)
 			{
-				this->clipSupportStructure(temp_polyhedrons[j].getMesh(), up_mesh, low_mesh, m_paritions[i].getBasePlane());
-				this->addSupportStructureofSupportStructureToParition(m_paritions[i], up_mesh);
-				temp_polyhedrons[j] = low_mesh;
+				if (this->clipSupportStructure(temp_polyhedrons[j].getMesh(), up_mesh, low_mesh, m_paritions[i].getBasePlane()))
+				{
+					this->addSupportStructureofSupportStructureToParition(m_paritions[i], up_mesh);
+					temp_polyhedrons[j] = low_mesh;
+				}
 			}
 		}
 
 		for (int j = 0; j < temp_polyhedrons.size(); j++)
 		{
-			this->addSupportStructureofSupportStructureToParition(m_paritions.back(), temp_polyhedrons[j]);
+			this->addSupportStructureofSupportStructureToParition(m_paritions[index], temp_polyhedrons[j]);
 		}
-
-		m_paritions[partition_index].setPrintingLayers(working_printing_layers);
 	}
 	m_paritions.revert();
 }
@@ -223,7 +234,9 @@ bool SupportGenerator::findNeighourContours(std::vector<SO::Polygon> &contours, 
 void SupportGenerator::generateSupportStructureForSupportStructure(SO::PolygonCollection &contours, 
 	const SO::Plane &plane, std::vector<SO::Polyhedron<CgalMesh_EPICK>> &support_structures)
 {
-	// Step 1: check plane normal.
+	SO::Plane plane_above = contours.getPlane();
+	SO::Plane plane_below = plane;
+	SO::PolygonCollection &support_contours = contours;
 
 	std::vector<SO::PolylineCollection> contours_of_support_structure_at_different_plane;
 
@@ -235,8 +248,10 @@ void SupportGenerator::generateSupportStructureForSupportStructure(SO::PolygonCo
 
 	contours_of_support_structure_at_different_plane.push_back(polylines);
 
-	if (plane.getNormal().dot(Eigen::Vector3d(0, 0, 1)) < cos(M_PI_4))
+	if (plane_above.getNormal().dot(plane_below.getNormal()) < cos(M_PI_4))
 	{
+
+		//! Find point in support_contours closest to plane_below;
 		int p = 0;
 		int q = 0;
 
@@ -244,7 +259,7 @@ void SupportGenerator::generateSupportStructureForSupportStructure(SO::PolygonCo
 		{
 			for (int j = 0; j < contours[i].numberOfPoints(); j++)
 			{
-				if (contours[i][j][2] < contours[p][q][2])
+				if (plane_below.getDistanceFromPointToPlane(contours[i][j]) < plane_below.getDistanceFromPointToPlane(contours[p][q]))
 				{
 					p = i;
 					q = j;
@@ -252,17 +267,15 @@ void SupportGenerator::generateSupportStructureForSupportStructure(SO::PolygonCo
 			}
 		}
 
-		Eigen::Vector3d lowest_point = contours[p][q];
-		
+		Eigen::Vector3d point_closest_to_plane_below = contours[p][q];
+		// 
+
 		Eigen::Transform<double, 3, Eigen::Affine> transformation_matrix;
-		SO::Plane built_plate;
-		transformation_matrix = Eigen::AngleAxis<double>(
-			M_PI_4,
-			built_plate.getAxisOfRotation(plane));
+		transformation_matrix = Eigen::AngleAxis<double>(M_PI_4, plane_below.getAxisOfRotation(plane_above));
 
-		Eigen::Vector3d new_plane_normal = transformation_matrix.linear() * Eigen::Vector3d(0, 0, 1);
+		Eigen::Vector3d new_plane_normal = transformation_matrix.linear() * plane_below.getNormal();
 
-		SO::Plane forty_five_degree_plane(lowest_point, new_plane_normal);
+		SO::Plane middle_plane(point_closest_to_plane_below, new_plane_normal);
 
 		SO::PolylineCollection contours_1;
 		for (int i = 0; i < contours.numberOfPolygons(); i++)
@@ -270,7 +283,7 @@ void SupportGenerator::generateSupportStructureForSupportStructure(SO::PolygonCo
 			SO::Polyline temp_contour;
 			for (int j = 0; j < contours[i].numberOfPoints(); j++)
 			{
-				Eigen::Vector3d projected_point = forty_five_degree_plane.getProjectionOfPointOntoPlane(contours[i][j]);
+				Eigen::Vector3d projected_point = middle_plane.getProjectionOfPointOntoPlane(contours[i][j]);
 				temp_contour.push_back(projected_point);
 			}
 			contours_1.addPolyline(temp_contour);
@@ -279,14 +292,13 @@ void SupportGenerator::generateSupportStructureForSupportStructure(SO::PolygonCo
 	}
 
 	SO::PolylineCollection contours_2;
-	SO::Plane built_plate;
 	SO::PolylineCollection &temp_contours = contours_of_support_structure_at_different_plane.back();
 	for (int i = 0; i < temp_contours.size(); i++)
 	{
 		SO::Polyline temp_contour;
 		for (int j = 0; j < temp_contours[i].numberOfPoints(); j++)
 		{
-			Eigen::Vector3d projected_point = built_plate.getProjectionOfPointOntoPlane(temp_contours[i][j]);
+			Eigen::Vector3d projected_point = plane_below.getProjectionOfPointOntoPlane(temp_contours[i][j]);
 			temp_contour.push_back(projected_point);
 		}
 		contours_2.addPolyline(temp_contour);
@@ -380,7 +392,7 @@ bool SupportGenerator::generatePolyhedronFromContours(SO::PolylineCollection &co
 	}
 }
 
-void SupportGenerator::clipSupportStructure(CgalMesh_EPICK sm, CgalMesh_EPICK &sm_U, 
+bool SupportGenerator::clipSupportStructure(CgalMesh_EPICK sm, CgalMesh_EPICK &sm_U, 
 	CgalMesh_EPICK &sm_L, const SO::Plane &clip_plane)
 {
 	if (clip_plane != SO::Plane())
@@ -392,7 +404,16 @@ void SupportGenerator::clipSupportStructure(CgalMesh_EPICK sm, CgalMesh_EPICK &s
 		CGAL::Polygon_mesh_processing::clip(sm_U, cgal_plane.opposite(), CGAL::parameters::clip_volume(true));
 		sm_L.collect_garbage();
 		sm_U.collect_garbage();
+		if (sm_L.number_of_faces() > 0 && sm_U.number_of_faces() > 0)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
+	return false;
 }
 
 void SupportGenerator::addSupportStructureofSupportStructureToParition(
@@ -445,6 +466,8 @@ void SupportGenerator::addSupportStructureofSupportStructureToParition(
 		polylines.clear();
 		slicer(CgalPlane_EPICK(slicing_plane.a(), slicing_plane.b(), slicing_plane.c(), slicing_plane.d()), std::back_inserter(polylines));
 	};
+
+	parition.setPrintingLayers(printing_layers);
 }
 
 void SupportGenerator::addContoursToPrintingLayer(
@@ -456,7 +479,6 @@ void SupportGenerator::addContoursToPrintingLayer(
 		return;
 	}
 
-	SO::PolygonCollection contours_to_be_added = printing_layer.getContours().getDifference(contours);
-
+	SO::PolygonCollection contours_to_be_added = contours.getDifference(printing_layer.getContours());
 	printing_layer.addSupportStructureContours(contours_to_be_added);
 }
