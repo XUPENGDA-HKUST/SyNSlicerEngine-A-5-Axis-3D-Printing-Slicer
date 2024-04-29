@@ -37,27 +37,7 @@ Plane::Plane(double a, double b, double c, double d)
 
 Plane::Plane(std::string file_name)
 {
-	FILE *pathFile;
-	const char *c = file_name.c_str();
-	pathFile = fopen(c, "r");
-
-	Eigen::Vector3d temp_point;
-	int current_index = 0;
-
-	while (!feof(pathFile))
-	{
-		fscanf(pathFile, "%d %lf %lf %lf\n", &current_index, &temp_point[0], &temp_point[1], &temp_point[2]);
-		if (current_index == -2)
-		{
-			this->setOrigin(temp_point);
-			continue;
-		}
-		if (current_index == -1)
-		{
-			this->setNormal(temp_point);
-			continue;
-		}
-	}
+	this->load(file_name);
 }
 
 Plane::~Plane()
@@ -65,7 +45,7 @@ Plane::~Plane()
 
 }
 
-bool Plane::writeToTXT(std::string file_name)
+bool Plane::save(std::string file_name)
 {
 	std::ofstream myfile(file_name);
 
@@ -76,6 +56,36 @@ bool Plane::writeToTXT(std::string file_name)
 		return true;
 	}
 	else 
+	{
+		return false;
+	}
+}
+
+bool Plane::load(std::string file_name)
+{
+	std::ifstream inputFile(file_name);
+	if (inputFile.is_open()) {
+		std::string line;
+		Eigen::Vector3d temp_point;
+		int current_index = 0;
+		while (std::getline(inputFile, line))
+		{
+			std::sscanf(line.c_str(), "%d %lf %lf %lf", &current_index, &temp_point[0], &temp_point[1], &temp_point[2]);
+			if (current_index == -2)
+			{
+				this->setOrigin(temp_point);
+				continue;
+			}
+			if (current_index == -1)
+			{
+				this->setNormal(temp_point);
+				continue;
+			}
+		}
+		inputFile.close();
+		return true;
+	}
+	else
 	{
 		return false;
 	}

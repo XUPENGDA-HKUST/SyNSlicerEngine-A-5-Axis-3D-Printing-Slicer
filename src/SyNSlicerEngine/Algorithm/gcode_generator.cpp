@@ -19,7 +19,6 @@ SO::Toolpath GcodeGenerator::getCompletedToolpath()
 	return m_completed_toolpath;
 }
 
-
 void GcodeGenerator::generateToolpathForEachLayer()
 {
 	SO::Line intersecting_line;

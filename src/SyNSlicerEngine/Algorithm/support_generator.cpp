@@ -10,21 +10,22 @@ SupportGenerator::SupportGenerator(SO::PartitionCollection<CgalMesh_EPICK> &inpu
 	: side_step(0.4)
 	, m_paritions(input_paritions)
 {
-	spdlog::get("basic_logger")->info("Construct SupportGenerator");
+
 }
 
 SupportGenerator::~SupportGenerator()
 {
-	spdlog::get("basic_logger")->info("Destroy SupportGenerator");
-}
 
-static int count = 0;
+}
 
 void SupportGenerator::generateSupportStructure()
 {
 	spdlog::info("Generate support structure!");
+	// Call revert because the default sequence is from bottom to top.
+	// But support generation is performed from top to bottom.
 	m_paritions.revert();
-	for (int partition_index = 0; partition_index < m_paritions.numberOfPartitions(); partition_index++) // from 0 means from top to down
+
+	for (int partition_index = 0; partition_index < m_paritions.numberOfPartitions(); partition_index++)
 	{
 		SO::PrintingLayerCollection working_printing_layers = m_paritions[partition_index].getPrintingLayers();
 
@@ -57,14 +58,11 @@ void SupportGenerator::generateSupportStructure()
 			support_contours_at_layer_i_minus_1.addPolygons(support_projected_contours.getDifference(all_contours_from_layer_i_minus_1));
 			support_contours_at_layer_i_minus_1.addPolygons(support_contours_from_layer_i_minus_1);
 
-			// group solution_0 and solution_1 together;
+			// Group contours close to each other together as a group.
 			std::vector<SO::PolygonCollection> splited_contours;
-
 			this->splitAndGroupContours(support_contours_at_layer_i_minus_1, splited_contours, 3 * side_step);
 
 			SO::PolygonCollection convexhulls_of_contours;
-			SO::Polygon temp_polyline;
-
 			for (int i = 0; i < splited_contours.size(); i++)
 			{
 				convexhulls_of_contours.addPolygon(splited_contours[i].getConvexHullPolygon()); // subject_2
@@ -79,22 +77,24 @@ void SupportGenerator::generateSupportStructure()
 
 		m_paritions[partition_index].setPrintingLayers(working_printing_layers);
 
+		// temp_polyhedrons.size() = support_contours_at_layer_i_minus_1.size()
 		std::vector<SO::Polyhedron<CgalMesh_EPICK>> temp_polyhedrons;
 
 		int index = partition_index + 1;
-		if (m_paritions[partition_index].getBasePlane() != SO::Plane())
+		// This if loop run only if current partition is not the last partition in the partition list.
+		if (partition_index != (m_paritions.numberOfPartitions() - 1))
 		{
 			SO::PrintingLayer p_layer_i = working_printing_layers.getLayer(0);
 			if (p_layer_i.getSupportStructureContours().numberOfPolygons() > 0)
 			{
-				SO::Plane slicing_plane = m_paritions[partition_index].getBasePlane();
-				SO::PolygonCollection projected_contours = p_layer_i.getSupportStructureContours().projectToOtherPlane(slicing_plane);
+				SO::PolygonCollection projected_contours = p_layer_i.getSupportStructureContours().projectToOtherPlane(m_paritions[partition_index].getBasePlane());
 
 				SO::PolygonCollection pos, neg;
 				for (int i = partition_index - 1; i >= 0; i--)
 				{
 					if (projected_contours.clipWithPlane(m_paritions[i].getBasePlane(), pos, neg))
 					{
+						// pos will collides with partition print after.
 						projected_contours = neg;
 					}
 				}

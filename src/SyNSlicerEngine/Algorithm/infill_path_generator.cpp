@@ -12,8 +12,6 @@ InfillPathGenerator::InfillPathGenerator(
 	, m_side_step(side_step)
 	, m_infill_type(infill_type)
 	, m_is_inputs_valid(true)
-	, m_cgal_outer_contour(CgalPolygon2D_EPICK())
-	, m_cgal_inner_contours(std::vector<CgalPolygon2D_EPICK>())
 	, m_output(SO::PolygonCollection())
 {
 	for (size_t i = 0; i < m_contours.numberOfPolygons(); i++)
@@ -28,7 +26,7 @@ InfillPathGenerator::InfillPathGenerator(
 		}
 		else
 		{
-			spdlog::error("Polygon not simple {}", i);
+			//spdlog::error("Polygon not simple {}", i);
 		}
 	}
 
@@ -65,17 +63,15 @@ void InfillPathGenerator::generateInfillPath()
 	}
 }
 
-void InfillPathGenerator::getOutput(SO::PolygonCollection &ouput)
+void InfillPathGenerator::getOutput(SO::PolygonCollection &output)
 {
 	if (m_is_inputs_valid == false)
 	{
 		//spdlog::error("No output can be provided because the inputs are not valid!");
 		return;	
 	}
-	ouput = m_output;
+	output = m_output;
 }
-
-static int a = 0;
 
 void InfillPathGenerator::generateGridInfillPath()
 {

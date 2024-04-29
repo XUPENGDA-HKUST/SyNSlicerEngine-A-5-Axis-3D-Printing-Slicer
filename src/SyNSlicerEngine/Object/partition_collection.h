@@ -7,41 +7,84 @@ namespace SO = SyNSlicerEngine::Object;
 
 namespace SyNSlicerEngine::Object
 {
-	//! This class is used describe the 3D model after partitioning.
-	/*!
-		The difference between this and the superclass Model is that it stores members. \n
-		(1) A contour obtain during parititioning used to calculate printing sequence. \n
-		(2) Partition that should be printed before this partition does. \n
-		(3) All printing layers obtained after slicing this partition.
-	*/
+	//! This class is store all the 3D models obtained in partitioning.
 	template <class T>
 	class PartitionCollection
 	{
 	public:
+		//! Default constructor.
 		PartitionCollection();
+
+		//! Copy constructor.
 		PartitionCollection(const PartitionCollection &other);
+
+		//! Constructor.
+		/*!
+			\brief	Construct by loading the save file of this class.
+			\param[in]	file_name	Path of the file.
+		*/
 		PartitionCollection(std::string file_name);
+
+		//! Destructor.
 		~PartitionCollection();
 
+		//! Save the Partitions.
+		/*!
+			\param[in]	file_name	Path of the save file.
+		*/
 		bool save(std::string file_name);
+
+		//! Load the save file of this class.
+		/*!
+			\param[in]	file_name	Path of the save file.
+		*/
 		bool load(std::string file_name);
 
+		//! Restore all the members of this class to default value.
 		void reset();
+
+		//! Add a partition.
+		/*!
+			\param[in]	partition	Partition.
+		*/
 		void addPartition(const SO::Partition<T> &partition);
+
+		//! Revert the sequence of the partitions.
 		void revert();
+
+		//! Get the last partition stored in this class.
+		/*!
+			\return SO::Partition<T>.
+		*/
 		SO::Partition<T> &back();
+
+		//! Remove the last partition stored in this class.
 		void pop_back();
+
+		//! Get all the partitions stored in this class.
+		/*!
+			\return std::vector<SO::Partition<T>>.
+		*/
 		std::vector<SO::Partition<T>> &get();
 
+		//! Get number of the partitions stored in this class.
+		/*!
+			\return Number of partitions.
+		*/
 		int numberOfPartitions() const;
-		void determinePrintingSequence();
 
+		//! Copy assignment operators
 		PartitionCollection &operator=(const PartitionCollection &other);
+
+		//! Get one of the partition stored in this class.
+		/*!
+			\param[in]	index	Index.
+		*/
 		SO::Partition<T> &operator[](int index);
 
-	private:
+	protected:
+		//! Store all the partitions.
 		std::vector<SO::Partition<T>> m_partitions;
-
 	};
 
 	template <class T>
@@ -241,11 +284,6 @@ namespace SyNSlicerEngine::Object
 	inline int PartitionCollection<T>::numberOfPartitions() const
 	{
 		return m_partitions.size();
-	}
-
-	template <class T>
-	inline void PartitionCollection<T>::determinePrintingSequence()
-	{
 	}
 
 	template <class T>

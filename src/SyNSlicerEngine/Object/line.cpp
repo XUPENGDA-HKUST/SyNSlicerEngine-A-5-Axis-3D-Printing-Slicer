@@ -129,29 +129,6 @@ void Line::reverseDirection()
 	m_direction = -m_direction;
 }
 
-Eigen::Vector3d Line::findInterpolationOnLine(double middle, double start, double end)
-{
-	assert(middle > start && middle < end);
-	double t = (middle - start) / (end - start);
-	Eigen::Vector3d interpolated_point = m_source + t * (m_target - m_source);
-	return interpolated_point;
-}
-
-std::vector<Eigen::Vector3d> Line::getRefinedLine(double gap)
-{
-	std::vector<Eigen::Vector3d> points_on_line;
-	int points_to_be_added = round(this->getLength() / gap) - 1;
-	points_on_line.reserve(points_to_be_added + 2);
-	points_on_line.emplace_back(m_source);
-	for (int i = 1; i <= points_to_be_added; i++)
-	{
-		double t = 1.0 / (points_to_be_added + 1) * i;
-		points_on_line.emplace_back(findInterpolationOnLine(t));
-	};
-	points_on_line.emplace_back(m_target);
-	return points_on_line;
-}
-
 double Line::getDistanceOfPoint(const Eigen::Vector3d &point) const
 {	
 	assert(m_is_valid);

@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     SyNSlicerEngine::GUI::ObjectDrawer drawer(main_window.getRenderer());
 
 
-    if (false)
+    if (true)
     {
         Eigen::Vector3d origin(0, 0, 0);
         Eigen::Vector3d pt0(0, 0, 0);

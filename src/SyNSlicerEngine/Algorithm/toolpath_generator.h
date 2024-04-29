@@ -32,8 +32,8 @@ namespace SyNSlicerEngine::Algorithm {
 
 		//!  Constructor.
 		/*!
-			\param	partition		The diameter of the filament used by the printer.
-			\param	with_support	Whether generate printing paths for support structure.
+			\param[in,out]	partition		The diameter of the filament used by the printer.
+			\param[in]		with_support	Whether generate printing paths for support structure.
 		*/
 		ToolpathGenerator(SO::Partition<CgalMesh_EPICK> &partition, bool with_support = false);
 
@@ -42,23 +42,23 @@ namespace SyNSlicerEngine::Algorithm {
 
 		//! Set properties for printing paths of the 3D model.
 		/*!
-			\param	wall_count		Number of wall.
-			\param	bottom_count	Number of bottom layers.
-			\param	top_count		Number of top layers.
-			\param	path_type		Infill pattern. 0: Contour parallel. 1: Zigzag. 2: Grid
-			\param	infill_density	Density of infill pattern.
-			\param	side_step		Distance between consective paths.
+			\param[in]	wall_count		Number of wall.
+			\param[in]	bottom_count	Number of bottom layers.
+			\param[in]	top_count		Number of top layers.
+			\param[in]	path_type		Infill pattern. 0: Contour parallel. 1: Zigzag. 2: Grid
+			\param[in]	infill_density	Density of infill pattern.
+			\param[in]	side_step		Distance between consective paths.
 		*/
 		virtual void setPathPropertyForModel(int wall_count, int bottom_count, int top_count, int path_type, int infill_density, double side_step);
 
 		//! Set properties for printing paths of support structure.
 		/*!
-			\param	wall_count		Number of wall.
-			\param	bottom_count	Number of bottom layers.
-			\param	top_count		Number of top layers.
-			\param	path_type		Infill pattern. 0: Contour parallel. 1: Zigzag. 2: Grid
-			\param	infill_density	Density of infill pattern.
-			\param	side_step		Distance between consective paths.
+			\param[in]	wall_count		Number of wall.
+			\param[in]	bottom_count	Number of bottom layers.
+			\param[in]	top_count		Number of top layers.
+			\param[in]	path_type		Infill pattern. 0: Contour parallel. 1: Zigzag. 2: Grid
+			\param[in]	infill_density	Density of infill pattern.
+			\param[in]	side_step		Distance between consective paths.
 		*/
 		virtual void setPathPropertyForSupport(int wall_count, int bottom_count, int top_count, int path_type, int infill_density, double side_step);
 
@@ -72,15 +72,15 @@ namespace SyNSlicerEngine::Algorithm {
 
 		//! Determine the planes used to calculate zigzag path.
 		/*!
-			\param	contours	Contours.
-			\param	index		Define planes normal direction. /b 0 or /b 1.
+			\param[in]	contours	Contours.
+			\param[in]	index		Define planes normal direction. /b 0 or /b 1.
 		*/
 		virtual void determineCuttingPlanesZigzagInfill(SO::PolygonCollection &contours, int index);
 
 		//! Determine the planes used to calculate grid infill.
 		/*!
-			\param	contours		Contours.
-			\param	infill_density	Density of infill pattern.
+			\param[in]	contours		Contours.
+			\param[in]	infill_density	Density of infill pattern.
 		*/
 		virtual void determineCuttingPlanesGridInfill(SO::PolygonCollection &contours, int infill_density);
 
@@ -89,34 +89,34 @@ namespace SyNSlicerEngine::Algorithm {
 
 		//! Generate printing path for the wall of the model.
 		/*!
-			\param	wall_count	Number of wall.
+			\param[in]	wall_count	Number of wall.
 		*/
 		virtual void generateWallForModel(int wall_count);
 
 		//! Generate printing path for the bottom of the model.
 		/*!
-			\param	wall_count		Number of wall.
-			\param	bottom_count	Number of bottom layers.
+			\param[in]	wall_count		Number of wall.
+			\param[in]	bottom_count	Number of bottom layers.
 		*/
 		virtual void generateBottomForModel(int wall_count, int bottom_count);
 
 		//! Generate printing path for the top of the model.
 		/*!
-			\param	wall_count		Number of wall.
-			\param	top_count	Number of top layers. 
+			\param[in]	wall_count		Number of wall.
+			\param[in]	top_count	Number of top layers. 
 		*/
 		virtual void generateTopForModel(int wall_count, int top_count);
 
 		//! Generate printing path for the bottom and top of the model.
 		/*!
-			\param	wall_count		Number of wall.
+			\param[in]	wall_count		Number of wall.
 		*/
 		virtual void generateTopBottomUnionAndInfillContoursForModel(int wall_count);
 
 		//! Generate printing path for the infill of the model.
 		/*!
-			\param	wall_count	Number of wall.
-			\param	infill_type	Infill pattern. 0: Contour parallel. 1: Zigzag. 2: Grid
+			\param[in]	wall_count	Number of wall.
+			\param[in]	infill_type	Infill pattern. 0: Contour parallel. 1: Zigzag. 2: Grid
 		*/
 		virtual void generateInfillForModel(int wall_count, int infill_type);
 		
@@ -125,42 +125,42 @@ namespace SyNSlicerEngine::Algorithm {
 
 		//! Generate printing path for the wall of the support structure.
 		/*!
-			\param	wall_count	Number of wall.
+			\param[in]	wall_count	Number of wall.
 		*/
 		virtual void generateWallForSupport(int wall_count);
 
 		//! Generate printing path for the bottom of the support structure.
 		/*!
-			\param	wall_count		Number of wall.
-			\param	bottom_count	Number of bottom layers.
+			\param[in]	wall_count		Number of wall.
+			\param[in]	bottom_count	Number of bottom layers.
 		*/
 		virtual void generateBottomForSupport(int wall_count, int bottom_count);
 
 		//! Generate printing path for the top of the model.
 		/*!
-			\param	wall_count	Number of wall.
-			\param	top_count	Number of top layers.
+			\param[in]	wall_count	Number of wall.
+			\param[in]	top_count	Number of top layers.
 		*/
 		virtual void generateTopForSupport(int wall_count, int top_count);
 
 		//! Generate printing path for the bottom and top of the model.
 		/*!
-			\param	wall_count	Number of wall.
+			\param[in]	wall_count	Number of wall.
 		*/
 		virtual void generateTopBottomUnionAndInfillContoursForSupport(int wall_count);
 
 		//! Generate printing path for the infill of the model.
 		/*!
-			\param	wall_count	Number of wall.
-			\param	infill_type	Infill pattern. 0: Contour parallel. 1: Zigzag. 2: Grid
+			\param[in]	wall_count	Number of wall.
+			\param[in]	infill_type	Infill pattern. 0: Contour parallel. 1: Zigzag. 2: Grid
 		*/
 		virtual void generateInfillForSupport(int wall_count, int infill_type);
 		
 		//! Transform a point from one plane to another plane.
 		/*!
-			\param	point			The point.
-			\param	source_plane	Source plane.
-			\param	target_plane	Target plane.
+			\param[in]	point			The point.
+			\param[in]	source_plane	Source plane.
+			\param[in]	target_plane	Target plane.
 		*/
 		virtual Eigen::Vector3d transformPointFromPlaneToPlane(
 			const Eigen::Vector3d &point, const SO::Plane &source_plane, const SO::Plane &target_plane);
@@ -218,8 +218,6 @@ namespace SyNSlicerEngine::Algorithm {
 
 		//! Planes used to generate infill paths.
 		std::vector<SO::Plane> m_cutting_planes;
-
-
 	};
 }
 

@@ -3,8 +3,9 @@
 using SyNSlicerEngine::Object::PointCloud;
 
 PointCloud::PointCloud()
+	: m_is_empty(true)
 {
-	m_status = Empty;
+
 }
 
 PointCloud::PointCloud(const PointCloud &other)
@@ -28,7 +29,7 @@ PointCloud::~PointCloud()
 void PointCloud::reset()
 {
 	m_points.clear();
-	m_status = Empty;
+	m_is_empty = true;
 }
 
 bool PointCloud::hasCommonPoints(const PointCloud &other)
@@ -78,7 +79,7 @@ int PointCloud::size() const
 
 void PointCloud::updateBound(Eigen::Vector3d point)
 {
-	if (m_status == Empty)
+	if (m_is_empty == true)
 	{
 		m_bound[0] = point[0];
 		m_bound[1] = point[0];
@@ -86,7 +87,7 @@ void PointCloud::updateBound(Eigen::Vector3d point)
 		m_bound[3] = point[1];
 		m_bound[4] = point[2];
 		m_bound[5] = point[2];
-		m_status = FirstPointAdded;
+		m_is_empty = false;
 	}
 	else
 	{
@@ -118,6 +119,6 @@ PointCloud &PointCloud::operator=(const PointCloud &other)
 	{
 		m_bound[i] = other.m_bound[i];
 	}
-	m_status = other.m_status;
+	m_is_empty = other.m_is_empty;
 	return *this;
 }

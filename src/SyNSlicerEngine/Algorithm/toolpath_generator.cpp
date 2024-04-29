@@ -5,12 +5,14 @@ using SyNSlicerEngine::Algorithm::ToolpathGenerator;
 ToolpathGenerator::ToolpathGenerator(SO::Partition<CgalMesh_EPICK> &partition, bool with_support)
     : mp_partition(&partition)
     , m_side_step(0.4)
+    , m_with_support(with_support)
 {
-    m_with_support = with_support;
+
 };
 
 ToolpathGenerator::~ToolpathGenerator()
 {
+
 }
 
 void ToolpathGenerator::setPathPropertyForModel(int wall_count, int bottom_count, int top_count, int path_type, int infill_density, double side_step)
@@ -65,7 +67,6 @@ void ToolpathGenerator::generatePath()
     }
 }
 
-static int aaa = 0;
 void ToolpathGenerator::determineOriginOfAllPrintingLayers()
 {
     if (mp_partition->getPrintingLayers().size() < 1)

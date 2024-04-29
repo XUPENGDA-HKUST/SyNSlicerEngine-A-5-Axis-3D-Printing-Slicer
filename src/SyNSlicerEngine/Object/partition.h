@@ -23,43 +23,116 @@ namespace SyNSlicerEngine::Object
 		using EigenPoint = Eigen::Vector3d;
 
 	public:
+        //! Default constructor.
 		Partition();
+
+        //! Copy constructor.
 		Partition(const Partition<T> &other);
+
+        //! Construct this by inputting a cgal mesh.
+        /*!
+            \param[in] mesh Cgal mesh, CgalMesh_EPICK or CgalMesh_EPECK.
+        */
         Partition(const T &mesh);
+
+        //! Construct this by inputting a .stl file.
+        /*!
+            \param[in] file_path System path of the file.
+        */
 		Partition(std::string file_path);
+
+        //! Destructor.
 		~Partition();
 
+        //! Set base plane.
+        /*!
+            \param[in] base_plane Base plane.
+        */
 		void setBasePlane(const SO::Plane &base_plane);
+
+        //! Get base plane.
+        /*!
+            \return Base plane.
+        */
         SO::Plane getBasePlane();
+
+        //! Get base contours.
+        /*!
+            \return Base contours.
+        */
         PolygonCollection &getBaseContours();
 
+        //! Add key.
+        /*!
+            Key is used to determine printing sequence. Key should be printed before lock.
+            \param[in]  key     Key.
+        */
         void addKey(int key);
+
+        // Get keys.
+        /*!
+            \return     All keys.
+        */
         std::vector<int> getKeys();
 
+        //! Add lock.
+        /*!
+            Lock is used to determine printing sequence. Lock should be printed after key.
+            \param[in]  lock     Lock.
+        */
         void addLock(int lock);
+
+        // Get Locks.
+        /*!
+            \return     All locks.
+        */
         std::vector<int> getLocks();
 
+        //! Get EPICK mesh.
+        /*!
+            \return     CgalMesh_EPICK.
+        */
         CgalMesh_EPICK getEPICKMesh();
+
+        //! Get EPECK mesh.
+        /*!
+            \return     CgalMesh_EPECK.
+        */
         CgalMesh_EPECK getEPECKMesh();
 
+        //! Set printing layers.
+        /*!
+            \param[in]  printing_layers     Printing layers.
+        */
         void setPrintingLayers(const SO::PrintingLayerCollection &printing_layers);
+
+        //! Get EPECK mesh.
+        /*!
+            \return     SO::PrintingLayerCollection.
+        */
         SO::PrintingLayerCollection &getPrintingLayers();
 
+        //! Copy assignment operators
 		Partition<T> &operator=(const Partition<T> &other);
 
-	private:
-
+	protected:
+        //! Calculate base contours.
 		void determineBaseContours();
 
+        //! Store base plane.
 		SO::Plane m_base_plane;
 		
+        //! Store base contours.
 		SO::PolygonCollection m_base_contours;
 
+        //! Store printing layers.
 		SO::PrintingLayerCollection m_printing_layers;
 
+        //! Store keys.
         std::vector<int> m_keys;
-        std::vector<int> m_locks;
 
+        //! Store locks.
+        std::vector<int> m_locks;
 	};
 
     template<class T>
