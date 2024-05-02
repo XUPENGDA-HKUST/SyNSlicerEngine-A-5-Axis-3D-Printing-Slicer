@@ -43,7 +43,7 @@ bool PrintingLayerCollection::isValid()
 {
 	for (int i = 0; i < layer_status.size(); i++)
 	{
-		if (layer_status[i] == true)
+		if (layer_status[i] == false)
 		{
 			return false;
 		}
@@ -72,11 +72,6 @@ void PrintingLayerCollection::update()
 	}
 
 	m_support.closePolylines();
-}
-
-void PrintingLayerCollection::generateToolpath(int toolpath_type)
-{
-	Eigen::Vector3d zigzag_direction(1, 0, 0);
 }
 
 SO::PolylineCollection PrintingLayerCollection::getContours() const
