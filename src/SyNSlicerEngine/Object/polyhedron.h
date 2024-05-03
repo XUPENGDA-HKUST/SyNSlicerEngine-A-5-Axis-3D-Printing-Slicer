@@ -16,57 +16,95 @@ namespace SyNSlicerEngine::Object {
 	class Polyhedron
 	{
 	public:
+        //! Default constructor.
 		Polyhedron();
+
+        //! Copy constructor.
 		Polyhedron(const Polyhedron &other);
+
+        //! Constructor.
+        /*!
+            \brief  construct this by loading a .stl file.
+            \param[in] file_path Path of the .stl file.
+        */
 		Polyhedron(std::string file_path);
+
+        //! Constructor.
+        /*!
+            \brief  construct this by inputting a cgal mesh.
+            \param[in] mesh CgalMesh_EPICK or CgalMesh_EPECK.
+        */
 		Polyhedron(const T &mesh);
+
+        //! Destructor.
 		~Polyhedron();
 
+        //! Repaire self-intersection.
 		bool repaireSelfIntersection();
+
+        //! Remove duplicate vertices and faces.
 		bool makeAsCleanAsPossible();
+
+        //! Remove duplicate vertices and faces of the input mesh.
+        /*!
+            \param[in] mesh CgalMesh_EPICK.
+        */
         bool makeAsCleanAsPossible(CgalMesh_EPICK &mesh);
 
+        //! File holes in the mesh.
         bool fillHoles();
 
+        //! Get the stored mesh.
+        /*!
+            \return \b CgalMesh_EPICK or \b CgalMesh_EPECK.
+        */
 		T getMesh() const;
 
-		bool writeMeshToSTL(const std::string &name);
+        //! Save mesh to .stl file
+        /*!
+            \param[in] file_path Path of the .stl file.
+        */
+		bool save(std::string file_path);
 
+        //! Loading mesh from a given file path
+        /*!
+            \param[in] file_path Path of the .stl file.
+        */
+        bool load(std::string file_path);
+
+        //! Copy assignment operator.
 		Polyhedron &operator = (const Polyhedron &other);
 
 	protected:
+        // Store the mesh.
 		T m_mesh;
-
-	private:
-		//! Loading mesh from a given file path
-		bool loadMesh(std::string file_path);
 	};
 
 	template<class T>
-	inline SyNSlicerEngine::Object::Polyhedron<T>::Polyhedron()
+	inline Polyhedron<T>::Polyhedron()
 	{
 	}
 
 	template<class T>
-	inline SyNSlicerEngine::Object::Polyhedron<T>::Polyhedron(const Polyhedron &other)
+	inline Polyhedron<T>::Polyhedron(const Polyhedron &other)
 	{
 		*this = other;
 	}
 
 	template<class T>
-	inline SyNSlicerEngine::Object::Polyhedron<T>::Polyhedron(std::string file_path)
+	inline Polyhedron<T>::Polyhedron(std::string file_path)
 	{
-		this->loadMesh(file_path);
+		this->load(file_path);
 	}
 
 	template<class T>
-	inline SyNSlicerEngine::Object::Polyhedron<T>::Polyhedron(const T &mesh)
+	inline Polyhedron<T>::Polyhedron(const T &mesh)
 	{
 		this->m_mesh = mesh;
 	}
 
 	template<class T>
-	inline SyNSlicerEngine::Object::Polyhedron<T>::~Polyhedron()
+	inline Polyhedron<T>::~Polyhedron()
 	{
 	}
 
@@ -313,15 +351,15 @@ namespace SyNSlicerEngine::Object {
     }
 
 	template<class T>
-	inline T SyNSlicerEngine::Object::Polyhedron<T>::getMesh() const
+	inline T Polyhedron<T>::getMesh() const
 	{
 		return this->m_mesh;
 	}
 
 	template<class T>
-	inline bool SyNSlicerEngine::Object::Polyhedron<T>::writeMeshToSTL(const std::string &name)
+	inline bool Polyhedron<T>::save(std::string file_path)
 	{
-		if (!CGAL::IO::write_polygon_mesh(name, this->m_mesh))
+		if (!CGAL::IO::write_polygon_mesh(file_path, this->m_mesh))
 		{
 			spdlog::info("Polyhedron::writeEPECKMeshToSTL: Fail!");
 			return false;
@@ -329,32 +367,32 @@ namespace SyNSlicerEngine::Object {
 		return true;
 	}
 
+    template<class T>
+    inline bool Polyhedron<T>::load(std::string file_path)
+    {
+        std::size_t found_0 = file_path.find(".stl");
+        std::size_t found_1 = file_path.find(".STL");
+
+        if (found_0 != std::string::npos || found_1 != std::string::npos)
+        {
+            if (CGAL::Polygon_mesh_processing::IO::read_polygon_mesh(file_path, this->m_mesh))
+            {
+                spdlog::info("Read .stl to m_mesh OK");
+                return true;
+            }
+            return false;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
 	template<class T>
-	inline Polyhedron<T> &SyNSlicerEngine::Object::Polyhedron<T>::operator=(const Polyhedron &other)
+	inline Polyhedron<T> &Polyhedron<T>::operator=(const Polyhedron &other)
 	{
 		this->m_mesh = other.m_mesh;
 		return *this;
-	}
-
-	template<class T>
-	inline bool SyNSlicerEngine::Object::Polyhedron<T>::loadMesh(std::string file_path)
-	{
-		std::size_t found_0 = file_path.find(".stl");
-		std::size_t found_1 = file_path.find(".STL");
-
-		if (found_0 != std::string::npos || found_1 != std::string::npos)
-		{
-			if (CGAL::Polygon_mesh_processing::IO::read_polygon_mesh(file_path, this->m_mesh))
-			{
-				spdlog::info("Read .stl to m_mesh OK");
-				return true;
-			}
-			return false;
-		}
-		else
-		{
-			return false;
-		}
 	}
 }
 

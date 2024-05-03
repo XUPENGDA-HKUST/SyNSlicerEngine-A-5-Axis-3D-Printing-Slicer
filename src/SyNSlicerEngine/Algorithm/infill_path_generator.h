@@ -25,10 +25,10 @@ namespace SyNSlicerEngine::Algorithm
 
 		//! Constructor.
 		/*!
-			\param contours[in]			Contours to be filled in.
-			\param cutting_planes[in]	Planes used to generate infills.
-			\param side_step[in]		Distance between two consecutive paths.
-			\param infill_type[in]		Infill pattern.
+			\param[in]	contours		Contours to be filled in.
+			\param[in]	cutting_planes	Planes used to generate infills.
+			\param[in]	side_step		Distance between two consecutive paths.
+			\param[in]	infill_type		Infill pattern.
 		*/
 		InfillPathGenerator(
 			const SO::PolygonCollection &contours, 

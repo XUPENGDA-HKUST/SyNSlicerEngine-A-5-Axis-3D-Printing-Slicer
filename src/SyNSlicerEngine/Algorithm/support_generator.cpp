@@ -31,13 +31,13 @@ void SupportGenerator::generateSupportStructure()
 
 		for (int layer_number = working_printing_layers.getNumberOfLayers() - 1; layer_number >= 1; --layer_number)
 		{
-			if (working_printing_layers.getLayer(layer_number - 1).getNumberOfContours() <= 0)
+			if (working_printing_layers[layer_number - 1].getNumberOfContours() <= 0)
 			{
 				continue;
 			};
 
-			SO::PrintingLayer p_layer_i = working_printing_layers.getLayer(layer_number);
-			SO::PrintingLayer p_layer_i_minus_1 = working_printing_layers.getLayer(layer_number - 1);
+			SO::PrintingLayer p_layer_i = working_printing_layers[layer_number];
+			SO::PrintingLayer p_layer_i_minus_1 = working_printing_layers[layer_number - 1];
 
 			SO::PolygonCollection contours = p_layer_i.getContours();
 			SO::PolygonCollection projected_contours = contours.projectToOtherPlane(p_layer_i_minus_1.getSlicingPlane());
@@ -84,7 +84,7 @@ void SupportGenerator::generateSupportStructure()
 		// This if loop run only if current partition is not the last partition in the partition list.
 		if (partition_index != (m_paritions.numberOfPartitions() - 1))
 		{
-			SO::PrintingLayer p_layer_i = working_printing_layers.getLayer(0);
+			SO::PrintingLayer p_layer_i = working_printing_layers[0];
 			if (p_layer_i.getSupportStructureContours().numberOfPolygons() > 0)
 			{
 				SO::PolygonCollection projected_contours = p_layer_i.getSupportStructureContours().projectToOtherPlane(m_paritions[partition_index].getBasePlane());

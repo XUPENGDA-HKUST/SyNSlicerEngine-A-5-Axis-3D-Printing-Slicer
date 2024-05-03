@@ -1,7 +1,7 @@
 #include "object_drawer.h"
 
-using SyNSlicerEngine::GUI::ObjectDrawer;
-using SyNSlicerEngine::GUI::ObjectForVisualization;
+using SyNSlicerGUI::ObjectDrawer;
+using SyNSlicerGUI::ObjectForVisualization;
 
 ObjectDrawer::ObjectDrawer(vtkRenderer *p_renderer)
 	: mp_renderer(p_renderer)
@@ -11,6 +11,7 @@ ObjectDrawer::ObjectDrawer(vtkRenderer *p_renderer)
 
 ObjectDrawer::~ObjectDrawer()
 {
+	this->removeAllObjectsDrawn();
 }
 
 vtkRenderer *ObjectDrawer::getRenderer()
@@ -357,7 +358,7 @@ int ObjectDrawer::removeAllObjectsDrawn()
 
 void ObjectDrawer::addObjectToRenderer(vtkPolyData *p_polydata, std::string name)
 {
-	ObjectForVisualization *object = new GUI::ObjectForVisualization();
+	ObjectForVisualization *object = new SyNSlicerGUI::ObjectForVisualization();
 	object->setPolyData(p_polydata);
 	object->addToRenderer(mp_renderer);
 	m_object_in_renderer.insert(std::make_pair(name, object));

@@ -68,9 +68,9 @@ namespace SyNSlicerEngine::Algorithm {
 
 		//! Genearte Tool path for parallel printing layers.
 		/*!
-			\param polygons			Contours.
-			\param toolpaths		Toolpaths.
-			\param layer_thickness	Layer thicknees used to calculate extrusion.
+			\param polygons_collection	Contours.
+			\param toolpaths			Toolpaths.
+			\param layer_thickness		Layer thicknees used to calculate extrusion.
 		*/
 		virtual void generateToolpath(const std::vector<SO::PolygonCollection> &polygons_collection, SO::ToolpathCollection &toolpaths, double layer_thickness);
 
@@ -85,7 +85,7 @@ namespace SyNSlicerEngine::Algorithm {
 		
 		//! Genearte Tool path for non parallel printing layers.
 		/*!
-			\param polygons				Contours.
+			\param polygons_collection	Contours.
 			\param toolpaths			Toolpaths.
 			\param intersecting_line	Intersecting line of two consecutive printing layers.
 			\param angle_between_planes	Angle between two consecutive printing layers.

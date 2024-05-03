@@ -43,6 +43,94 @@ PolygonCollection::PolygonCollection(const std::vector<CgalPolyline_EPICK> &poly
 
 PolygonCollection::PolygonCollection(std::string file_name)
 {
+	this->load(file_name);
+}
+
+PolygonCollection::~PolygonCollection()
+{
+}
+
+bool PolygonCollection::save(std::string file_name)
+{
+	std::ofstream myfile(file_name);
+
+	if (myfile.is_open()) {
+		// Write some lines to the file
+
+		myfile << -2 << " " << m_plane.getOrigin()[0] << " " << m_plane.getOrigin()[1] << " " << m_plane.getOrigin()[2] << "\n";
+		myfile << -1 << " " << m_plane.getNormal()[0] << " " << m_plane.getNormal()[1] << " " << m_plane.getNormal()[2] << "\n";
+
+		for (size_t i = 0; i < m_polygons.size(); i++)
+		{
+			for (size_t j = 0; j < m_polygons[i].get().size(); j++)
+			{
+				myfile << i << " " << m_polygons[i][j][0] << " " << m_polygons[i][j][1] << " " << m_polygons[i][j][2] << "\n";
+			}
+		}
+		// Close the file
+		myfile.close();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+bool PolygonCollection::load(std::string file_name)
+{
+	std::ifstream inputFile(file_name);
+
+	if (inputFile.is_open()) {
+		std::string line;
+		Eigen::Vector3d temp_point;
+		int current_index = 0;
+		int last_index = -1;
+		SO::Polygon temp_polygon;
+
+		while (std::getline(inputFile, line))
+		{
+			std::sscanf(line.c_str(), "%d %lf %lf %lf\n", &current_index, &temp_point[0], &temp_point[1], &temp_point[2]);
+			if (current_index == -2)
+			{
+				m_plane.setOrigin(temp_point);
+				continue;
+			}
+			if (current_index == -1)
+			{
+				m_plane.setNormal(temp_point);
+				continue;
+			}
+			if (current_index >= 0 && current_index != last_index)
+			{
+				if (temp_polygon.size() > 0)
+				{
+					this->addPolygon(temp_polygon);
+				}
+				temp_polygon.reset();
+				temp_polygon.setPlane(m_plane);
+				temp_polygon.addPointToBack(temp_point);
+				last_index = current_index;
+				continue;
+			}
+			temp_polygon.addPointToBack(temp_point);
+			last_index = current_index;
+		}
+
+		if (temp_polygon.size() > 0)
+		{
+			this->addPolygon(temp_polygon);
+		}
+
+		inputFile.close();
+		return true;
+	}
+	else
+	{
+		std::cerr << "Error opening the file." << std::endl;
+		return false;
+	}
+
+	/*
 	FILE *pathFile;
 	const char *c = file_name.c_str();
 	pathFile = fopen(c, "r");
@@ -84,36 +172,7 @@ PolygonCollection::PolygonCollection(std::string file_name)
 	{
 		this->addPolygon(temp_polygon);
 	}
-}
-
-PolygonCollection::~PolygonCollection()
-{
-}
-
-bool PolygonCollection::writeToTXT(std::string file_name)
-{
-	std::ofstream myfile(file_name);
-
-	if (myfile.is_open()) {
-		// Write some lines to the file
-
-		myfile << -2 << " " << m_plane.getOrigin()[0] << " " << m_plane.getOrigin()[1] << " " << m_plane.getOrigin()[2] << "\n";
-		myfile << -1 << " " << m_plane.getNormal()[0] << " " << m_plane.getNormal()[1] << " " << m_plane.getNormal()[2] << "\n";
-
-		for (size_t i = 0; i < m_polygons.size(); i++)
-		{
-			for (size_t j = 0; j < m_polygons[i].get().size(); j++)
-			{
-				myfile << i << " " << m_polygons[i][j][0] << " " << m_polygons[i][j][1] << " " << m_polygons[i][j][2] << "\n";
-			}
-		}
-		// Close the file
-		myfile.close();
-		return true;
-	}
-	else {
-		return false;
-	}
+	*/
 }
 
 int PolygonCollection::numberOfPolygons() const
@@ -169,7 +228,7 @@ Eigen::Vector3d PolygonCollection::getCentroid() const
 	return result;
 }
 
-void PolygonCollection::getBoundingBox(double(&bound)[6])
+void PolygonCollection::getBoundingBox(double bound[6])
 {
 	if (m_polygons.size() == 0)
 	{
@@ -191,8 +250,10 @@ void PolygonCollection::getBoundingBox(double(&bound)[6])
 		}
 		m_boudning_box_calculated = true;
 	};
-
-	memcpy(&bound, &m_bounding_box, sizeof(m_bounding_box));
+	for (size_t i = 0; i < 6; i++)
+	{
+		bound[i] = m_bounding_box[i];
+	}
 }
 
 double PolygonCollection::getClosestPointFromLine(const SO::Line &line, Eigen::Vector3d &point) const

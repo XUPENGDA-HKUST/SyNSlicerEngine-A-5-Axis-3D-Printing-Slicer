@@ -99,11 +99,6 @@ const int PrintingLayerCollection::getNumberOfLayers() const
 	return m_printing_layers.size();
 }
 
-SO::PrintingLayer PrintingLayerCollection::getLayer(int index)
-{
-	return m_printing_layers[index];
-}
-
 SO::PrintingLayer &PrintingLayerCollection::operator[](int index)
 {
 	return m_printing_layers[index];

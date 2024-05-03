@@ -28,11 +28,11 @@ namespace SyNSlicerEngine::Algorithm
 
 		//! Constructor.
 		/*!
-			\param partition				The partition to be sliced.
+			\param p_partition				The partition to be sliced.
 			\param target_layer_thickness	The average layer thickness want to achieve.
 			\param side_step				The distance between consecutive paths.
 			\param min_layer_thickness		The minimum layer thickness that the printer can print.
-			\param m_max_layer_thickness	The maximum layer thickness that the printer can print.
+			\param max_layer_thickness		The maximum layer thickness that the printer can print.
 		*/
 		explicit AutoSlicer(SO::Partition<CgalMesh_EPICK> &p_partition,
 			double target_layer_thickness = 0.3, double side_step = 0.4, double min_layer_thickness = 0.25,
@@ -68,8 +68,8 @@ namespace SyNSlicerEngine::Algorithm
 		/*!
 			Make sure all the planes generate a printing layer that the layer thickness is between
 			m_min_layer_thickness and m_max_layer_thickness. \n
-			\param contours_below	The printing layer below.
-			\param contours_up		The printing layer above.
+			\param plane_up			The plane above.
+			\param plane_below		The plane below.
 		*/
 		virtual bool calculateIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below);
 
@@ -79,8 +79,8 @@ namespace SyNSlicerEngine::Algorithm
 			m_min_layer_thickness and m_max_layer_thickness. \n
 			All default intermediate planes will adjust in calculateIntermediatePlanes() so that all of them 
 			can meet the requirement.
-			\param contours_below	The printing layer below.
-			\param contours_up		The printing layer above.
+			\param plane_up			The plane above.
+			\param plane_below		The plane below.
 			\param slicing_planes	The default intermediate planes.
 		*/
 		virtual bool computeDefaultIntermediatePlanes(SO::Plane &plane_up, SO::Plane plane_below, std::vector<SO::Plane> &slicing_planes);

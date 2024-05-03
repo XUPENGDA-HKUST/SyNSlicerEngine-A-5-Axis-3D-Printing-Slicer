@@ -1,6 +1,6 @@
 #include "sub_window.h"
 
-using GUI::SubWindow;
+using SyNSlicerGUI::SubWindow;
 
 SubWindow::SubWindow()
 {

@@ -123,7 +123,7 @@ void InfillPathGenerator::generateGridInfillPath()
 					int count = 0;
 					for (int polyline_index = 0; polyline_index < counter_clockwise_contours.numberOfPolygons(); polyline_index++)
 					{
-						if (counter_clockwise_contours[polyline_index].isLineInside(temp_line))
+						if (counter_clockwise_contours[polyline_index].isMidpointOfLineInside(temp_line))
 						{
 							count++;
 						}
@@ -131,7 +131,7 @@ void InfillPathGenerator::generateGridInfillPath()
 
 					for (int polyline_index = 0; polyline_index < clockwise_contours.numberOfPolygons(); polyline_index++)
 					{
-						if (clockwise_contours[polyline_index].isLineInside(temp_line))
+						if (clockwise_contours[polyline_index].isMidpointOfLineInside(temp_line))
 						{
 							count--;
 						}
@@ -196,7 +196,7 @@ void InfillPathGenerator::generateZigZagInfillPath()
 					int count = 0;
 					for (int polyline_index = 0; polyline_index < counter_clockwise_contours.numberOfPolygons(); polyline_index++)
 					{
-						if (counter_clockwise_contours[polyline_index].isLineInside(temp_line))
+						if (counter_clockwise_contours[polyline_index].isMidpointOfLineInside(temp_line))
 						{
 							count++;
 						}
@@ -204,7 +204,7 @@ void InfillPathGenerator::generateZigZagInfillPath()
 
 					for (int polyline_index = 0; polyline_index < clockwise_contours.numberOfPolygons(); polyline_index++)
 					{
-						if (clockwise_contours[polyline_index].isLineInside(temp_line))
+						if (clockwise_contours[polyline_index].isMidpointOfLineInside(temp_line))
 						{
 							count--;
 						}

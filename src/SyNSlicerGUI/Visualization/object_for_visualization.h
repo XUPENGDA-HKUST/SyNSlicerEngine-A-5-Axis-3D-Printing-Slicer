@@ -11,7 +11,7 @@
 
 namespace SO = SyNSlicerEngine::Object;
 
-namespace SyNSlicerEngine::GUI {
+namespace SyNSlicerGUI {
 
 	//!  This class is used to store a object for visualizing in the renderer 
 	/*!

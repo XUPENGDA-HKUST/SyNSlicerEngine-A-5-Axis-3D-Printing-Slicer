@@ -75,7 +75,7 @@ void GcodeGenerator::generateCompletedToolpath()
 
 		for (int printing_layer_index = 0; printing_layer_index < current_parition.getPrintingLayers().getNumberOfLayers(); printing_layer_index++)
 		{
-			const SO::PrintingLayer &current_layer = current_parition.getPrintingLayers().getLayer(printing_layer_index);
+			const SO::PrintingLayer &current_layer = current_parition.getPrintingLayers()[printing_layer_index];
 
 			for (int toolpath_index = 0; toolpath_index < current_layer.getToolpaths().size(); toolpath_index++)
 			{
@@ -104,7 +104,7 @@ void GcodeGenerator::generateCompletedToolpath()
 			Eigen::Vector3d origin_0(m_completed_toolpath.back()[0], m_completed_toolpath.back()[1], m_completed_toolpath.back()[2]);
 			Eigen::Vector3d normal_0(m_completed_toolpath.back()[3], m_completed_toolpath.back()[4], m_completed_toolpath.back()[5]);
 
-			SO::ToolPoint first_tool_point_in_next_partition(m_partitions[partition_index + 1].getPrintingLayers().getLayer(0).getToolpaths()[0][0]);
+			SO::ToolPoint first_tool_point_in_next_partition(m_partitions[partition_index + 1].getPrintingLayers()[0].getToolpaths()[0][0]);
 
 			Eigen::Vector3d origin_1(first_tool_point_in_next_partition[0], first_tool_point_in_next_partition[1], first_tool_point_in_next_partition[2]);
 			Eigen::Vector3d normal_1(first_tool_point_in_next_partition[3], first_tool_point_in_next_partition[4], first_tool_point_in_next_partition[5]);

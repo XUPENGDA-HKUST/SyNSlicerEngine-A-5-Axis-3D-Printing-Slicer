@@ -68,8 +68,8 @@ namespace SyNSlicerEngine::Algorithm
 
 		//! Check if swept volume intersect the partition printed.
 		/*!
-			\param swept_volume[in] Swept volume.
-			\param partition[in] Printed partition.
+			\param[in]	swept_volume Swept volume.
+			\param[in]	partition Printed partition.
 			\return \b Ture if intersected. \b False if not intersected.
 		*/
 		virtual bool isSweptVolumeIntersectParition(CgalMesh_EPICK swept_volume, CgalMesh_EPICK partition);

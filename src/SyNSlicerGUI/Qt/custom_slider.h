@@ -8,7 +8,7 @@
 #include "Object/printing_layer_collection.h"
 #include "object_drawer.h"
 
-namespace SyNSlicerEngine::GUI {
+namespace SyNSlicerGUI {
 
     class LayerPreviewSlider : public QSlider
     {
@@ -83,7 +83,7 @@ namespace SyNSlicerEngine::GUI {
 
     private:
         QSlider slider;
-        GUI::ObjectDrawer m_drawer;
+        SyNSlicerGUI::ObjectDrawer m_drawer;
         SO::PartitionCollection<CgalMesh_EPICK> &m_partition_list;
         SO::PrintingLayerCollection m_printing_layers;
 

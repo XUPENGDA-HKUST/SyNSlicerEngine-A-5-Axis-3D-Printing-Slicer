@@ -24,7 +24,7 @@ namespace SyNSlicerEngine::Algorithm
 
 		//! Constructor
 		/*!
-			\param[in] partition_list All the partitions.
+			\param[in] partition All the partitions.
 			\param[in] nozzle The printer nozzle.
 		*/
 		SweptVolumwCalculator(const SO::Partition<CgalMesh_EPICK> &partition, SO::Nozzle nozzle);

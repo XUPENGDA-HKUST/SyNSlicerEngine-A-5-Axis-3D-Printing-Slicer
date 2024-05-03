@@ -18,11 +18,6 @@ PolylineCollection::~PolylineCollection()
 
 }
 
-void PolylineCollection::setNumberOfPolyline(int number)
-{
-	m_polylines.reserve(number);
-}
-
 void PolylineCollection::addPolyline(const Polyline &polyline)
 {
 	m_polylines.emplace_back(polyline);

@@ -93,12 +93,6 @@ namespace SyNSlicerEngine::Object {
 		/*!
 			\param[in] index	n.
 		*/
-		SO::PrintingLayer getLayer(int index);
-
-		//! Get the n-th layer in the container.
-		/*!
-			\param[in] index	n.
-		*/
 		SO::PrintingLayer &operator[](int index);
 
 		//! Copy assignment operator.

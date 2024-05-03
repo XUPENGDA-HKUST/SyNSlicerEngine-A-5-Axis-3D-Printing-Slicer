@@ -13,7 +13,7 @@ SkeletonNode::SkeletonNode(const Skeleton_EPICK &skeleton, const SO::Plane &plan
     : m_skeleton(skeleton)
 {
     double distance = std::numeric_limits<double>::max();
-    Skeleton_EPICK::vertex_descriptor closest_points;
+    Skeleton_EPICK::vertex_descriptor closest_points{};
     for (const Skeleton_EPICK::vertex_descriptor &v : CGAL::make_range(vertices(skeleton)))
     {
         Eigen::Vector3d temp_point(skeleton[v].point.x(), skeleton[v].point.y(), skeleton[v].point.z());

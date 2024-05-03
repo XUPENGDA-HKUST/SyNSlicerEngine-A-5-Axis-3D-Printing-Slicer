@@ -47,7 +47,7 @@ void AutoPartitioner::partition()
     {       
         if (CGAL::is_closed(m_partition_list[i].getEPECKMesh()))
         {
-            if (!m_partition_list[i].writeMeshToSTL(std::string("Part_") + std::to_string(i) + std::string(".stl")))
+            if (!m_partition_list[i].save(std::string("Part_") + std::to_string(i) + std::string(".stl")))
             {
                 spdlog::error("AutoPartitioner::writeSTL(): Fail!");
             }     

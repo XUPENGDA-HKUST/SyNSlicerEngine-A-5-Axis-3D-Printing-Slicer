@@ -28,7 +28,7 @@ namespace SyNSlicerEngine::Algorithm
 
 		//! Constructor.
 		/*!
-			\param	partition	The partition to be sliced.
+			\param	p_partition	The partition to be sliced.
 		*/
 		explicit Slicer(SO::Partition<CgalMesh_EPICK> &p_partition);
 

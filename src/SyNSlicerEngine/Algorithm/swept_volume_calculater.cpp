@@ -20,17 +20,17 @@ void SweptVolumwCalculator::calculateSweptVolume()
 	std::vector<CgalPoint_EPICK> pointcloud;
 	for (size_t i = 0; i < m_partition.getPrintingLayers().getNumberOfLayers(); i++)
 	{
-		Eigen::Vector3d normal = m_partition.getPrintingLayers().getLayer(i).getSlicingPlane().getNormal();
-		for (size_t j = 0; j < m_partition.getPrintingLayers().getLayer(i).getNumberOfContours(); j++)
+		Eigen::Vector3d normal = m_partition.getPrintingLayers()[i].getSlicingPlane().getNormal();
+		for (size_t j = 0; j < m_partition.getPrintingLayers()[i].getNumberOfContours(); j++)
 		{
-			std::vector<Eigen::Vector3d> contour = m_partition.getPrintingLayers().getLayer(i).getContour(j).get();
+			std::vector<Eigen::Vector3d> contour = m_partition.getPrintingLayers()[i].getContour(j).get();
 			std::vector<CgalPoint_EPICK> temp_pointcloud = calculatePointCloud(contour, normal);
 			pointcloud.insert(pointcloud.end(), temp_pointcloud.begin(), temp_pointcloud.end());
 		}
 
-		for (size_t j = 0; j < m_partition.getPrintingLayers().getLayer(i).getSupportStructureContours().numberOfPolygons(); j++)
+		for (size_t j = 0; j < m_partition.getPrintingLayers()[i].getSupportStructureContours().numberOfPolygons(); j++)
 		{
-			std::vector<Eigen::Vector3d> contour = m_partition.getPrintingLayers().getLayer(i).getSupportStructureContours()[j].get();
+			std::vector<Eigen::Vector3d> contour = m_partition.getPrintingLayers()[i].getSupportStructureContours()[j].get();
 			std::vector<CgalPoint_EPICK> temp_pointcloud = calculatePointCloud(contour, normal);
 			pointcloud.insert(pointcloud.end(), temp_pointcloud.begin(), temp_pointcloud.end());
 		}

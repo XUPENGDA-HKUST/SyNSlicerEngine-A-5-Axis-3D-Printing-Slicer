@@ -16,7 +16,7 @@
 
 namespace SO = SyNSlicerEngine::Object;
 
-namespace SyNSlicerEngine::GUI {
+namespace SyNSlicerGUI {
 
 	class ObjectDrawer
 	{
@@ -53,7 +53,7 @@ namespace SyNSlicerEngine::GUI {
 		void addObjectToRenderer(vtkPolyData *p_polydata, std::string name);
 
 		vtkRenderer *mp_renderer;
-		std::map<std::string, GUI::ObjectForVisualization *> m_object_in_renderer;
+		std::map<std::string, SyNSlicerGUI::ObjectForVisualization *> m_object_in_renderer;
 	};
 
 }

@@ -199,12 +199,12 @@ double Polygon::getArea() const
 	return 0.5 * sign_area.norm();
 }
 
-double Polygon::length() const
+double Polygon::perimeter() const
 {
-	return this->getLength();
+	return this->getPerimeter();
 }
 
-double Polygon::getLength() const
+double Polygon::getPerimeter() const
 {
 	double length = 0.0;
 	std::vector<Eigen::Vector3d> new_polygon = m_polygon;
@@ -220,7 +220,7 @@ double Polygon::getLength() const
 	return length;
 }
 
-void Polygon::getBoundingBox(double(&bound)[6])
+void Polygon::getBoundingBox(double bound[6])
 {
 	if (m_polygon.size() == 0)
 	{
@@ -250,7 +250,10 @@ void Polygon::getBoundingBox(double(&bound)[6])
 		m_boudning_box_calculated = true;
 	};
 
-	memcpy(&bound, &m_bounding_box, sizeof(m_bounding_box));
+	for (int i = 0; i < 6; i++)
+	{
+		bound[i] = m_bounding_box[i];
+	}
 }
 
 bool Polygon::isIntersectedWithPlane(const SO::Plane &plane)
@@ -341,7 +344,7 @@ bool Polygon::isPointInside(const Eigen::Vector3d &point)
 	return false;
 }
 
-bool Polygon::isLineInside(const SO::Line &line)
+bool Polygon::isMidpointOfLineInside(const SO::Line &line)
 {
 	if (!m_cgal_polygon.size())
 	{
@@ -375,9 +378,9 @@ bool Polygon::isLineInside(const SO::Line &line)
 bool Polygon::isOneOfTheVerticesOfTriangleInside(const SO::Triangle &triangle)
 {
 	bool result = false;
-	result = result || this->isPointInside(triangle.m_v0);
-	result = result || this->isPointInside(triangle.m_v1);
-	result = result || this->isPointInside(triangle.m_v2);
+	result = result || this->isPointInside(triangle.v0());
+	result = result || this->isPointInside(triangle.v1());
+	result = result || this->isPointInside(triangle.v2());
 	return result;
 }
 

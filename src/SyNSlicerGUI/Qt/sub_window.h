@@ -14,7 +14,7 @@
 #include <vtkNamedColors.h>
 #include <QVTKOpenGLNativeWidget.h>
 
-namespace GUI{
+namespace SyNSlicerGUI {
 
     //! This class defines a independent window for debug purpose.
     class SubWindow : public QMainWindow

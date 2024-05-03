@@ -1,6 +1,6 @@
 #include "object_for_visualization.h"
 
-using SyNSlicerEngine::GUI::ObjectForVisualization;
+using SyNSlicerGUI::ObjectForVisualization;
 
 ObjectForVisualization::ObjectForVisualization()
 	: mp_poly_data(nullptr)
