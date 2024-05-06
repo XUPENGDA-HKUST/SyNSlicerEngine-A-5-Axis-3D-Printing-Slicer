@@ -41,7 +41,6 @@ int main(int argc, char *argv[])
 
     SyNSlicerGUI::ObjectDrawer drawer(main_window.getRenderer());
 
-
     if (false)
     {
         Eigen::Vector3d origin(0, 0, 0);
@@ -62,7 +61,8 @@ int main(int argc, char *argv[])
         polygons.save("Polygons.txt");
 
         SO::PolygonCollection polygons_loaded("Polygons.txt");
-        drawer.drawPolygons(polygons_loaded, "123");
+        std::string name = "123";
+        drawer.drawPolygons(polygons_loaded, name);
         drawer.setColor("123", 1, 0, 0);
     }
     else
@@ -122,16 +122,16 @@ int main(int argc, char *argv[])
         gcode_generator.generateToolpathForEachLayer();
         gcode_generator.generateCompletedToolpath();
         gcode_generator.writeGcode();
-        gcode_generator.getCompletedToolpath();
 
         for (int i = 0; i < result.numberOfPartitions(); i++)
         {
-            drawer.drawMesh(result[i].getEPICKMesh(), std::string("Mesh") + std::to_string(i));
-            drawer.setColor(std::string("Mesh") + std::to_string(i),
+            std::string name = std::string("Mesh") + std::to_string(i);
+            drawer.drawMesh(result[i].getEPICKMesh(), name);
+            drawer.setColor(name,
                 255.0 / result.numberOfPartitions() * i,
                 255.0 / result.numberOfPartitions() * i,
                 255.0 / result.numberOfPartitions() * i);
-            drawer.setOpacity(std::string("Mesh") + std::to_string(i), 0.2);
+            drawer.setOpacity(name, 0.2);
         }
 
         /*
@@ -147,6 +147,13 @@ int main(int argc, char *argv[])
         */
 
         SyNSlicerGUI::LayerPreviewSlider *layer_preview = new SyNSlicerGUI::LayerPreviewSlider(result, main_window.getRenderer());
+
+        auto list = drawer.getAllObjectDrawn();
+
+        for (auto &[name, actor] : list)
+        {
+            std::cout << name << ": " << actor << std::endl;
+        }
     }
 
     main_window.resetCamera();

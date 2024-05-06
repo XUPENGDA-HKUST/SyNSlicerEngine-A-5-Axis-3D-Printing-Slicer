@@ -33,6 +33,8 @@ namespace SyNSlicerGUI {
             this->setRange(0, m_printing_layers.getNumberOfLayers() - 1);
             this->setValue(0);
 
+            this->setFixedSize(400, 400);
+
             this->show();
         };
 
@@ -47,36 +49,43 @@ namespace SyNSlicerGUI {
             {
                 m_drawer.removeAllObjectsDrawn();
             }
-
-            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPaths().getSurface(), "S" + std::to_string(current_value));
-            m_drawer.setColor("S" + std::to_string(current_value), 1, 0, 0);
+            std::string name = "S" + std::to_string(current_value);
+            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPaths().getSurface(), name);
+            m_drawer.setColor(name, 1, 0, 0);
 
             for (size_t i = 0; i < m_printing_layers[current_value].getPrintingPaths().getWall().size(); i++)
             {
-                m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPaths().getWall()[i], "W" + std::to_string(i) + std::to_string(current_value));
-                m_drawer.setColor("W" + std::to_string(i) + std::to_string(current_value), 0, 1, 0);
+                name = "W" + std::to_string(i) + std::to_string(current_value);
+                m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPaths().getWall()[i], name);
+                m_drawer.setColor(name, 0, 1, 0);
             }
 
-            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPaths().getBottomTopUnion(), "BT" + std::to_string(current_value));
-            m_drawer.setColor("BT" + std::to_string(current_value), 1, 1, 0);
+            name = "BT" + std::to_string(current_value);
+            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPaths().getBottomTopUnion(), name);
+            m_drawer.setColor(name, 1, 1, 0);
 
-            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPaths().getInfill(), "I" + std::to_string(current_value));
-            m_drawer.setColor("I" + std::to_string(current_value), (double)255 / 255, (double)165 / 255, 0);
+            name = "I" + std::to_string(current_value);
+            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPaths().getInfill(), name);
+            m_drawer.setColor(name, (double)255 / 255, (double)165 / 255, 0);
 
-            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPathsForSupport().getSurface(), "SS" + std::to_string(current_value));
-            m_drawer.setColor("SS" + std::to_string(current_value), 1, 0, 0);
+            name = "SS" + std::to_string(current_value);
+            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPathsForSupport().getSurface(), name);
+            m_drawer.setColor(name, 1, 0, 0);
 
             for (size_t i = 0; i < m_printing_layers[current_value].getPrintingPathsForSupport().getWall().size(); i++)
             {
-                m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPathsForSupport().getWall()[i], "WW" + std::to_string(i) + std::to_string(current_value));
-                m_drawer.setColor("WW" + std::to_string(i) + std::to_string(current_value), 0, 1, 0);
+                name = "WW" + std::to_string(i) + std::to_string(current_value);
+                m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPathsForSupport().getWall()[i], name);
+                m_drawer.setColor(name, 0, 1, 0);
             }
 
-            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPathsForSupport().getBottomTopUnion(), "BTBT" + std::to_string(current_value));
-            m_drawer.setColor("BTBT" + std::to_string(current_value), 1, 1, 0);
+            name = "BTBT" + std::to_string(current_value);
+            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPathsForSupport().getBottomTopUnion(), name);
+            m_drawer.setColor(name, 1, 1, 0);
 
-            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPathsForSupport().getInfill(), "II" + std::to_string(current_value));
-            m_drawer.setColor("II" + std::to_string(current_value), (double)255 / 255, (double)165 / 255, 0);
+            name = "II" + std::to_string(current_value);
+            m_drawer.drawPolygons(m_printing_layers[current_value].getPrintingPathsForSupport().getInfill(), name);
+            m_drawer.setColor(name, (double)255 / 255, (double)165 / 255, 0);
 
             last_value = value;
         }

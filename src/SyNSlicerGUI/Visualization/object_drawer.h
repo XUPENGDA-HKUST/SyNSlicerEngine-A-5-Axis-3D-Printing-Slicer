@@ -28,34 +28,37 @@ namespace SyNSlicerGUI {
 
 		vtkRenderer *getRenderer();
 
-		void drawPoint(const Eigen::Vector3d &point, std::string name);
-		void drawPoints(const std::vector<Eigen::Vector3d> &points, std::string name);
-		void drawLine(const SO::Line &line, std::string name);
-		void drawPolyline(const SO::Polyline &polygon, std::string name);
-		void drawPolylines(const SO::PolylineCollection &polygons, std::string name);
-		void drawPolygon(const SO::Polygon &polygon, std::string name);
-		void drawPolygons(SO::PolygonCollection &polygons, std::string name);
-		void drawPlane(const SO::Plane &plane, std::string name);
-		void drawTriangles(std::vector<int> faces, const CgalMesh_EPICK &mesh, std::string name);
-		void drawTriangles(std::vector<CgalMesh_EPICK::Face_index> faces, const CgalMesh_EPICK &mesh, std::string name);
-		void drawMesh(const CgalMesh_EPICK &mesh, std::string name);
-		void drawMesh(const CgalMesh_EPECK &mesh, std::string name);
+		std::string drawPoint(const Eigen::Vector3d &point, std::string &name);
+		std::string drawPoints(const std::vector<Eigen::Vector3d> &points, std::string &name);
+		std::string drawLine(const SO::Line &line, std::string &name);
+		std::string drawPolyline(const SO::Polyline &polygon, std::string &name);
+		std::string drawPolylines(const SO::PolylineCollection &polygons, std::string &name);
+		std::string drawPolygon(const SO::Polygon &polygon, std::string &name);
+		std::string drawPolygons(SO::PolygonCollection &polygons, std::string &name);
+		std::string drawPlane(const SO::Plane &plane, std::string &name);
+		bool removePlane(std::string name);
+
+		std::string drawTriangles(std::vector<int> faces, const CgalMesh_EPICK &mesh, std::string &name);
+		std::string drawTriangles(std::vector<CgalMesh_EPICK::Face_index> faces, const CgalMesh_EPICK &mesh, std::string &name);
+		std::string drawMesh(const CgalMesh_EPICK &mesh, std::string &name);
+		std::string drawMesh(const CgalMesh_EPECK &mesh, std::string &name);
 
 		void setColor(std::string name, double r, double g, double b);
 		void setOpacity(std::string name, double opacity);
 
 		int numberOfObjectsDrawn();
 		ObjectForVisualization *getObjectDrawn(std::string name);
-		void removeObjectDrawn(std::string name);
+		std::map<std::string, SyNSlicerGUI::ObjectForVisualization *> getAllObjectDrawn();
+
+		bool removeObjectDrawn(std::string name);
 		int removeAllObjectsDrawn();
 
 	private:
-		void addObjectToRenderer(vtkPolyData *p_polydata, std::string name);
+		std::string addObjectToRenderer(vtkPolyData *p_polydata, std::string &name);
 
 		vtkRenderer *mp_renderer;
 		std::map<std::string, SyNSlicerGUI::ObjectForVisualization *> m_object_in_renderer;
 	};
-
 }
 
 #endif // SYNSLICERGUI_OBJECTDRAWER_H_

@@ -19,7 +19,7 @@ vtkRenderer *ObjectDrawer::getRenderer()
 	return mp_renderer;
 }
 
-void ObjectDrawer::drawPoint(const Eigen::Vector3d &point, std::string name)
+std::string ObjectDrawer::drawPoint(const Eigen::Vector3d &point, std::string &name)
 {
 	vtkNew<vtkPoints> points;
 	// Create the topology of the point (a vertex)
@@ -40,9 +40,11 @@ void ObjectDrawer::drawPoint(const Eigen::Vector3d &point, std::string name)
 	this->addObjectToRenderer(pointcloud, name);
 	m_object_in_renderer[name]->getProperty()->SetPointSize(10);
 	m_object_in_renderer[name]->setColor(1, 0, 0);
+
+	return name;
 }
 
-void ObjectDrawer::drawPoints(const std::vector<Eigen::Vector3d> &points, std::string name)
+std::string ObjectDrawer::drawPoints(const std::vector<Eigen::Vector3d> &points, std::string &name)
 {
 	vtkNew<vtkPoints> vtk_points;
 	// Create the topology of the point (a vertex)
@@ -66,9 +68,11 @@ void ObjectDrawer::drawPoints(const std::vector<Eigen::Vector3d> &points, std::s
 	this->addObjectToRenderer(polydata, name);
 	m_object_in_renderer[name]->getProperty()->SetPointSize(10);
 	m_object_in_renderer[name]->setColor(1, 0, 0);
+
+	return name;
 }
 
-void ObjectDrawer::drawLine(const SO::Line &line, std::string name)
+std::string ObjectDrawer::drawLine(const SO::Line &line, std::string &name)
 {
 	int pointID = 0;
 	vtkNew<vtkPoints> points;
@@ -89,9 +93,10 @@ void ObjectDrawer::drawLine(const SO::Line &line, std::string name)
 	this->addObjectToRenderer(line_poly_data, name);
 	m_object_in_renderer[name]->setColor(1, 0, 0);
 
+	return name;
 }
 
-void ObjectDrawer::drawPolyline(const SO::Polyline &polyline, std::string name)
+std::string ObjectDrawer::drawPolyline(const SO::Polyline &polyline, std::string &name)
 {
 	int pointID = 0;
 	vtkNew<vtkPoints> points;
@@ -115,9 +120,11 @@ void ObjectDrawer::drawPolyline(const SO::Polyline &polyline, std::string name)
 	polyline_poly_data->SetLines(cells);
 
 	this->addObjectToRenderer(polyline_poly_data, name);
+
+	return name;
 }
 
-void ObjectDrawer::drawPolylines(const SO::PolylineCollection &polylines, std::string name)
+std::string ObjectDrawer::drawPolylines(const SO::PolylineCollection &polylines, std::string &name)
 {
 	int pointID = 0;
 	vtkNew<vtkPoints> points;
@@ -144,9 +151,11 @@ void ObjectDrawer::drawPolylines(const SO::PolylineCollection &polylines, std::s
 	polyline_poly_data->SetLines(cells);
 
 	this->addObjectToRenderer(polyline_poly_data, name);
+
+	return name;
 }
 
-void ObjectDrawer::drawPolygon(const SO::Polygon &polygon, std::string name)
+std::string ObjectDrawer::drawPolygon(const SO::Polygon &polygon, std::string &name)
 {
 	int pointID = 0;
 	vtkNew<vtkPoints> points;
@@ -170,9 +179,11 @@ void ObjectDrawer::drawPolygon(const SO::Polygon &polygon, std::string name)
 	polyline_poly_data->SetLines(cells);
 
 	this->addObjectToRenderer(polyline_poly_data, name);
+
+	return name;
 }
 
-void ObjectDrawer::drawPolygons(SO::PolygonCollection &polygons, std::string name)
+std::string ObjectDrawer::drawPolygons(SO::PolygonCollection &polygons, std::string &name)
 {
 	int pointID = 0;
 	vtkNew<vtkPoints> points;
@@ -199,9 +210,11 @@ void ObjectDrawer::drawPolygons(SO::PolygonCollection &polygons, std::string nam
 	polyline_poly_data->SetLines(cells);
 
 	this->addObjectToRenderer(polyline_poly_data, name);
+
+	return name;
 }
 
-void ObjectDrawer::drawPlane(const SO::Plane &plane, std::string name)
+std::string ObjectDrawer::drawPlane(const SO::Plane &plane, std::string &name)
 {
 	vtkNew<vtkPlaneSource> p_plane_source;
 	p_plane_source->SetOrigin(0, 0, 0);
@@ -212,12 +225,26 @@ void ObjectDrawer::drawPlane(const SO::Plane &plane, std::string name)
 	p_plane_source->Update();
 	this->addObjectToRenderer(p_plane_source->GetOutput(), name);
 
-	this->drawPoint(plane.getOrigin(), "Origin" + name);
-	this->drawLine(SO::Line(plane.getOrigin(), plane.getNormal(), 10), "Normal" + name);
-	this->setColor("Normal" + name, 1, 0, 0);
+	std::string origin_name = std::string("Origin") + name;
+	this->drawPoint(plane.getOrigin(), origin_name);
+
+	std::string normal_name = std::string("Normal") + name;
+	this->drawLine(SO::Line(plane.getOrigin(), plane.getNormal(), 10), normal_name);
+	this->setColor(normal_name, 1, 0, 0);
+
+	return name;
 }
 
-void ObjectDrawer::drawTriangles(std::vector<int> faces, const CgalMesh_EPICK &mesh, std::string name)
+bool ObjectDrawer::removePlane(std::string name)
+{
+	bool result = true;
+	result = result && this->removeObjectDrawn(name);
+	result = result && this->removeObjectDrawn(std::string("Origin") + name);
+	result = result && this->removeObjectDrawn(std::string("Normal") + name);
+	return result;
+}
+
+std::string ObjectDrawer::drawTriangles(std::vector<int> faces, const CgalMesh_EPICK &mesh, std::string &name)
 {
 	vtkNew<vtkPoints> points;
 	vtkNew<vtkCellArray> triangles;
@@ -250,10 +277,12 @@ void ObjectDrawer::drawTriangles(std::vector<int> faces, const CgalMesh_EPICK &m
 
 	this->addObjectToRenderer(trianglePolyData, name);
 	this->setColor(name, 1, 0, 0);
+
+	return name;
 }
 
-void ObjectDrawer::drawTriangles(std::vector<CgalMesh_EPICK::Face_index> faces, 
-	const CgalMesh_EPICK &mesh, std::string name)
+std::string ObjectDrawer::drawTriangles(std::vector<CgalMesh_EPICK::Face_index> faces,
+	const CgalMesh_EPICK &mesh, std::string &name)
 {
 	vtkNew<vtkPoints> points;
 	vtkNew<vtkCellArray> triangles;
@@ -286,9 +315,11 @@ void ObjectDrawer::drawTriangles(std::vector<CgalMesh_EPICK::Face_index> faces,
 
 	this->addObjectToRenderer(trianglePolyData, name);
 	this->setColor(name, 1, 0, 0);
+
+	return name;
 }
 
-void ObjectDrawer::drawMesh(const CgalMesh_EPICK &mesh, std::string name)
+std::string ObjectDrawer::drawMesh(const CgalMesh_EPICK &mesh, std::string &name)
 {
 	if (CGAL::IO::write_polygon_mesh("temp.stl", mesh))
 	{
@@ -300,9 +331,11 @@ void ObjectDrawer::drawMesh(const CgalMesh_EPICK &mesh, std::string name)
 	reader->Update();
 
 	this->addObjectToRenderer(reader->GetOutput(), name);
+
+	return name;
 }
 
-void ObjectDrawer::drawMesh(const CgalMesh_EPECK &mesh, std::string name)
+std::string ObjectDrawer::drawMesh(const CgalMesh_EPECK &mesh, std::string &name)
 {
 	if (CGAL::IO::write_polygon_mesh("temp.stl", mesh))
 	{
@@ -314,6 +347,8 @@ void ObjectDrawer::drawMesh(const CgalMesh_EPECK &mesh, std::string name)
 	reader->Update();
 
 	this->addObjectToRenderer(reader->GetOutput(), name);
+
+	return name;
 }
 
 void ObjectDrawer::setColor(std::string name, double r, double g, double b)
@@ -336,11 +371,22 @@ ObjectForVisualization *ObjectDrawer::getObjectDrawn(std::string name)
 	return m_object_in_renderer[name];
 }
 
-void ObjectDrawer::removeObjectDrawn(std::string name)
+std::map<std::string, SyNSlicerGUI::ObjectForVisualization *> ObjectDrawer::getAllObjectDrawn()
 {
+	return m_object_in_renderer;
+}
+
+bool ObjectDrawer::removeObjectDrawn(std::string name)
+{
+	auto it = m_object_in_renderer.find(name);
+	if (it == m_object_in_renderer.end())
+	{
+		return false;
+	}
 	mp_renderer->RemoveActor(m_object_in_renderer[name]->getActor());
 	delete m_object_in_renderer[name];
 	m_object_in_renderer.erase(name);
+	return true;
 }
 
 int ObjectDrawer::removeAllObjectsDrawn()
@@ -356,10 +402,21 @@ int ObjectDrawer::removeAllObjectsDrawn()
 	return number_of_objects_removed;
 }
 
-void ObjectDrawer::addObjectToRenderer(vtkPolyData *p_polydata, std::string name)
+std::string ObjectDrawer::addObjectToRenderer(vtkPolyData *p_polydata, std::string &name)
 {
 	ObjectForVisualization *object = new SyNSlicerGUI::ObjectForVisualization();
 	object->setPolyData(p_polydata);
 	object->addToRenderer(mp_renderer);
-	m_object_in_renderer.insert(std::make_pair(name, object));
+	
+	const auto [it, success] =  m_object_in_renderer.insert(std::make_pair(name, object));
+	bool status = success;
+	int index = this->numberOfObjectsDrawn();
+	while (status == false)
+	{
+		name = std::to_string(index);
+		const auto [it, success] = m_object_in_renderer.insert(std::make_pair(name, object));
+		status = success;
+		index += 1;
+	}
+	return name;
 }
