@@ -361,6 +361,11 @@ void ObjectDrawer::setOpacity(std::string name, double opacity)
 	m_object_in_renderer[name]->setOpacity(opacity);
 }
 
+void ObjectDrawer::setVisible(std::string name, bool visible)
+{
+	m_object_in_renderer[name]->setVisible(visible);
+}
+
 int ObjectDrawer::numberOfObjectsDrawn()
 {
 	return m_object_in_renderer.size();

@@ -20,7 +20,6 @@ namespace SyNSlicerGUI {
 
 	class ObjectDrawer
 	{
-
 	public:
 		ObjectDrawer() = delete;
 		ObjectDrawer(vtkRenderer *p_renderer);
@@ -37,7 +36,6 @@ namespace SyNSlicerGUI {
 		std::string drawPolygons(SO::PolygonCollection &polygons, std::string &name);
 		std::string drawPlane(const SO::Plane &plane, std::string &name);
 		bool removePlane(std::string name);
-
 		std::string drawTriangles(std::vector<int> faces, const CgalMesh_EPICK &mesh, std::string &name);
 		std::string drawTriangles(std::vector<CgalMesh_EPICK::Face_index> faces, const CgalMesh_EPICK &mesh, std::string &name);
 		std::string drawMesh(const CgalMesh_EPICK &mesh, std::string &name);
@@ -45,6 +43,7 @@ namespace SyNSlicerGUI {
 
 		void setColor(std::string name, double r, double g, double b);
 		void setOpacity(std::string name, double opacity);
+		void setVisible(std::string name, bool visible);
 
 		int numberOfObjectsDrawn();
 		ObjectForVisualization *getObjectDrawn(std::string name);
