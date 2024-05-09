@@ -150,14 +150,14 @@ namespace SyNSlicerEngine::Object
     inline Partition<T>::Partition(const T &mesh)
         : Polyhedron<T>(mesh)
     {
-
+        this->setBasePlane(SO::Plane());
     }
 
     template<class T>
     inline Partition<T>::Partition(std::string file_path)
         : Polyhedron<T>(file_path)
     {
-
+        this->setBasePlane(SO::Plane());
     }
 
     template<class T>

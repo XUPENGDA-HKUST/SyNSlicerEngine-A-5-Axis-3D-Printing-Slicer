@@ -194,6 +194,25 @@ void GcodeGenerator::writeGcode(double filament_diameter)
 	myfile.close();	
 }
 
+void GcodeGenerator::writeGcode(std::string file_name, double filament_diameter)
+{
+	this->computeExtrusion(filament_diameter);
+	std::ofstream myfile;
+	myfile.open(file_name);
+	for (int point_idx = 0; point_idx < m_completed_toolpath.size(); point_idx++)
+	{
+		myfile << "X" << m_completed_toolpath[point_idx][0];
+		myfile << " Y" << m_completed_toolpath[point_idx][1];
+		myfile << " Z" << m_completed_toolpath[point_idx][2];
+		myfile << " NX" << m_completed_toolpath[point_idx][3];
+		myfile << " NY" << m_completed_toolpath[point_idx][4];
+		myfile << " NZ" << m_completed_toolpath[point_idx][5];
+		myfile << " E" << m_completed_toolpath[point_idx][6];
+		myfile << "\n";
+	}
+	myfile.close();
+}
+
 void GcodeGenerator::generateToolpath(const SO::PolygonCollection &polygons, SO::ToolpathCollection &toolpaths, double layer_thickness)
 {
 	for (auto &polygon : polygons.get())

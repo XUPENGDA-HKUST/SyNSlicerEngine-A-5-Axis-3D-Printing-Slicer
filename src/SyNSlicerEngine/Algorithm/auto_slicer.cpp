@@ -43,13 +43,22 @@ void AutoSlicer::slice()
     }
 
     SO::PrintingLayerCollection printing_layers;
-    for (size_t i = 1; i < m_slicing_result.size(); i++)
+    for (int i = 1; i < m_slicing_result.size(); i++)
     {
         if (!this->isSlicingPlaneValid(m_slicing_result[i].getPlane(), m_slicing_result[i - 1].getPlane()))
         {
             std::cout << "Layer " << i << " not_valid" << std::endl;
         }
+
         SO::PrintingLayer printing_layer(m_slicing_result[i], m_slicing_result[i].getPlane(), m_slicing_result[i - 1].getPlane());
+
+        if (i != 1)
+        {
+            SO::PolygonCollection support_contours;
+            this->checkSupportNeeded(m_slicing_result[i - 1], m_slicing_result[i], support_contours);
+            printing_layers.back().addSupportStructureContours(support_contours);
+        }
+
         printing_layers.addPrintingLayer(printing_layer);
     }
 
@@ -73,7 +82,7 @@ bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_starti
 
     SO::PolygonCollection support_contours;
 
-    this->checkSupportNeeded(contours_below, contours_up, support_contours);
+    this->checkSupportNeeded(contours_below, contours_up, support_contours, 0.25);
 
     if (support_contours.size())
     {
@@ -159,7 +168,7 @@ bool AutoSlicer::determineNextSlicingPlane(SO::PolygonCollection &current_starti
     return true;
 }
 
-bool AutoSlicer::checkSupportNeeded(SO::PolygonCollection &contours_below, SO::PolygonCollection &contours_up, SO::PolygonCollection &support_contours)
+bool AutoSlicer::checkSupportNeeded(SO::PolygonCollection &contours_below, SO::PolygonCollection &contours_up, SO::PolygonCollection &support_contours, double coefficient)
 {
     bool support_needed = false;
 
@@ -178,7 +187,7 @@ bool AutoSlicer::checkSupportNeeded(SO::PolygonCollection &contours_below, SO::P
     SO::PolygonCollection contours_from_layer_i_minus_1 = contours_below;
 
     // 0.25 control how the slicing planes sensitive to model surface
-    contours_from_layer_i_minus_1 = contours_from_layer_i_minus_1.getOffset(0.25 * m_side_step);
+    contours_from_layer_i_minus_1 = contours_from_layer_i_minus_1.getOffset(coefficient * m_side_step);
     support_contours = projected_contours.getDifference(contours_from_layer_i_minus_1);
 
     if (support_contours.size())

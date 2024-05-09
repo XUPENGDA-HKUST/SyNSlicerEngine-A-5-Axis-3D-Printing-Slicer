@@ -89,6 +89,12 @@ namespace SyNSlicerEngine::Object {
 		*/
 		const int getNumberOfLayers() const;
 
+		//! Get the last layer in the container.
+		/*!
+			\return \b SO::PrintingLayer \b& Last printing layers.
+		*/
+		SO::PrintingLayer &back();
+
 		//! Get the n-th layer in the container.
 		/*!
 			\param[in] index	n.

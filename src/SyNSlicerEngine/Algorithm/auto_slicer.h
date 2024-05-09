@@ -61,8 +61,9 @@ namespace SyNSlicerEngine::Algorithm
 			\param contours_below	The printing layer below.
 			\param contours_up		The printing layer above.
 			\param support_contours The support structure needs to hold contour up.
+			\param coefficient		The coefficient related to overhanging angle.
 		*/
-		virtual bool checkSupportNeeded(SO::PolygonCollection &contours_below, SO::PolygonCollection &contours_up, SO::PolygonCollection &support_contours);
+		virtual bool checkSupportNeeded(SO::PolygonCollection &contours_below, SO::PolygonCollection &contours_up, SO::PolygonCollection &support_contours, double coefficient = 0.5);
 
 		//! Determine all intermediate planes between plane_up and plane_below.
 		/*!

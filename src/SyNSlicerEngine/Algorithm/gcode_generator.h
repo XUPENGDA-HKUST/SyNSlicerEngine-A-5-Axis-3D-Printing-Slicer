@@ -57,6 +57,13 @@ namespace SyNSlicerEngine::Algorithm {
 		*/
 		virtual void writeGcode(double filament_diameter = 1.75);
 
+		//! Write the Gcode file
+		/*!
+			\param file_name			The location where the file should be saved.
+			\param filament_diameter	The diameter of the filament used by the printer.
+		*/
+		virtual void writeGcode(std::string file_name, double filament_diameter = 1.75);
+
 	protected:
 		//! Genearte Tool path for parallel printing layers.
 		/*!

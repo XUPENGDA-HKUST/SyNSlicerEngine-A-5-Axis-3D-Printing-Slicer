@@ -1,0 +1,7 @@
+#include "qboxlayout.h"
+#include "qcheckbox.h"
+#include "qcombobox.h"
+#include "qlabel.h"
+#include "qpushbutton.h"
+#include "qspinbox.h"
+#include "qwidget.h"

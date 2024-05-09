@@ -42,6 +42,7 @@ namespace SyNSlicerEngine::Object
 
 		//! Restore all the members of this class to default value.
 		void reset();
+		void clear();
 
 		//! Add a partition.
 		/*!
@@ -60,6 +61,8 @@ namespace SyNSlicerEngine::Object
 
 		//! Remove the last partition stored in this class.
 		void pop_back();
+
+		void erase(int index);
 
 		//! Get all the partitions stored in this class.
 		/*!
@@ -247,6 +250,12 @@ namespace SyNSlicerEngine::Object
 	}
 
 	template <class T>
+	inline void PartitionCollection<T>::clear()
+	{
+		m_partitions.clear();
+	}
+
+	template <class T>
 	inline void PartitionCollection<T>::addPartition(const Partition<T> &partition)
 	{
 		m_partitions.emplace_back(partition);
@@ -274,6 +283,13 @@ namespace SyNSlicerEngine::Object
 	{
 		m_partitions.pop_back();
 	}
+
+	template<class T>
+	inline void PartitionCollection<T>::erase(int index)
+	{
+		m_partitions.erase(m_partitions.begin() + index);
+	}
+
 	template <class T>
 	inline std::vector<SO::Partition<T>> &PartitionCollection<T>::get()
 	{
