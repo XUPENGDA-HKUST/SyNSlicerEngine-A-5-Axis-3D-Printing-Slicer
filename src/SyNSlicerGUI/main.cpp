@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
                 SO::Nozzle nozzle(0.4, 10, 10);
                 SyNSlicerGUI::AutoPartitionerGUI auto_p(source_epick, nozzle, main_window.getRenderer());
                 auto_p.partition();
-                result = auto_p.getResult();
+                result = auto_p.getResultEPICK();
 
                 for (int i = 0; i < result.numberOfPartitions(); i++)
                 {

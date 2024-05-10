@@ -19,8 +19,6 @@ AutoPartitioner::~AutoPartitioner()
 
 void AutoPartitioner::partition()
 {
-    m_results.reset();
-
     // Repair input mesh if needed.
     if (!m_partition.repaireSelfIntersection())
     {
@@ -41,16 +39,21 @@ void AutoPartitioner::partition()
     std::vector<SO::PointCloud> vertices_to_ignore;
     //EigenPoints vertices_to_ignore;
     this->partitionMesh(epeck_partition, m_partition_list, vertices_to_ignore);
+}
+
+SO::PartitionCollection<CgalMesh_EPICK> AutoPartitioner::getResultEPICK()
+{
+    m_results.reset();
 
     // Save of the output meshes.
     for (int i = 0; i < m_partition_list.numberOfPartitions(); i++)
-    {       
+    {
         if (CGAL::is_closed(m_partition_list[i].getEPECKMesh()))
         {
             if (!m_partition_list[i].save(std::string("Part_") + std::to_string(i) + std::string(".stl")))
             {
                 spdlog::error("AutoPartitioner::writeSTL(): Fail!");
-            }     
+            }
             m_results.addPartition(SO::Partition<CgalMesh_EPICK>(std::string("Part_") + std::to_string(i) + std::string(".stl")));
             m_results[i].setBasePlane(m_partition_list[i].getBasePlane());
             for (auto lock : m_partition_list[i].getLocks())
@@ -64,13 +67,13 @@ void AutoPartitioner::partition()
             }
         }
     }
-}
-
-SO::PartitionCollection<CgalMesh_EPICK> AutoPartitioner::getResult()
-{
     return m_results;
 }
 
+SO::PartitionCollection<CgalMesh_EPECK> AutoPartitioner::getResultEPECK()
+{
+    return m_partition_list;
+}
 
 void AutoPartitioner::partitionMesh(SO::Partition<CgalMesh_EPECK> &partition, SO::PartitionCollection<CgalMesh_EPECK> &partition_list, std::vector<SO::PointCloud> &vertices_to_ignore_list)
 {

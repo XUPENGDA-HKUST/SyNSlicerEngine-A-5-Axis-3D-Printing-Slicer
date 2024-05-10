@@ -44,6 +44,7 @@ namespace SyNSlicerGUI {
 		void setColor(std::string name, double r, double g, double b);
 		void setOpacity(std::string name, double opacity);
 		void setVisible(std::string name, bool visible);
+		void setProperty(std::string name, vtkProperty *vtk_property);
 
 		int numberOfObjectsDrawn();
 		ObjectForVisualization *getObjectDrawn(std::string name);

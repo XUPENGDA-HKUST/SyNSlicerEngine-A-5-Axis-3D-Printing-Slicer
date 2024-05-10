@@ -366,6 +366,11 @@ void ObjectDrawer::setVisible(std::string name, bool visible)
 	m_object_in_renderer[name]->setVisible(visible);
 }
 
+void ObjectDrawer::setProperty(std::string name, vtkProperty *vtk_property)
+{
+	m_object_in_renderer[name]->getProperty()->DeepCopy(vtk_property);
+}
+
 int ObjectDrawer::numberOfObjectsDrawn()
 {
 	return m_object_in_renderer.size();

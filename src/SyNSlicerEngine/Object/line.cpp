@@ -172,6 +172,20 @@ Eigen::Vector3d Line::getProjectionOfPointOntoRay(const Eigen::Vector3d &point)
 	return result;
 }
 
+bool Line::isProjectionOfPointLieOnLineSegment(const Eigen::Vector3d &point) const
+{
+	Eigen::Vector3d v0(point - this->getSource());
+	double distance = v0.dot(this->getDirection());
+	if (distance >= 0 && distance <= this->getLength())
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 Line &Line::operator=(const Line &other)
 {
 	setLine(other.m_source, other.m_target);

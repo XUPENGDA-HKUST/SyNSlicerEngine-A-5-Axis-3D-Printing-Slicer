@@ -35,6 +35,7 @@
 #include "support_generator_gui.h"
 #include "toolpath_generator_gui.h"
 #include "gcode_generator_gui.h"
+#include "mesh_clipper_gui.h"
 
 namespace SO = SyNSlicerEngine::Object;
 namespace SA = SyNSlicerEngine::Algorithm;
@@ -56,6 +57,7 @@ namespace SyNSlicerGUI {
 		void changeShowOrHidePartition(int partition_index, bool visible);
 		void setClipPartition(int partition_index);
 		void clipPartition();
+		void clipPartitionWithFinitePlane();
 		void runAutoPartition();
 		void confirmPartition();
 		void resetPartitionResult();
@@ -95,7 +97,7 @@ namespace SyNSlicerGUI {
 		SO::PartitionCollection<CgalMesh_EPICK> m_partitions_in_partitioning;
 
 		SO::Partition<CgalMesh_EPICK> *mp_on_clipping_partition;
-		SA::MeshClipper m_mesh_clipper;
+		MeshClipperGUI m_mesh_clipper;
 
 	};
 }

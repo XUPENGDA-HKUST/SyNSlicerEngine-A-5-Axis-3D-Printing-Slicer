@@ -15,7 +15,7 @@ ModelPartitioningWidget::ModelPartitioningWidget(QWidget *parent)
 	m_partition_mode_combo_box.addItem("(Select a parition method)");
 	m_partition_mode_combo_box.addItem("Auto Partition");
 	m_partition_mode_combo_box.addItem("Infinite Plane Clipping");
-	//m_partition_mode_combo_box.addItem("Finite Plane Clipping");
+	m_partition_mode_combo_box.addItem("Finite Plane Clipping");
 
 	m_confirm_result_button.setText("Confirm");
 	m_confirm_result_button.setEnabled(false);

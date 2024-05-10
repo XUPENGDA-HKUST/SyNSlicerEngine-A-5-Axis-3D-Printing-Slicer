@@ -46,7 +46,8 @@ namespace SyNSlicerEngine::Algorithm
 		virtual void partition();
 
 		//! Call this method to obtain the result.
-		SO::PartitionCollection<CgalMesh_EPICK> getResult();
+		SO::PartitionCollection<CgalMesh_EPICK> getResultEPICK();
+		SO::PartitionCollection<CgalMesh_EPECK> getResultEPECK();
 
 	protected:
 		using EigenPoint = Eigen::Vector3d;

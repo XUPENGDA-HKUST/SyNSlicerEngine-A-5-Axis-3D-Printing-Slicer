@@ -231,6 +231,100 @@ namespace SyNSlicerEngine::Object {
     }
 
     template<>
+    inline bool Polyhedron<CgalMesh_EPICK>::makeAsCleanAsPossible(CgalMesh_EPICK &mesh)
+    {
+        struct Array_traits
+        {
+            struct Equal_3
+            {
+                bool operator()(const std::array<EPICK::FT, 3> &p, const std::array<EPICK::FT, 3> &q) const {
+                    return p == q;
+                }
+            };
+            struct Less_xyz_3
+            {
+                bool operator()(const std::array<EPICK::FT, 3> &p, const std::array<EPICK::FT, 3> &q) const {
+                    return std::lexicographical_compare(p.begin(), p.end(), q.begin(), q.end());
+                }
+            };
+            Equal_3 equal_3_object() const { return Equal_3(); }
+            Less_xyz_3 less_xyz_3_object() const { return Less_xyz_3(); }
+        };
+
+        mesh.collect_garbage();
+
+        std::vector<std::array<EPICK::FT, 3> > points;
+        std::vector<std::vector<std::size_t>> polygons;
+
+        CGAL::Polygon_mesh_processing::polygon_mesh_to_polygon_soup(mesh, points, polygons);
+
+        CgalMesh_EPICK repaired_mesh;
+
+        struct Visitor : public CGAL::Polygon_mesh_processing::Default_orientation_visitor
+        {
+            void non_manifold_edge(std::size_t id1, std::size_t id2, std::size_t nb_poly)
+            {
+                std::cout << std::setprecision(17);
+                std::cout << "The edge " << id1 << ", " << id2 << " is not manifold: " << nb_poly << " incident polygons." << std::endl;
+                std::cout << m_points[id1][0] << " ";
+                std::cout << m_points[id1][1] << " ";
+                std::cout << m_points[id1][2] << std::endl;
+                std::cout << m_points[id2][0] << " ";
+                std::cout << m_points[id2][1] << " ";
+                std::cout << m_points[id2][2] << std::endl;
+            }
+            void non_manifold_vertex(std::size_t id, std::size_t nb_cycles)
+            {
+                std::cout << "The vertex " << id << " is not manifold: " << nb_cycles << " connected components of vertices in the link." << std::endl;
+            }
+            void duplicated_vertex(std::size_t v1, std::size_t v2)
+            {
+                std::cout << "The vertex " << v1 << " has been duplicated, its new id is " << v2 << "." << std::endl;
+            }
+            void vertex_id_in_polygon_replaced(std::size_t p_id, std::size_t i1, std::size_t i2)
+            {
+                std::cout << "In the polygon " << p_id << ", the index " << i1 << " has been replaced by " << i2 << "." << std::endl;
+                std::cout << m_points[m_polygons[p_id][0]][0] << " " << m_points[m_polygons[p_id][0]][1] << " " << m_points[m_polygons[p_id][0]][2] << std::endl;
+                std::cout << m_points[m_polygons[p_id][1]][0] << " " << m_points[m_polygons[p_id][1]][1] << " " << m_points[m_polygons[p_id][1]][2] << std::endl;
+                std::cout << m_points[m_polygons[p_id][2]][0] << " " << m_points[m_polygons[p_id][2]][1] << " " << m_points[m_polygons[p_id][2]][2] << std::endl;
+                std::cout << std::endl;
+            }
+            void polygon_orientation_reversed(std::size_t p_id)
+            {
+                std::cout << "The polygon " << p_id << " has been reversed." << std::endl;
+            }
+            Visitor(std::vector<std::array<EPICK::FT, 3> > points, std::vector<std::vector<std::size_t>> polygons)
+            {
+                m_points = points;
+                m_polygons = polygons;
+            };
+
+            std::vector<std::array<EPICK::FT, 3>> m_points;
+            std::vector<std::vector<std::size_t>> m_polygons;
+        };
+
+
+        if (!CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons))
+        {
+            spdlog::info("orient_polygon_soup() return false for the first time!");
+        }
+
+        CGAL::Polygon_mesh_processing::repair_polygon_soup(points, polygons, CGAL::parameters::geom_traits(Array_traits()));
+        //CGAL::Polygon_mesh_processing::orient_triangle_soup_with_reference_triangle_mesh(mesh, points, polygons);
+
+        if (!CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygons))
+        {
+            spdlog::info("orient_polygon_soup() return false for the second time!");
+            //return false;
+        }
+
+        CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, repaired_mesh);
+
+        mesh = repaired_mesh;
+        return true;
+    }
+
+    template<>
     inline bool Polyhedron<CgalMesh_EPECK>::makeAsCleanAsPossible(CgalMesh_EPICK &mesh)
     {
         struct Array_traits

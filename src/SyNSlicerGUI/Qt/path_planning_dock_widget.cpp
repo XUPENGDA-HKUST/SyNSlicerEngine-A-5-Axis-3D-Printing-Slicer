@@ -17,6 +17,7 @@ PathPlanningDockWidget::PathPlanningDockWidget(vtkRenderer *input_renderer, QWid
 	, m_reset_button(tr("Reset All"), nullptr)
 	, m_operating_partition_index(0)
 	, m_mesh_clipping_interactor_style(mp_renderer)
+	, m_mesh_clipper(mp_renderer)
 {
 	this->setWidget(&m_widget);
 	m_widget.setLayout(&m_grid_layout);
@@ -70,6 +71,10 @@ PathPlanningDockWidget::PathPlanningDockWidget(vtkRenderer *input_renderer, QWid
 		this, SLOT(clipPartition()));
 
 	QObject::connect(
+		&m_stacked_widget.m_model_partition_widget.m_finite_plane_clipping_confirm_line_button, SIGNAL(clicked()),
+		this, SLOT(clipPartitionWithFinitePlane()));
+
+	QObject::connect(
 		&m_stacked_widget.m_toolpath_generating_widget, SIGNAL(emitToolpathSetting(std::tuple<int, int, int, int, int, int>)),
 		this, SLOT(generateToolPath(std::tuple<int, int, int, int, int, int>)));
 
@@ -94,6 +99,7 @@ PathPlanningDockWidget::~PathPlanningDockWidget()
 void PathPlanningDockWidget::reset()
 {
 	m_drawer.removeAllObjectsDrawn();
+	m_drawer_for_preview.removeAllObjectsDrawn();
 	m_partitions.clear();
 	model_name = std::string();
 	m_tree_widget.reset();
@@ -207,11 +213,37 @@ void PathPlanningDockWidget::clipPartition()
 	m_stacked_widget.m_model_partition_widget.m_exit_button.setEnabled(false);
 }
 
+void PathPlanningDockWidget::clipPartitionWithFinitePlane()
+{
+	std::tuple<SO::Line, Eigen::Vector3d, SO::Plane> clipping_parameter;
+	if (m_mesh_clipping_interactor_style.getLine(clipping_parameter))
+	{
+		m_mesh_clipper.clipWithFinitePlane(std::get<0>(clipping_parameter),
+			std::get<1>(clipping_parameter), std::get<2>(clipping_parameter), m_partitions_in_partitioning);
+
+		std::string name = std::string("Partition") + std::to_string(m_operating_partition_index);
+		m_drawer.setVisible(name, false);
+		name = std::string("Contours") + std::to_string(m_operating_partition_index);
+		m_drawer.setVisible(name, false);
+		name = std::string("Support_Contours") + std::to_string(m_operating_partition_index);
+		m_drawer.setVisible(name, false);
+
+		this->drawPartitionsInPartitioning();
+
+		m_mesh_clipping_interactor_style.deleteLine();
+	}
+
+	m_stacked_widget.m_model_partition_widget.m_infinite_plane_clipping_confirm_line_button.setEnabled(false);
+	m_stacked_widget.m_model_partition_widget.m_confirm_result_button.setEnabled(true);
+	m_stacked_widget.m_model_partition_widget.m_reset_button.setEnabled(true);
+	m_stacked_widget.m_model_partition_widget.m_exit_button.setEnabled(false);
+}
+
 void PathPlanningDockWidget::runAutoPartition()
 {	
 	AutoPartitionerGUI auto_partitioner(*mp_on_clipping_partition, m_nozzle, mp_renderer);
 	auto_partitioner.partition();
-	m_partitions_in_partitioning = auto_partitioner.getResult();
+	m_partitions_in_partitioning = auto_partitioner.getResultEPICK();
 
 	std::string name = std::string("Partition") + std::to_string(m_operating_partition_index);
 	m_drawer.setVisible(name, false);

@@ -115,6 +115,14 @@ namespace SyNSlicerEngine::Object
 		*/
 		Eigen::Vector3d getProjectionOfPointOntoRay(const Eigen::Vector3d &point);
 
+		//! Check if projection of point lies on line segment.
+		/*!
+			\param[in]	point	The point.
+			\param[in]	line	The line.
+			\return \b True if yes. \n \b False if not.
+		*/
+		bool isProjectionOfPointLieOnLineSegment(const Eigen::Vector3d &point) const;
+
 		//! Copy operation.
 		Line &operator=(const Line &other);
 

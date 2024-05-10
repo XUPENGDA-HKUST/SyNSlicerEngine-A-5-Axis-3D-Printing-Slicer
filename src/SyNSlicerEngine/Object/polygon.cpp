@@ -169,6 +169,11 @@ Eigen::Vector3d Polygon::getCentroid() const
 		}
 	}
 
+	if (abs(total_sign_area.norm()) < 1e-6)
+	{
+		return Eigen::Vector3d(0, 0, 0);
+	}
+
 	double x = numerator_x / total_sign_area.norm();
 	double y = numerator_y / total_sign_area.norm();
 	double z = numerator_z / total_sign_area.norm();

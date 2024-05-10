@@ -14,6 +14,7 @@
 #include <vtkPolyLine.h>
 #include <vtkProperty.h>
 #include <vtkProperty2D.h>
+#include <vtkPropPicker.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
