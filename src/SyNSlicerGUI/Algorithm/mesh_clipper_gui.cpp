@@ -115,7 +115,7 @@ bool MeshClipperGUI::findAllSperatedMeshes(std::vector<CgalMesh_EPICK::Face_inde
             }
 
             std::cout << meshes.size() << " models created!" << std::endl;
-
+            m_partitions.clear();
             for (size_t i = 0; i < meshes.size(); i++)
             {
                 SO::Partition<CgalMesh_EPICK> partition(meshes[i]);

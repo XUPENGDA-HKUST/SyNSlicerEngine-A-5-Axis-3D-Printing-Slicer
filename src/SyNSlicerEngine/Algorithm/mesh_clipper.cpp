@@ -75,6 +75,7 @@ bool MeshClipper::clipWithFinitePlane(const SO::Line &line, const Eigen::Vector3
     {
         if (findAllSperatedMeshes(triangle_contour, line, clipping_plane))
         {
+            clipping_time += 1;
             result = m_partitions;
             return true;
         }
@@ -194,7 +195,7 @@ bool MeshClipper::findAllSperatedMeshes(std::vector<CgalMesh_EPICK::Face_index> 
         std::vector<CgalMesh_EPICK> meshes;
         CGAL::Polygon_mesh_processing::split_connected_components(temp_cgal_mesh, meshes);
 
-        if (meshes.size() != 1)
+        if (meshes.size() > 1)
         {
             CgalMesh_EPICK contour;
             this->extractFacetsFromMeshToNewMesh(triangle_contour, m_operating_cgal_mesh, contour);
@@ -243,7 +244,7 @@ bool MeshClipper::findAllSperatedMeshes(std::vector<CgalMesh_EPICK::Face_index> 
             }
 
             std::cout << meshes.size() << " models created!" << std::endl;
-
+            m_partitions.clear();
             for (size_t i = 0; i < meshes.size(); i++)
             {    
                 SO::Partition<CgalMesh_EPICK> partition(meshes[i]);
@@ -412,10 +413,13 @@ void MeshClipper::determineBasePlane(SO::Partition<CgalMesh_EPICK> &model, const
         Eigen::Vector3d point(mesh.point(it).x(), mesh.point(it).y(), mesh.point(it).z());
         if (base_plane.isPointOnPlane(point, 1e-2))
         {
+            model.setBasePlane(base_plane);
+            model.addKey(clipping_time);
             return;
         }
     }
     model.setBasePlane(clipping_plane);
+    model.addLock(clipping_time);
 }
 
 void MeshClipper::extractFacetsFromMeshToNewMesh(std::vector<CgalMesh_EPICK::Face_index> facets, const CgalMesh_EPICK &mesh_in, CgalMesh_EPICK &mesh_out)

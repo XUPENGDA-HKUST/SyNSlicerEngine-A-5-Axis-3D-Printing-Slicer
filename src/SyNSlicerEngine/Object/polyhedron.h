@@ -54,6 +54,10 @@ namespace SyNSlicerEngine::Object {
         //! File holes in the mesh.
         bool fillHoles();
 
+        bool getUnion(CgalMesh_EPICK mesh);
+
+        int getNumberOfConnectedComponent();
+
         //! Get the stored mesh.
         /*!
             \return \b CgalMesh_EPICK or \b CgalMesh_EPECK.
@@ -442,6 +446,60 @@ namespace SyNSlicerEngine::Object {
             ++nb_holes;
         }
         return true;
+    }
+
+    template<class T>
+    inline bool Polyhedron<T>::getUnion(CgalMesh_EPICK mesh)
+    {
+        return false;
+    }
+
+    template<>
+    inline bool Polyhedron<CgalMesh_EPICK>::getUnion(CgalMesh_EPICK mesh)
+    {
+            auto add_vertex_to_mesh = [](CgalPoint_EPICK &point, CgalMesh_EPICK &mesh) {
+            Eigen::Vector3d p0(point.x(), point.y(), point.z());
+            for (CgalMesh_EPICK::Vertex_index vid : mesh.vertices())
+            {
+                Eigen::Vector3d p1(mesh.point(vid).x(), mesh.point(vid).y(), mesh.point(vid).z());
+                if ((p0 - p1).norm() < 1e-6)
+                {
+                    return vid;
+                };
+            }
+            CgalMesh_EPICK::Vertex_index a = mesh.add_vertex(point);
+            return a;
+        };
+
+        for (CgalMesh_EPICK::face_index face_idx : mesh.faces())
+        {
+            std::vector<CgalMesh_EPICK::vertex_index> vertex_list;
+            for (CgalMesh_EPICK::vertex_index vertex_idx : mesh.vertices_around_face(mesh.halfedge(face_idx)))
+            {
+                vertex_list.push_back(add_vertex_to_mesh(mesh.point(vertex_idx), this->m_mesh));
+            }
+            this->m_mesh.add_face(vertex_list[0], vertex_list[1], vertex_list[2]);
+        }
+        return false;
+
+        //CGAL::Polygon_mesh_processing::corefine_and_compute_union(this->m_mesh, mesh, this->m_mesh);
+        //return false;
+    }
+
+    template<class T>
+    inline int Polyhedron<T>::getNumberOfConnectedComponent()
+    {
+        return 0;
+    }
+
+    template<>
+    inline int Polyhedron<CgalMesh_EPICK>::getNumberOfConnectedComponent()
+    {
+        typedef boost::graph_traits<CgalMesh_EPICK>::face_descriptor face_descriptor;
+        CgalMesh_EPICK::Property_map<face_descriptor, std::size_t> fccmap =
+            this->m_mesh.add_property_map<face_descriptor, std::size_t>("f:CC").first;
+        std::size_t num = PMP::connected_components(this->m_mesh, fccmap);
+        return num;
     }
 
 	template<class T>

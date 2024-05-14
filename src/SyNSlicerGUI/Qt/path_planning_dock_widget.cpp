@@ -17,6 +17,7 @@ PathPlanningDockWidget::PathPlanningDockWidget(vtkRenderer *input_renderer, QWid
 	, m_reset_button(tr("Reset All"), nullptr)
 	, m_operating_partition_index(0)
 	, m_mesh_clipping_interactor_style(mp_renderer)
+	, m_partition_selecting_interactor_style(mp_renderer)
 	, m_mesh_clipper(mp_renderer)
 {
 	this->setWidget(&m_widget);
@@ -51,6 +52,10 @@ PathPlanningDockWidget::PathPlanningDockWidget(vtkRenderer *input_renderer, QWid
 		this, SLOT(setClipPartition(int)));
 
 	QObject::connect(
+		&m_stacked_widget.m_model_partition_widget.m_partition_mode_combo_box, SIGNAL(currentIndexChanged(int)),
+		this, SLOT(changePartitionMode(int)));
+
+	QObject::connect(
 		&m_stacked_widget.m_model_partition_widget.m_auto_partition_button, SIGNAL(clicked()),
 		this, SLOT(runAutoPartition()));
 
@@ -73,6 +78,10 @@ PathPlanningDockWidget::PathPlanningDockWidget(vtkRenderer *input_renderer, QWid
 	QObject::connect(
 		&m_stacked_widget.m_model_partition_widget.m_finite_plane_clipping_confirm_line_button, SIGNAL(clicked()),
 		this, SLOT(clipPartitionWithFinitePlane()));
+
+	QObject::connect(
+		&m_stacked_widget.m_model_partition_widget.m_confirm_paritition_selection, SIGNAL(clicked()),
+		this, SLOT(confirmPartitionSelection()));
 
 	QObject::connect(
 		&m_stacked_widget.m_toolpath_generating_widget, SIGNAL(emitToolpathSetting(std::tuple<int, int, int, int, int, int>)),
@@ -147,6 +156,28 @@ void PathPlanningDockWidget::changeShowOrHidePartition(int partition_index, bool
 	m_drawer.setVisible(name, visible);
 }
 
+void PathPlanningDockWidget::changePartitionMode(int mode)
+{
+	switch (mode)
+	{
+	case 0:
+		mp_render_window_interactor->SetInteractorStyle(mp_default_interactor_style);
+	case 1:
+		mp_render_window_interactor->SetInteractorStyle(mp_default_interactor_style);
+	case 2:
+		mp_render_window_interactor->SetInteractorStyle(&m_mesh_clipping_interactor_style);
+		m_stacked_widget.m_model_partition_widget.m_infinite_plane_clipping_confirm_line_button.setEnabled(true);
+	case 3:
+		mp_render_window_interactor->SetInteractorStyle(&m_mesh_clipping_interactor_style);
+		m_stacked_widget.m_model_partition_widget.m_finite_plane_clipping_confirm_line_button.setEnabled(true);
+		m_stacked_widget.m_model_partition_widget.m_confirm_paritition_selection.setEnabled(false);
+		m_stacked_widget.m_model_partition_widget.m_confirm_result_button.setEnabled(false);
+		m_stacked_widget.m_model_partition_widget.m_reset_button.setEnabled(false);
+	default:
+		break;
+	}
+}
+
 void PathPlanningDockWidget::setClipPartition(int partition_index)
 {
 	m_tree_widget.setButtonsEnabled(false);
@@ -174,23 +205,17 @@ void PathPlanningDockWidget::setClipPartition(int partition_index)
 	mp_renderer->ResetCamera();
 	mp_render_window->Render();
 
-	mp_render_window_interactor->SetInteractorStyle(&m_mesh_clipping_interactor_style);
 	mp_on_clipping_partition = &m_partitions[partition_index];
 	m_operating_partition_index = partition_index;
-	m_mesh_clipper.setPartition(&m_partitions[partition_index]);
 
 	m_stacked_widget.setCurrentIndex(1);
-
-	m_stacked_widget.m_model_partition_widget.m_infinite_plane_clipping_confirm_line_button.setEnabled(true);
-	m_stacked_widget.m_model_partition_widget.m_auto_partition_button.setEnabled(true);
-	m_stacked_widget.m_model_partition_widget.m_confirm_result_button.setEnabled(false);
-	m_stacked_widget.m_model_partition_widget.m_reset_button.setEnabled(false);
-	m_stacked_widget.m_model_partition_widget.m_exit_button.setEnabled(true);
+	m_stacked_widget.m_model_partition_widget.m_partition_mode_combo_box.setCurrentIndex(0);
 }
 
 void PathPlanningDockWidget::clipPartition()
 {
 	std::tuple<SO::Line, Eigen::Vector3d, SO::Plane> clipping_parameter;
+	m_mesh_clipper.setPartition(&m_partitions[m_operating_partition_index]);
 	if (m_mesh_clipping_interactor_style.getLine(clipping_parameter))
 	{
 		m_mesh_clipper.clipWithInfinitePlane(std::get<2>(clipping_parameter), m_partitions_in_partitioning);
@@ -207,6 +232,7 @@ void PathPlanningDockWidget::clipPartition()
 		m_mesh_clipping_interactor_style.deleteLine();
 	}
 
+	m_stacked_widget.m_model_partition_widget.m_partition_mode_combo_box.setEnabled(false);
 	m_stacked_widget.m_model_partition_widget.m_infinite_plane_clipping_confirm_line_button.setEnabled(false);
 	m_stacked_widget.m_model_partition_widget.m_confirm_result_button.setEnabled(true);
 	m_stacked_widget.m_model_partition_widget.m_reset_button.setEnabled(true);
@@ -216,6 +242,7 @@ void PathPlanningDockWidget::clipPartition()
 void PathPlanningDockWidget::clipPartitionWithFinitePlane()
 {
 	std::tuple<SO::Line, Eigen::Vector3d, SO::Plane> clipping_parameter;
+	m_mesh_clipper.setPartition(&m_partitions[m_operating_partition_index]);
 	if (m_mesh_clipping_interactor_style.getLine(clipping_parameter))
 	{
 		m_mesh_clipper.clipWithFinitePlane(std::get<0>(clipping_parameter),
@@ -228,15 +255,30 @@ void PathPlanningDockWidget::clipPartitionWithFinitePlane()
 		name = std::string("Support_Contours") + std::to_string(m_operating_partition_index);
 		m_drawer.setVisible(name, false);
 
-		this->drawPartitionsInPartitioning();
-
 		m_mesh_clipping_interactor_style.deleteLine();
 	}
 
-	m_stacked_widget.m_model_partition_widget.m_infinite_plane_clipping_confirm_line_button.setEnabled(false);
+	m_partition_selecting_interactor_style.setPartitions(m_partitions_in_partitioning, mp_on_clipping_partition->getBasePlane());
+	mp_render_window_interactor->SetInteractorStyle(&m_partition_selecting_interactor_style);
+
+	m_stacked_widget.m_model_partition_widget.m_partition_mode_combo_box.setEnabled(false);
+	m_stacked_widget.m_model_partition_widget.m_finite_plane_clipping_confirm_line_button.setEnabled(false);
+	m_stacked_widget.m_model_partition_widget.m_confirm_paritition_selection.setEnabled(true);
+	m_stacked_widget.m_model_partition_widget.m_confirm_result_button.setEnabled(false);
+	m_stacked_widget.m_model_partition_widget.m_reset_button.setEnabled(false);
+	m_stacked_widget.m_model_partition_widget.m_exit_button.setEnabled(false);
+
+	mp_render_window->Render();
+}
+
+void PathPlanningDockWidget::confirmPartitionSelection()
+{
+	m_partition_selecting_interactor_style.confirmSelection(m_partitions_in_partitioning);
+	this->drawPartitionsInPartitioning();
+	mp_render_window_interactor->SetInteractorStyle(mp_default_interactor_style);
+	m_stacked_widget.m_model_partition_widget.m_confirm_paritition_selection.setEnabled(false);
 	m_stacked_widget.m_model_partition_widget.m_confirm_result_button.setEnabled(true);
 	m_stacked_widget.m_model_partition_widget.m_reset_button.setEnabled(true);
-	m_stacked_widget.m_model_partition_widget.m_exit_button.setEnabled(false);
 }
 
 void PathPlanningDockWidget::runAutoPartition()
@@ -299,8 +341,12 @@ void PathPlanningDockWidget::resetPartitionResult()
 	name = std::string("Support_Contours") + std::to_string(m_operating_partition_index);
 	m_drawer.setVisible(name, true);
 
+	this->changePartitionMode(m_stacked_widget.m_model_partition_widget.m_partition_mode_combo_box.currentIndex());
+
+	m_stacked_widget.m_model_partition_widget.m_partition_mode_combo_box.setEnabled(true);
 	m_stacked_widget.m_model_partition_widget.m_auto_partition_button.setEnabled(true);
 	m_stacked_widget.m_model_partition_widget.m_infinite_plane_clipping_confirm_line_button.setEnabled(true);
+	m_stacked_widget.m_model_partition_widget.m_finite_plane_clipping_confirm_line_button.setEnabled(true);
 	m_stacked_widget.m_model_partition_widget.m_confirm_result_button.setEnabled(false);
 	m_stacked_widget.m_model_partition_widget.m_reset_button.setEnabled(false);
 	m_stacked_widget.m_model_partition_widget.m_exit_button.setEnabled(true);
