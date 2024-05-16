@@ -7,7 +7,7 @@ PartitionSelectingInteractorStyle::PartitionSelectingInteractorStyle(vtkRenderer
     : m_should_drawer_delete_in_destructer(true)
     , mp_renderer(p_renderer)
     , mp_drawer(new ObjectDrawer(p_renderer))
-    , m_current_key(0)
+    , m_current_key(100)
 {
     LastPickedActor = nullptr;
     vtkNew<vtkNamedColors> colors;
@@ -139,18 +139,25 @@ bool PartitionSelectingInteractorStyle::confirmSelection(SO::PartitionCollection
         m_result_partitions.addPartition(*partition_selected[i]);
     }
 
+    int base_partition_index = 0;
     for (int i = 0; i < partition_not_selected.size(); i++)
     {
         partition_not_selected[i]->makeAsCleanAsPossible();
+        if (partition_not_selected[i]->getBasePlane() == m_base_plane)
+        {
+            base_partition_index = i;
+        }
     }
 
-    for (size_t i = 1; i < partition_not_selected.size(); i++)
+    for (int i = 0; i < partition_not_selected.size(); i++)
     {
-        partition_not_selected[0]->getUnion(partition_not_selected[i]->getEPICKMesh());
+        if (i != base_partition_index)
+        {
+            partition_not_selected[base_partition_index]->getUnion(partition_not_selected[i]->getEPICKMesh());
+        }
     }
 
-    partition_not_selected[0]->setBasePlane(m_base_plane);
-    m_result_partitions.addPartition(*partition_not_selected[0]);
+    m_result_partitions.addPartition(*partition_not_selected[base_partition_index]);
 
     partitions = m_result_partitions;
 

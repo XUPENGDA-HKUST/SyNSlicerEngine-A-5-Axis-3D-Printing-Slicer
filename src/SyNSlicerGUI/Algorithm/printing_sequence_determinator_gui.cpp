@@ -44,17 +44,3 @@ void PrintingSequenceDeterminatorGUI::findSweptVolumeOfNozzleForAllPartition()
 		}
 	}
 }
-
-bool PrintingSequenceDeterminatorGUI::isSweptVolumeIntersectParition(CgalMesh_EPICK swept_volume, CgalMesh_EPICK partition)
-{
-	CgalMesh_EPICK mesh_out;
-	CGAL::Polygon_mesh_processing::corefine_and_compute_intersection(swept_volume, partition, mesh_out);
-	if (mesh_out.number_of_vertices() > 0)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}

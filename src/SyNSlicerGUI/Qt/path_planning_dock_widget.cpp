@@ -274,7 +274,10 @@ void PathPlanningDockWidget::clipPartitionWithFinitePlane()
 
 void PathPlanningDockWidget::confirmPartitionSelection()
 {
-	m_partition_selecting_interactor_style.confirmSelection(m_partitions_in_partitioning);
+	if (!m_partition_selecting_interactor_style.confirmSelection(m_partitions_in_partitioning))
+	{
+		return;
+	};
 	this->drawPartitionsInPartitioning();
 	mp_render_window_interactor->SetInteractorStyle(mp_default_interactor_style);
 	m_stacked_widget.m_model_partition_widget.m_confirm_paritition_selection.setEnabled(false);

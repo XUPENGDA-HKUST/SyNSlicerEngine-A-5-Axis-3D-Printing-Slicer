@@ -56,9 +56,17 @@ bool MeshClipper::clipWithInfinitePlane(const SO::Plane &plane, SO::PartitionCol
 	SO::Partition<CgalMesh_EPICK> up_partition(pos_mesh);
 	up_partition.setBasePlane(clip_plane);
 	up_partition.addLock(clipping_time);
+    for (size_t i = 0; i < mp_partition->getKeys().size(); i++)
+    {
+        up_partition.addKey(mp_partition->getKeys()[i]);
+    }
 	SO::Partition<CgalMesh_EPICK> low_partition(neg_mesh);
 	low_partition.setBasePlane(partition.getBasePlane());
 	low_partition.addKey(clipping_time);
+    for (size_t i = 0; i < mp_partition->getLocks().size(); i++)
+    {
+        low_partition.addLock(mp_partition->getLocks()[i]);
+    }
 
 	clipping_time += 1;
 
@@ -148,7 +156,7 @@ bool MeshClipper::findTriangleContour(const SO::Line &line, const SO::Plane &pla
 
 bool MeshClipper::findAllSperatedMeshes(std::vector<CgalMesh_EPICK::Face_index> &triangle_contour, const SO::Line &line, const SO::Plane &plane)
 {
-    CgalMesh_EPICK &m_operating_cgal_mesh = mp_partition->getEPICKMesh();
+    CgalMesh_EPICK m_operating_cgal_mesh = mp_partition->getEPICKMesh();
     if (PMP::does_self_intersect(m_operating_cgal_mesh))
     {
         std::cout << "Original mesh self intersect!" << std::endl;
@@ -246,7 +254,7 @@ bool MeshClipper::findAllSperatedMeshes(std::vector<CgalMesh_EPICK::Face_index> 
             std::cout << meshes.size() << " models created!" << std::endl;
             m_partitions.clear();
             for (size_t i = 0; i < meshes.size(); i++)
-            {    
+            {
                 SO::Partition<CgalMesh_EPICK> partition(meshes[i]);
                 this->determineBasePlane(partition, mp_partition->getBasePlane(), plane);
                 m_partitions.addPartition(partition);
@@ -415,11 +423,19 @@ void MeshClipper::determineBasePlane(SO::Partition<CgalMesh_EPICK> &model, const
         {
             model.setBasePlane(base_plane);
             model.addKey(clipping_time);
+            for (size_t i = 0; i < mp_partition->getLocks().size(); i++)
+            {
+                model.addLock(mp_partition->getLocks()[i]);
+            }
             return;
         }
     }
     model.setBasePlane(clipping_plane);
     model.addLock(clipping_time);
+    for (size_t i = 0; i < mp_partition->getKeys().size(); i++)
+    {
+        model.addKey(mp_partition->getKeys()[i]);
+    }
 }
 
 void MeshClipper::extractFacetsFromMeshToNewMesh(std::vector<CgalMesh_EPICK::Face_index> facets, const CgalMesh_EPICK &mesh_in, CgalMesh_EPICK &mesh_out)

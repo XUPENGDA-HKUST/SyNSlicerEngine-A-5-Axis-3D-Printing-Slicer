@@ -23,11 +23,6 @@ namespace SyNSlicerGUI
 		~MeshClipperGUI();
 
 	protected:
-		bool findAllSperatedMeshes(
-			std::vector<CgalMesh_EPICK::Face_index> &triangle_contour, 
-			const SO::Line &line, 
-			const SO::Plane &plane) override;
-
 		bool m_should_drawer_delete_in_destructer;
 		ObjectDrawer *mp_drawer;
 	};
