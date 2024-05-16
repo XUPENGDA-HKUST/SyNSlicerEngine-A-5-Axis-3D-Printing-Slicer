@@ -100,7 +100,7 @@ PrintingSequenceDeterminator::PrintingSequenceStatus PrintingSequenceDeterminato
 		{
 			if (isSweptVolumeIntersectParition(m_swept_volume_list[i], printing_sequence[j].getEPICKMesh()))
 			{
-				if (isSweptVolumeIntersectParition(m_swept_volume_list[j], printing_sequence[j].getEPICKMesh()))
+				if (isSweptVolumeIntersectParition(m_swept_volume_list[j], printing_sequence[i].getEPICKMesh()))
 				{
 					return PrintingSequenceStatus::CollisionOccurAndCannotBeFixed;
 				}
@@ -154,6 +154,7 @@ bool PrintingSequenceDeterminator::isPrintingSequenceSelfSupported(SO::Partition
 		{
 			for (auto &lock : printing_sequence[i].getLocks())
 			{
+				// This condition is false means no key to open this lock.
 				if (parition_and_it_printing_status[lock] == false)
 				{
 					return false;

@@ -38,6 +38,8 @@ namespace SyNSlicerGUI
 
 		virtual void findSweptVolumeOfNozzleForAllPartition() override;
 
+		bool isSweptVolumeIntersectParition(CgalMesh_EPICK swept_volume, CgalMesh_EPICK partition) override;
+
 		bool m_should_drawer_delete_in_destructer;
 
 		SyNSlicerGUI::ObjectDrawer *m_drawer;

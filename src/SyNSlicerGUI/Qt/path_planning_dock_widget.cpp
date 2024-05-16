@@ -209,6 +209,7 @@ void PathPlanningDockWidget::setClipPartition(int partition_index)
 	m_operating_partition_index = partition_index;
 
 	m_stacked_widget.setCurrentIndex(1);
+	m_stacked_widget.m_model_partition_widget.m_partition_mode_combo_box.setEnabled(true);
 	m_stacked_widget.m_model_partition_widget.m_partition_mode_combo_box.setCurrentIndex(0);
 }
 
