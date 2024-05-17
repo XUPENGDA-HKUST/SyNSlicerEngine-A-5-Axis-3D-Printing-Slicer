@@ -91,7 +91,7 @@ namespace SyNSlicerEngine::Object {
 
 		//! Get the last layer in the container.
 		/*!
-			\return \b SO::PrintingLayer \b& Last printing layers.
+			\return \b SO::PrintingLayer \b & Last printing layers.
 		*/
 		SO::PrintingLayer &back();
 

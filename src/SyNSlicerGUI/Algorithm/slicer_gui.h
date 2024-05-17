@@ -16,16 +16,8 @@ namespace SyNSlicerGUI
 		//! Default constructor not allowed.
 		SlicerGUI() = delete;
 
-		//! Constructor.
-		/*!
-			\param	p_partition	The partition to be sliced.
-		*/
 		SlicerGUI(SO::Partition<CgalMesh_EPICK> &p_partition, vtkRenderer *p_renderer);
 
-		//! Constructor.
-		/*!
-			\param	p_partition	The partition to be sliced.
-		*/
 		SlicerGUI(SO::Partition<CgalMesh_EPICK> &p_partition, SyNSlicerGUI::ObjectDrawer *p_drawer);
 
 		//! Destructor.

@@ -7,7 +7,7 @@
 
 namespace SO = SyNSlicerEngine::Object;
 
-//!  The largest namespace.
+//!  The backend namespace.
 namespace SyNSlicerEngine 
 {
 	namespace Object

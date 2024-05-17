@@ -16,13 +16,7 @@ namespace SyNSlicerGUI
 		//! Default constructore is not allowed.
 		InfillPathGeneratorGUI() = delete;
 
-		//! Constructor.
-		/*!
-			\param[in]	contours		Contours to be filled in.
-			\param[in]	cutting_planes	Planes used to generate infills.
-			\param[in]	side_step		Distance between two consecutive paths.
-			\param[in]	infill_type		Infill pattern.
-		*/
+
 		InfillPathGeneratorGUI(
 			const SO::PolygonCollection &contours, 
 			const std::vector<SO::Plane> &cutting_planes,
@@ -30,13 +24,6 @@ namespace SyNSlicerGUI
 			int infill_type,
 			vtkRenderer *p_renderer);
 
-		//! Constructor.
-		/*!
-			\param[in]	contours		Contours to be filled in.
-			\param[in]	cutting_planes	Planes used to generate infills.
-			\param[in]	side_step		Distance between two consecutive paths.
-			\param[in]	infill_type		Infill pattern.
-		*/
 		InfillPathGeneratorGUI(
 			const SO::PolygonCollection &contours,
 			const std::vector<SO::Plane> &cutting_planes,

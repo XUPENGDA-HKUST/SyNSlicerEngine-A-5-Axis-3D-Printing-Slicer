@@ -17,18 +17,8 @@ namespace SyNSlicerGUI
 		//!  Default constructor is not allowed.
 		ToolpathGeneratorGUI() = delete;
 
-		//!  Constructor.
-		/*!
-			\param[in,out]	partition		The diameter of the filament used by the printer.
-			\param[in]		with_support	Whether generate printing paths for support structure.
-		*/
 		ToolpathGeneratorGUI(SO::Partition<CgalMesh_EPICK> &partition, vtkRenderer *p_renderer, bool with_support = false);
 
-		//!  Constructor.
-		/*!
-			\param[in,out]	partition		The diameter of the filament used by the printer.
-			\param[in]		with_support	Whether generate printing paths for support structure.
-		*/
 		ToolpathGeneratorGUI(SO::Partition<CgalMesh_EPICK> &partition, SyNSlicerGUI::ObjectDrawer *p_drawer, bool with_support = false);
 
 		//!  Destructor.

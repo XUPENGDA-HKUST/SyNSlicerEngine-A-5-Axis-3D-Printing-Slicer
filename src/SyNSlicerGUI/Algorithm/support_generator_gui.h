@@ -16,17 +16,9 @@ namespace SyNSlicerGUI
 		//! Default constructor not allowed.
 		SupportGeneratorGUI() = delete;
 
-		//! Constructor.
-		/*!
-			\param input_paritions	All the partitions.
-		*/
 		SupportGeneratorGUI(SO::PartitionCollection<CgalMesh_EPICK> &input_paritions,
 			vtkRenderer *p_renderer);
 
-		//! Constructor.
-		/*!
-			\param input_paritions	All the partitions.
-		*/
 		SupportGeneratorGUI(SO::PartitionCollection<CgalMesh_EPICK> &input_paritions,
 			SyNSlicerGUI::ObjectDrawer *p_drawer);
 

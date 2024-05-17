@@ -16,28 +16,10 @@ namespace SyNSlicerGUI
 		//! Default constructor not allowed.
 		AutoSlicerGUI() = delete;
 
-		//! Constructor.
-		/*!
-			\param p_partition				The partition to be sliced.
-			\param p_renderer				The VTK Renderer.
-			\param target_layer_thickness	The average layer thickness want to achieve.
-			\param side_step				The distance between consecutive paths.
-			\param min_layer_thickness		The minimum layer thickness that the printer can print.
-			\param max_layer_thickness		The maximum layer thickness that the printer can print.
-		*/
 		AutoSlicerGUI(SO::Partition<CgalMesh_EPICK> &p_partition, vtkRenderer *p_renderer,
 			double target_layer_thickness = 0.3, double side_step = 0.4, double min_layer_thickness = 0.25,
 			double max_layer_thickness = 0.35);
 
-		//! Constructor.
-		/*!
-			\param p_partition				The partition to be sliced.
-			\param p_drawer					The drawer.
-			\param target_layer_thickness	The average layer thickness want to achieve.
-			\param side_step				The distance between consecutive paths.
-			\param min_layer_thickness		The minimum layer thickness that the printer can print.
-			\param max_layer_thickness		The maximum layer thickness that the printer can print.
-		*/
 		AutoSlicerGUI(SO::Partition<CgalMesh_EPICK> &p_partition, SyNSlicerGUI::ObjectDrawer *p_drawer,
 			double target_layer_thickness = 0.3, double side_step = 0.4, double min_layer_thickness = 0.25,
 			double max_layer_thickness = 0.35);

@@ -118,7 +118,6 @@ namespace SyNSlicerEngine::Object
 		//! Check if projection of point lies on line segment.
 		/*!
 			\param[in]	point	The point.
-			\param[in]	line	The line.
 			\return \b True if yes. \n \b False if not.
 		*/
 		bool isProjectionOfPointLieOnLineSegment(const Eigen::Vector3d &point) const;

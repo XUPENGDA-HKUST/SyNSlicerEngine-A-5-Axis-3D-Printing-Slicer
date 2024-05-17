@@ -32,6 +32,4 @@
 *.app
 
 debug_build/
-data/
-/documentation
-/release_build
+release_build/

@@ -17,18 +17,8 @@ namespace SyNSlicerGUI
 		//!  Default constructor is not allowed.
 		PrintingSequenceDeterminatorGUI() = delete;
 
-		//!  Constructor.
-		/*!
-			\param[in,out] partition_list All the partitions.
-			\param[in] nozzle The printer nozzle.
-		*/
 		PrintingSequenceDeterminatorGUI(SO::PartitionCollection<CgalMesh_EPICK> &partition_list, SO::Nozzle nozzle, vtkRenderer *p_renderer);
 
-		//!  Constructor.
-		/*!
-			\param[in,out] partition_list All the partitions.
-			\param[in] nozzle The printer nozzle.
-		*/
 		PrintingSequenceDeterminatorGUI(SO::PartitionCollection<CgalMesh_EPICK> &partition_list, SO::Nozzle nozzle, SyNSlicerGUI::ObjectDrawer *p_drawer);
 
 		//!  Destructor.

@@ -16,23 +16,11 @@ namespace SyNSlicerGUI
 		//! Default constructor is not allowed.
 		SweptVolumwCalculatorGUI() = delete;
 
-		//! Constructor
-		/*!
-			\param[in] partition	All the partitions.
-			\param[in] p_renderer	VTK Renderer.
-			\param[in] nozzle		The printer nozzle.
-		*/
 		SweptVolumwCalculatorGUI(
 			const SO::Partition<CgalMesh_EPICK> &partition, 
 			SO::Nozzle nozzle,
 			vtkRenderer *p_renderer);
 		
-		//! Constructor
-		/*!
-			\param[in] partition	All the partitions.
-			\param[in] p_renderer	VTK Renderer.
-			\param[in] nozzle		The printer nozzle.
-		*/
 		SweptVolumwCalculatorGUI(
 			const SO::Partition<CgalMesh_EPICK> &partition,
 			SO::Nozzle nozzle,

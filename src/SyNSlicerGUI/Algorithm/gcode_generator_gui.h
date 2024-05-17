@@ -21,18 +21,8 @@ namespace SyNSlicerGUI
 		//! Default constructure is not allowed.
 		GcodeGeneratorGUI() = delete;
 
-		//! Constructor
-		/*!
-			\param[in] partitions All partitions to be printed.
-			\param[in] side_step Distance between consecutive paths.
-		*/
 		GcodeGeneratorGUI(SO::PartitionCollection<CgalMesh_EPICK> partitions, vtkRenderer *p_renderer, double side_step = 0.4);
 
-		//! Constructor
-		/*!
-			\param[in] partitions All partitions to be printed.
-			\param[in] side_step Distance between consecutive paths.
-		*/
 		GcodeGeneratorGUI(SO::PartitionCollection<CgalMesh_EPICK> partitions, SyNSlicerGUI::ObjectDrawer *p_drawer, double side_step = 0.4);
 
 		//! Destructor
